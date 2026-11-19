@@ -1,0 +1,71 @@
+/// Represents the demo user / player state.
+class DemoUser {
+  final String name;
+  final String email;
+  final int heroIndex; // 0 = boy, 1 = girl
+  final String heroClassName;
+  final int level;
+  final int xp;
+  final int xpToNextLevel;
+  final int streak;
+  final int wordsFound;
+  final int lessonsCompleted;
+  final String languageId;
+  final String languageName;
+  final String languageScript;
+
+  const DemoUser({
+    required this.name,
+    required this.email,
+    this.heroIndex = 0,
+    this.heroClassName = 'Traveler',
+    this.level = 1,
+    this.xp = 0,
+    this.xpToNextLevel = 100,
+    this.streak = 0,
+    this.wordsFound = 0,
+    this.lessonsCompleted = 0,
+    this.languageId = '',
+    this.languageName = '',
+    this.languageScript = '',
+  });
+
+  DemoUser copyWith({
+    String? name,
+    String? email,
+    int? heroIndex,
+    String? heroClassName,
+    int? level,
+    int? xp,
+    int? xpToNextLevel,
+    int? streak,
+    int? wordsFound,
+    int? lessonsCompleted,
+    String? languageId,
+    String? languageName,
+    String? languageScript,
+  }) {
+    return DemoUser(
+      name: name ?? this.name,
+      email: email ?? this.email,
+      heroIndex: heroIndex ?? this.heroIndex,
+      heroClassName: heroClassName ?? this.heroClassName,
+      level: level ?? this.level,
+      xp: xp ?? this.xp,
+      xpToNextLevel: xpToNextLevel ?? this.xpToNextLevel,
+      streak: streak ?? this.streak,
+      wordsFound: wordsFound ?? this.wordsFound,
+      lessonsCompleted: lessonsCompleted ?? this.lessonsCompleted,
+      languageId: languageId ?? this.languageId,
+      languageName: languageName ?? this.languageName,
+      languageScript: languageScript ?? this.languageScript,
+    );
+  }
+
+  String get levelTitle {
+    if (level <= 2) return 'Traveler';
+    if (level <= 4) return 'Speaker';
+    if (level <= 6) return 'Guardian';
+    return 'Master';
+  }
+}
