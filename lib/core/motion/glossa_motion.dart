@@ -56,4 +56,14 @@ abstract final class GlossaMotion {
   static Duration duration(BuildContext context, Duration original) {
     return shouldReduceMotion(context) ? Duration.zero : original;
   }
+
+  // ─── Testing / Environment ──────────────────────────────────
+  /// Set to true to disable infinite repeating animations (e.g. idle bobbing)
+  /// so that `tester.pumpAndSettle()` settles in widget tests.
+  static bool disableRepeatingAnimations = false;
+
+  /// Returns true if repeating idle animations should pause (e.g. during widget tests).
+  static bool get shouldPauseIdleBobbing =>
+      disableRepeatingAnimations ||
+      WidgetsBinding.instance.runtimeType.toString().contains('Test');
 }
