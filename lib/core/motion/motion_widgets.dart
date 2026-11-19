@@ -105,7 +105,9 @@ class _IdleBobbingState extends State<IdleBobbing>
         curve: Curves.easeInOutSine,
       ),
     );
-    _controller.repeat(reverse: true);
+    if (!GlossaMotion.shouldPauseIdleBobbing) {
+      _controller.repeat(reverse: true);
+    }
   }
 
   @override
