@@ -1,0 +1,239 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:glossa_app/app/router/app_router.dart';
+import 'package:glossa_app/app/theme/glossa_colors.dart';
+import 'package:glossa_app/app/theme/glossa_typography.dart';
+import 'package:glossa_app/core/constants/spacing.dart';
+import 'package:glossa_app/core/widgets/glossa_button.dart';
+import 'package:glossa_app/core/widgets/tab_control.dart';
+import 'package:glossa_app/core/widgets/hero_avatar.dart';
+import 'package:glossa_app/shared/providers/game_state_provider.dart';
+
+class LoginScreen extends ConsumerStatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _codeController = TextEditingController();
+  bool _obscureCode = true;
+  bool _autoSave = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go(AppRoutes.welcome);
+          }
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(Spacing.pagePadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: Spacing.sm),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_rounded,
+                          color: GlossaColors.blueNavy, size: 28),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go(AppRoutes.welcome);
+                        }
+                      },
+                    ),
+                    const SizedBox(width: Spacing.xs),
+                    Expanded(
+                      child: GlossaTabControl(
+                        selectedIndex: 1,
+                        labels: const ['New game', 'Load game'],
+                        onChanged: (i) {
+                          if (i == 0) context.go(AppRoutes.signup);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Spacing.xl),
+              // Welcome back card
+              Container(
+                padding: const EdgeInsets.all(Spacing.lg),
+                decoration: BoxDecoration(
+                  color: GlossaColors.creamPale,
+                  borderRadius: BorderRadius.circular(Spacing.cardRadius),
+                  border: Border.all(color: GlossaColors.blueNavy, width: 2),
+                ),
+                child: Row(
+                  children: [
+                    const HeroAvatar(heroIndex: 0, level: 4, size: 50),
+                    const SizedBox(width: Spacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Welcome back, Traveler.',
+                              style: GlossaTypography.headlineMedium),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: GlossaColors.streakGreen,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text('5 day streak',
+                                    style: GlossaTypography.labelSmall
+                                        .copyWith(color: GlossaColors.white)),
+                              ),
+                              const SizedBox(width: 8),
+                              Text('Lv 4', style: GlossaTypography.bodySmall),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: Spacing.xxl),
+              Text('Save-file email', style: GlossaTypography.labelMedium),
+              const SizedBox(height: Spacing.sm),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(hintText: 'you@example.com'),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: Spacing.lg),
+              Text('Secret code', style: GlossaTypography.labelMedium),
+              const SizedBox(height: Spacing.sm),
+              TextFormField(
+                controller: _codeController,
+                obscureText: _obscureCode,
+                decoration: InputDecoration(
+                  hintText: 'Your secret code',
+                  suffixIcon: GestureDetector(
+                    onTap: () => setState(() => _obscureCode = !_obscureCode),
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Text(
+                        _obscureCode ? 'Show' : 'Hide',
+                        style: GlossaTypography.labelMedium
+                            .copyWith(color: GlossaColors.blueDeep),
+                      ),
+                    ),
+                  ),
+                  suffixIconConstraints:
+                      const BoxConstraints(minHeight: 0, minWidth: 0),
+                ),
+              ),
+              const SizedBox(height: Spacing.md),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _autoSave,
+                    onChanged: (v) =>
+                        setState(() => _autoSave = v ?? false),
+                  ),
+                  Text('Auto-save', style: GlossaTypography.bodyMedium),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Lost your code?'),
+                          content: const Text(
+                              'In the full app, you can reset your code via email. '
+                              'This is a demo — tap "Load game" to continue.'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'Lost your code?',
+                      style: GlossaTypography.labelMedium
+                          .copyWith(color: GlossaColors.blueDeep),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.xl),
+              GlossaButton(
+                label: 'Load game',
+                onPressed: () {
+                  ref.read(gameStateProvider.notifier).logIn();
+                  context.go(AppRoutes.town);
+                },
+              ),
+              const SizedBox(height: Spacing.lg),
+              Center(child: Text('or', style: GlossaTypography.bodyMedium)),
+              const SizedBox(height: Spacing.lg),
+              GlossaButton(
+                label: 'Link with Google',
+                style: GlossaButtonStyle.secondary,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                          'Google login will be available with Firebase integration.'),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: Spacing.xxl),
+              Center(
+                child: GestureDetector(
+                  onTap: () => context.go(AppRoutes.signup),
+                  child: RichText(
+                    text: TextSpan(
+                      style: GlossaTypography.bodyMedium,
+                      children: [
+                        const TextSpan(text: 'New here? '),
+                        TextSpan(
+                          text: 'Start a new game',
+                          style: GlossaTypography.labelMedium
+                              .copyWith(color: GlossaColors.blueDeep),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: Spacing.xxl),
+            ],
+          ),
+        ),
+      ),
+    ),
+    );
+  }
+}
