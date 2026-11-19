@@ -1,0 +1,162 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:glossa_app/app/router/app_router.dart';
+import 'package:glossa_app/app/theme/glossa_colors.dart';
+import 'package:glossa_app/app/theme/glossa_typography.dart';
+import 'package:glossa_app/core/constants/spacing.dart';
+import 'package:glossa_app/core/widgets/greek_key_border.dart';
+import 'package:glossa_app/core/widgets/logo_widget.dart';
+import 'package:glossa_app/core/widgets/audio_waveform.dart';
+
+class LandingScreen extends StatefulWidget {
+  const LandingScreen({super.key});
+
+  @override
+  State<LandingScreen> createState() => _LandingScreenState();
+}
+
+class _LandingScreenState extends State<LandingScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  Timer? _autoNav;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..forward();
+    _autoNav = Timer(const Duration(seconds: 3), () {
+      if (mounted) context.go(AppRoutes.splash);
+    });
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _autoNav?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: GlossaColors.blueDeep,
+      body: GestureDetector(
+        onTap: () {
+          _autoNav?.cancel();
+          context.go(AppRoutes.splash);
+        },
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: Column(
+            children: [
+              const GreekKeyBorder(),
+              Expanded(
+                child: FadeTransition(
+                  opacity: _fadeController,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: Spacing.xxl),
+                        // Large Devanagari greeting
+                        Text(
+                          'भाय्',
+                          style: GlossaTypography.devanagariLarge.copyWith(
+                            fontSize: 72,
+                            color: GlossaColors.yellowPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: Spacing.lg),
+                        // Logo with floating tokens
+                        SizedBox(
+                          height: 260,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              const GlossaLogo(size: 180),
+                              // Floating Devanagari tokens
+                              _FloatingToken('न', left: 20, top: 30),
+                              _FloatingToken('म', right: 20, top: 10,
+                                  bgColor: GlossaColors.redAction),
+                              _FloatingToken('थ', left: 15, bottom: 30),
+                              _FloatingToken('ल', right: 15, bottom: 10),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: Spacing.xxl),
+                        // Title
+                        Text(
+                          'Glossa',
+                          style: GlossaTypography.displayLargeOnDark.copyWith(
+                            fontSize: 42,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: Spacing.sm),
+                        Text(
+                          'Hear it. Say it. Preserve it.',
+                          style: GlossaTypography.bodyLargeOnDark,
+                        ),
+                        const SizedBox(height: Spacing.xl),
+                        const AudioWaveformIcon(
+                          color: GlossaColors.redAction,
+                          size: 32,
+                        ),
+                        const SizedBox(height: Spacing.xxl),
+                        Text(
+                          'NEWARI  ·  MAITHILI  ·  THARU  ·  LIMBU',
+                          style: GlossaTypography.labelSmall.copyWith(
+                            color: GlossaColors.white,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: Spacing.xxl),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const GreekKeyBorder(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FloatingToken extends Positioned {
+  _FloatingToken(
+    String letter, {
+    super.left,
+    super.right,
+    super.top,
+    super.bottom,
+    Color bgColor = GlossaColors.yellowPrimary,
+  }) : super(
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: GlossaColors.blueNavy, width: 2),
+            ),
+            child: Center(
+              child: Text(
+                letter,
+                style: const TextStyle(
+                  fontFamily: 'NotoSansDevanagari',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: GlossaColors.textDark,
+                ),
+              ),
+            ),
+          ),
+        );
+}
