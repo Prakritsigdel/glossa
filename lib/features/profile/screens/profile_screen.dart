@@ -49,7 +49,10 @@ class ProfileScreen extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: GlossaColors.white,
                         borderRadius: BorderRadius.circular(Spacing.cardRadius),
-                        border: Border.all(color: GlossaColors.blueNavy, width: 2.5),
+                        border: Border.all(
+                          color: GlossaColors.blueNavy,
+                          width: 2.5,
+                        ),
                         boxShadow: const [
                           BoxShadow(
                             color: GlossaColors.blueNavy,
@@ -79,14 +82,17 @@ class ProfileScreen extends ConsumerWidget {
                                     ),
                                     Text(
                                       'Lv ${user.level} ${user.heroClassName}',
-                                      style: GlossaTypography.labelMedium.copyWith(
-                                        color: GlossaColors.blueDeep,
-                                      ),
+                                      style: GlossaTypography.labelMedium
+                                          .copyWith(
+                                            color: GlossaColors.blueDeep,
+                                          ),
                                     ),
                                     const SizedBox(height: 4),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 2),
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: GlossaColors.creamPale,
                                         borderRadius: BorderRadius.circular(8),
@@ -99,20 +105,24 @@ class ProfileScreen extends ConsumerWidget {
                                         user.languageScript.isNotEmpty
                                             ? '${user.languageScript} (${user.languageName})'
                                             : 'Nepal Bhasa (Newari)',
-                                        style: GlossaTypography.labelSmall.copyWith(
-                                          color: GlossaColors.blueNavy,
-                                          fontSize: 10,
-                                        ),
+                                        style: GlossaTypography.labelSmall
+                                            .copyWith(
+                                              color: GlossaColors.blueNavy,
+                                              fontSize: 10,
+                                            ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.edit_outlined,
-                                    color: GlossaColors.blueNavy),
-                                onPressed: () =>
-                                    context.push('${AppRoutes.characterSelect}?mode=edit'),
+                                icon: const Icon(
+                                  Icons.edit_outlined,
+                                  color: GlossaColors.blueNavy,
+                                ),
+                                onPressed: () => context.push(
+                                  '${AppRoutes.characterSelect}?mode=edit',
+                                ),
                               ),
                             ],
                           ),
@@ -127,7 +137,9 @@ class ProfileScreen extends ConsumerWidget {
                             alignment: Alignment.centerRight,
                             child: Text(
                               '${user.xp} / ${user.xpToNextLevel} XP to Level ${user.level + 1}',
-                              style: GlossaTypography.bodySmall.copyWith(fontSize: 11),
+                              style: GlossaTypography.bodySmall.copyWith(
+                                fontSize: 11,
+                              ),
                             ),
                           ),
                         ],
@@ -138,11 +150,19 @@ class ProfileScreen extends ConsumerWidget {
                     // ─── 3 Stats Row ─────────────────────────
                     Row(
                       children: [
-                        _buildStatBox('Words Found', '${user.wordsFound}', '📚'),
+                        _buildStatBox(
+                          'Words Found',
+                          '${user.wordsFound}',
+                          '📚',
+                        ),
                         const SizedBox(width: Spacing.sm),
                         _buildStatBox('Day Streak', '${user.streak}d', '🔥'),
                         const SizedBox(width: Spacing.sm),
-                        _buildStatBox('Lessons', '${user.lessonsCompleted}', '⚔️'),
+                        _buildStatBox(
+                          'Lessons',
+                          '${user.lessonsCompleted}',
+                          '⚔️',
+                        ),
                       ],
                     ),
                     const SizedBox(height: Spacing.lg),
@@ -152,13 +172,24 @@ class ProfileScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Hero Mastery', style: GlossaTypography.headlineSmall),
+                          Text(
+                            'Hero Mastery',
+                            style: GlossaTypography.headlineSmall,
+                          ),
                           const SizedBox(height: Spacing.md),
-                          _buildSkillRow('Hearing', 0.85, GlossaColors.blueBright),
+                          _buildSkillRow(
+                            'Hearing',
+                            0.85,
+                            GlossaColors.blueBright,
+                          ),
                           const SizedBox(height: Spacing.sm),
                           _buildSkillRow('Voice', 0.60, GlossaColors.redAction),
                           const SizedBox(height: Spacing.sm),
-                          _buildSkillRow('Reading', 0.75, GlossaColors.successGreen),
+                          _buildSkillRow(
+                            'Reading',
+                            0.75,
+                            GlossaColors.successGreen,
+                          ),
                         ],
                       ),
                     ),
@@ -176,8 +207,11 @@ class ProfileScreen extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.mic_none_rounded,
-                                  color: GlossaColors.yellowPrimary, size: 28),
+                              const Icon(
+                                Icons.mic_none_rounded,
+                                color: GlossaColors.yellowPrimary,
+                                size: 28,
+                              ),
                               const SizedBox(width: Spacing.sm),
                               Text(
                                 'Preserve Your Heritage',
@@ -256,49 +290,69 @@ class ProfileScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(Spacing.cardRadius),
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(Spacing.cardRadius),
-                          border: Border.all(color: GlossaColors.blueNavy, width: 2),
+                          borderRadius: BorderRadius.circular(
+                            Spacing.cardRadius,
+                          ),
+                          border: Border.all(
+                            color: GlossaColors.blueNavy,
+                            width: 2,
+                          ),
                         ),
                         child: Column(
                           children: [
-                          ListTile(
-                            leading: const Icon(Icons.language_rounded,
-                                color: GlossaColors.blueNavy),
-                            title: Text('Change Target Language',
-                                style: GlossaTypography.labelMedium),
-                            trailing: const Icon(Icons.chevron_right_rounded),
-                            onTap: () =>
-                                context.push('${AppRoutes.languageSelect}?mode=edit'),
-                          ),
-                          const Divider(height: 1, thickness: 1),
-                          ListTile(
-                            leading: const Icon(Icons.switch_account_rounded,
-                                color: GlossaColors.blueNavy),
-                            title: Text('Switch Hero Appearance',
-                                style: GlossaTypography.labelMedium),
-                            trailing: const Icon(Icons.chevron_right_rounded),
-                            onTap: () =>
-                                context.push('${AppRoutes.characterSelect}?mode=edit'),
-                          ),
-                          const Divider(height: 1, thickness: 1),
-                          ListTile(
-                            leading: const Icon(Icons.logout_rounded,
-                                color: GlossaColors.redAction),
-                            title: Text(
-                              'Log Out (Demo)',
-                              style: GlossaTypography.labelMedium.copyWith(
-                                color: GlossaColors.redAction,
+                            ListTile(
+                              leading: const Icon(
+                                Icons.language_rounded,
+                                color: GlossaColors.blueNavy,
+                              ),
+                              title: Text(
+                                'Change Target Language',
+                                style: GlossaTypography.labelMedium,
+                              ),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: () => context.push(
+                                '${AppRoutes.languageSelect}?mode=edit',
                               ),
                             ),
-                            trailing: const Icon(Icons.chevron_right_rounded),
-                            onTap: () {
-                              ref.read(gameStateProvider.notifier).logOut();
-                              context.go(AppRoutes.welcome);
-                            },
-                          ),
-                        ],
+                            const Divider(height: 1, thickness: 1),
+                            ListTile(
+                              leading: const Icon(
+                                Icons.switch_account_rounded,
+                                color: GlossaColors.blueNavy,
+                              ),
+                              title: Text(
+                                'Switch Hero Appearance',
+                                style: GlossaTypography.labelMedium,
+                              ),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: () => context.push(
+                                '${AppRoutes.characterSelect}?mode=edit',
+                              ),
+                            ),
+                            const Divider(height: 1, thickness: 1),
+                            ListTile(
+                              leading: const Icon(
+                                Icons.logout_rounded,
+                                color: GlossaColors.redAction,
+                              ),
+                              title: Text(
+                                'Log Out',
+                                style: GlossaTypography.labelMedium.copyWith(
+                                  color: GlossaColors.redAction,
+                                ),
+                              ),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: () async {
+                                await ref
+                                    .read(gameStateProvider.notifier)
+                                    .logOut();
+                                if (context.mounted)
+                                  context.go(AppRoutes.welcome);
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                     ),
                     const SizedBox(height: Spacing.xxl),
                   ],
@@ -314,7 +368,10 @@ class ProfileScreen extends ConsumerWidget {
   Widget _buildStatBox(String label, String value, String icon) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: Spacing.md, horizontal: 8),
+        padding: const EdgeInsets.symmetric(
+          vertical: Spacing.md,
+          horizontal: 8,
+        ),
         decoration: BoxDecoration(
           color: GlossaColors.white,
           borderRadius: BorderRadius.circular(Spacing.cardRadius),
@@ -350,16 +407,14 @@ class ProfileScreen extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(name, style: GlossaTypography.labelSmall),
-            Text('${(progress * 100).round()}%',
-                style: GlossaTypography.labelSmall),
+            Text(
+              '${(progress * 100).round()}%',
+              style: GlossaTypography.labelSmall,
+            ),
           ],
         ),
         const SizedBox(height: 4),
-        GlossaProgressBar(
-          progress: progress,
-          fillColor: color,
-          height: 8,
-        ),
+        GlossaProgressBar(progress: progress, fillColor: color, height: 8),
       ],
     );
   }
