@@ -11,7 +11,6 @@ import 'package:glossa_app/core/widgets/glossa_button.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
 import 'package:glossa_app/core/widgets/xp_tip_banner.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
 /// Match words lesson screen — tap a Devanagari word then its English pair.
@@ -28,13 +27,19 @@ class _MatchWordsScreenState extends ConsumerState<MatchWordsScreen> {
   final Set<String> _matchedIds = {};
   String? _wrongPairFlashId; // briefly flash red on wrong
 
-  List<_MatchItem> get _devanagariItems => matchWordsExercises[0]
+  List<_MatchItem> get _devanagariItems => ref
+      .read(gameStateProvider)
+      .exercises
+      .first
       .options
       .where((o) => o.isDevanagari)
       .map((o) => _MatchItem(id: o.id, text: o.text, isDevanagari: true))
       .toList();
 
-  List<_MatchItem> get _englishItems => matchWordsExercises[0]
+  List<_MatchItem> get _englishItems => ref
+      .read(gameStateProvider)
+      .exercises
+      .first
       .options
       .where((o) => !o.isDevanagari)
       .map((o) => _MatchItem(id: o.id, text: o.text, isDevanagari: false))
@@ -58,34 +63,52 @@ class _MatchWordsScreenState extends ConsumerState<MatchWordsScreen> {
     _tryMatch();
   }
 
-  void _tryMatch() {
+  Future<void> _tryMatch() async {
     if (_selectedDevanagariId == null || _selectedEnglishId == null) return;
-
-    final expectedEnglish = matchPairs[_selectedDevanagariId];
-    if (expectedEnglish == _selectedEnglishId) {
+    final devanagariId = _selectedDevanagariId!;
+    final englishId = _selectedEnglishId!;
+    final exerciseId = ref.read(gameStateProvider).exercises.first.id;
+    bool correct;
+    try {
+      correct = await ref
+          .read(gameStateProvider.notifier)
+          .checkAnswer(exerciseId, selectedPairs: {devanagariId: englishId});
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+      return;
+    }
+    if (correct) {
       // Correct match
       setState(() {
-        _matchedIds.add(_selectedDevanagariId!);
-        _matchedIds.add(_selectedEnglishId!);
+        _matchedIds.add(devanagariId);
+        _matchedIds.add(englishId);
       });
       ref
           .read(gameStateProvider.notifier)
-          .addMatchedPair(_selectedDevanagariId!, _selectedEnglishId!);
-      ref.read(gameStateProvider.notifier).recordCorrectAnswer();
+          .addMatchedPair(devanagariId, englishId);
       _selectedDevanagariId = null;
       _selectedEnglishId = null;
 
-      Future.delayed(const Duration(milliseconds: 400), () {
+      Future.delayed(const Duration(milliseconds: 400), () async {
         if (!mounted) return;
         // Check if all matched
-        if (_matchedIds.length == matchPairs.length * 2) {
-          ref.read(gameStateProvider.notifier).completeLesson();
-          context.go(AppRoutes.levelUp);
+        if (_matchedIds.length == _devanagariItems.length * 2) {
+          try {
+            await ref.read(gameStateProvider.notifier).completeLesson();
+            if (mounted) context.go(AppRoutes.levelUp);
+          } catch (error) {
+            if (mounted)
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(error.toString())));
+          }
         }
       });
     } else {
       // Wrong match
-      setState(() => _wrongPairFlashId = _selectedEnglishId);
+      setState(() => _wrongPairFlashId = englishId);
       Future.delayed(const Duration(milliseconds: 500), () {
         if (!mounted) return;
         setState(() {
@@ -124,7 +147,7 @@ class _MatchWordsScreenState extends ConsumerState<MatchWordsScreen> {
   @override
   Widget build(BuildContext context) {
     final gs = ref.watch(gameStateProvider);
-    final progress = _matchedIds.length / (matchPairs.length * 2);
+    final progress = _matchedIds.length / (_devanagariItems.length * 2);
 
     return PopScope(
       canPop: false,
@@ -132,123 +155,144 @@ class _MatchWordsScreenState extends ConsumerState<MatchWordsScreen> {
         if (!didPop) _showLeaveDialog();
       },
       child: Scaffold(
-      backgroundColor: GlossaColors.creamBackground,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Spacing.pagePadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: Spacing.md),
-              // ─── Lesson header ──────────────────
-              _LessonHeader(
-                unitLabel: 'Unit 1',
-                progress: progress,
-                heroIndex: gs.user.heroIndex,
-                level: gs.user.level,
-                onClose: _showLeaveDialog,
-              ),
-              const SizedBox(height: Spacing.xl),
-
-              // ─── Instruction ────────────────────
-              Text('Match the words',
-                  style: GlossaTypography.headlineLarge),
-              const SizedBox(height: Spacing.md),
-
-              // ─── Audio pill ─────────────────────
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: GlossaColors.yellowPrimary,
-                  borderRadius: BorderRadius.circular(20),
-                  border:
-                      Border.all(color: GlossaColors.blueNavy, width: 2),
+        backgroundColor: GlossaColors.creamBackground,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.pagePadding,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: Spacing.md),
+                // ─── Lesson header ──────────────────
+                _LessonHeader(
+                  unitLabel: 'Unit 1',
+                  progress: progress,
+                  heroIndex: gs.user.heroIndex,
+                  level: gs.user.level,
+                  onClose: _showLeaveDialog,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.volume_up_rounded,
-                        color: GlossaColors.blueNavy, size: 18),
-                    const SizedBox(width: 6),
-                    Text('Hear the voice',
-                        style: GlossaTypography.labelMedium),
-                  ],
-                ),
-              ),
-              const SizedBox(height: Spacing.xl),
+                const SizedBox(height: Spacing.xl),
 
-              // ─── Match grid ─────────────────────
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
+                // ─── Instruction ────────────────────
+                Text('Match the words', style: GlossaTypography.headlineLarge),
+                const SizedBox(height: Spacing.md),
+
+                // ─── Audio pill ─────────────────────
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: GlossaColors.yellowPrimary,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: GlossaColors.blueNavy, width: 2),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      for (int i = 0; i < _devanagariItems.length; i++)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: Spacing.md),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: _MatchChip(
-                                  text: _devanagariItems[i].text,
-                                  isDevanagari: true,
-                                  isMatched:
-                                      _matchedIds.contains(_devanagariItems[i].id),
-                                  isSelected: _selectedDevanagariId ==
-                                      _devanagariItems[i].id,
-                                  isWrong: false,
-                                  onTap: () =>
-                                      _onTapDevanagari(_devanagariItems[i].id),
-                                ),
-                              ),
-                              const SizedBox(width: Spacing.md),
-                              Expanded(
-                                child: _MatchChip(
-                                  text: _englishItems[i].text,
-                                  isDevanagari: false,
-                                  isMatched:
-                                      _matchedIds.contains(_englishItems[i].id),
-                                  isSelected: _selectedEnglishId ==
-                                      _englishItems[i].id,
-                                  isWrong: _wrongPairFlashId ==
-                                      _englishItems[i].id,
-                                  onTap: () =>
-                                      _onTapEnglish(_englishItems[i].id),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      const SizedBox(height: Spacing.lg),
-                      const XpTipBanner(
-                          tip:
-                              'Match words faster to earn streak bonuses!'),
+                      const Icon(
+                        Icons.volume_up_rounded,
+                        color: GlossaColors.blueNavy,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Hear the voice',
+                        style: GlossaTypography.labelMedium,
+                      ),
                     ],
                   ),
                 ),
-              ),
+                const SizedBox(height: Spacing.xl),
 
-              // ─── Bottom action ──────────────────
-              Padding(
-                padding: const EdgeInsets.only(bottom: Spacing.xl),
-                child: GlossaButton(
-                  label: 'Attack!',
-                  style: GlossaButtonStyle.dark,
-                  onPressed: _matchedIds.length == matchPairs.length * 2
-                      ? () {
-                          ref
-                              .read(gameStateProvider.notifier)
-                              .completeLesson();
-                          context.go(AppRoutes.levelUp);
-                        }
-                      : null,
+                // ─── Match grid ─────────────────────
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        for (int i = 0; i < _devanagariItems.length; i++)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: Spacing.md),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _MatchChip(
+                                    text: _devanagariItems[i].text,
+                                    isDevanagari: true,
+                                    isMatched: _matchedIds.contains(
+                                      _devanagariItems[i].id,
+                                    ),
+                                    isSelected:
+                                        _selectedDevanagariId ==
+                                        _devanagariItems[i].id,
+                                    isWrong: false,
+                                    onTap: () => _onTapDevanagari(
+                                      _devanagariItems[i].id,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: Spacing.md),
+                                Expanded(
+                                  child: _MatchChip(
+                                    text: _englishItems[i].text,
+                                    isDevanagari: false,
+                                    isMatched: _matchedIds.contains(
+                                      _englishItems[i].id,
+                                    ),
+                                    isSelected:
+                                        _selectedEnglishId ==
+                                        _englishItems[i].id,
+                                    isWrong:
+                                        _wrongPairFlashId ==
+                                        _englishItems[i].id,
+                                    onTap: () =>
+                                        _onTapEnglish(_englishItems[i].id),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: Spacing.lg),
+                        const XpTipBanner(
+                          tip: 'Match words faster to earn streak bonuses!',
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ],
+
+                // ─── Bottom action ──────────────────
+                Padding(
+                  padding: const EdgeInsets.only(bottom: Spacing.xl),
+                  child: GlossaButton(
+                    label: 'Attack!',
+                    style: GlossaButtonStyle.dark,
+                    onPressed: _matchedIds.length == _devanagariItems.length * 2
+                        ? () async {
+                            try {
+                              await ref
+                                  .read(gameStateProvider.notifier)
+                                  .completeLesson();
+                              if (context.mounted)
+                                context.go(AppRoutes.levelUp);
+                            } catch (error) {
+                              if (context.mounted)
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(error.toString())),
+                                );
+                            }
+                          }
+                        : null,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 }
@@ -257,8 +301,11 @@ class _MatchItem {
   final String id;
   final String text;
   final bool isDevanagari;
-  _MatchItem(
-      {required this.id, required this.text, required this.isDevanagari});
+  _MatchItem({
+    required this.id,
+    required this.text,
+    required this.isDevanagari,
+  });
 }
 
 class _MatchChip extends StatelessWidget {
@@ -332,10 +379,7 @@ class _MatchChip extends StatelessWidget {
     );
 
     if (isWrong) {
-      chipContent = ShakeWidget(
-        deltaX: 6.0,
-        child: chipContent,
-      );
+      chipContent = ShakeWidget(deltaX: 6.0, child: chipContent);
     }
 
     return GestureDetector(
@@ -378,17 +422,23 @@ class _LessonHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: GlossaColors.blueDeep, width: 1.5),
           ),
-          child: Text(unitLabel,
-              style: GlossaTypography.labelSmall
-                  .copyWith(color: GlossaColors.blueDeep)),
+          child: Text(
+            unitLabel,
+            style: GlossaTypography.labelSmall.copyWith(
+              color: GlossaColors.blueDeep,
+            ),
+          ),
         ),
         const SizedBox(height: Spacing.sm),
         Row(
           children: [
             GestureDetector(
               onTap: onClose,
-              child: const Icon(Icons.close_rounded,
-                  color: GlossaColors.blueNavy, size: 28),
+              child: const Icon(
+                Icons.close_rounded,
+                color: GlossaColors.blueNavy,
+                size: 28,
+              ),
             ),
             const SizedBox(width: Spacing.sm),
             Expanded(child: LessonProgressBar(progress: progress)),

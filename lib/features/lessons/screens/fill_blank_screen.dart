@@ -11,7 +11,6 @@ import 'package:glossa_app/core/widgets/audio_waveform.dart';
 import 'package:glossa_app/core/widgets/glossa_button.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
 import 'package:glossa_app/shared/models/course_models.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
@@ -35,7 +34,7 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
   @override
   void initState() {
     super.initState();
-    _exercises = fillBlankExercises;
+    _exercises = ref.read(gameStateProvider).exercises;
   }
 
   Exercise get _current => _exercises[_exerciseIndex];
@@ -59,21 +58,31 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
     }
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_selectedOptionId == null) return;
-    final correct = _selectedOptionId == _current.correctAnswerId;
+    bool correct;
+    try {
+      correct = await ref
+          .read(gameStateProvider.notifier)
+          .checkAnswer(_current.id, selectedOptionId: _selectedOptionId);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+      return;
+    }
+    if (!mounted) return;
     setState(() {
       _submitted = true;
       _isCorrect = correct;
     });
 
-    if (correct) {
-      ref.read(gameStateProvider.notifier).recordCorrectAnswer();
-    } else {
+    if (!correct) {
       _shakeKey.currentState?.shake();
     }
 
-    Future.delayed(const Duration(milliseconds: 900), () {
+    Future.delayed(const Duration(milliseconds: 900), () async {
       if (!mounted) return;
       if (correct) {
         if (_exerciseIndex < _exercises.length - 1) {
@@ -86,8 +95,14 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
           });
           ref.read(gameStateProvider.notifier).nextExercise();
         } else {
-          ref.read(gameStateProvider.notifier).completeLesson();
-          context.go(AppRoutes.levelUp);
+          try {
+            await ref.read(gameStateProvider.notifier).completeLesson();
+            if (mounted) context.go(AppRoutes.levelUp);
+          } catch (error) {
+            if (mounted)
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(error.toString())));
+          }
         }
       } else {
         // Allow retry on wrong answer
@@ -138,7 +153,9 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
         backgroundColor: GlossaColors.creamBackground,
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.pagePadding),
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.pagePadding,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -147,8 +164,7 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
                 _buildHeader(gs, progress),
                 const SizedBox(height: Spacing.xl),
 
-                Text('Around the House',
-                    style: GlossaTypography.headlineLarge),
+                Text('Around the House', style: GlossaTypography.headlineLarge),
                 const SizedBox(height: Spacing.lg),
 
                 // ─── Audio card ─────────────────────
@@ -160,8 +176,10 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
                     decoration: BoxDecoration(
                       color: GlossaColors.white,
                       borderRadius: BorderRadius.circular(Spacing.cardRadius),
-                      border:
-                          Border.all(color: GlossaColors.blueNavy, width: 2.5),
+                      border: Border.all(
+                        color: GlossaColors.blueNavy,
+                        width: 2.5,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -175,7 +193,9 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
-                            _isPlayingAudio ? Icons.pause_rounded : Icons.volume_up_rounded,
+                            _isPlayingAudio
+                                ? Icons.pause_rounded
+                                : Icons.volume_up_rounded,
                             color: GlossaColors.white,
                             size: 24,
                           ),
@@ -219,10 +239,13 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
                           padding: const EdgeInsets.all(Spacing.lg),
                           decoration: BoxDecoration(
                             color: GlossaColors.creamPale,
-                            borderRadius:
-                                BorderRadius.circular(Spacing.cardRadius),
+                            borderRadius: BorderRadius.circular(
+                              Spacing.cardRadius,
+                            ),
                             border: Border.all(
-                                color: GlossaColors.blueNavy, width: 2),
+                              color: GlossaColors.blueNavy,
+                              width: 2,
+                            ),
                           ),
                           child: Column(
                             children: [
@@ -242,8 +265,10 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
                         const SizedBox(height: Spacing.xxl),
 
                         // Answer chips wrapped in ShakeWidget
-                        Text(_current.instruction,
-                            style: GlossaTypography.headlineSmall),
+                        Text(
+                          _current.instruction,
+                          style: GlossaTypography.headlineSmall,
+                        ),
                         const SizedBox(height: Spacing.md),
                         ShakeWidget(
                           key: _shakeKey,
@@ -253,20 +278,30 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
                             children: _current.options.map((opt) {
                               final isSelected = _selectedOptionId == opt.id;
                               final isCorrectOption =
-                                  _submitted && opt.id == _current.correctAnswerId;
+                                  _submitted &&
+                                  isSelected &&
+                                  _isCorrect == true;
                               final isWrongSelection =
-                                  _submitted && isSelected && _isCorrect == false;
+                                  _submitted &&
+                                  isSelected &&
+                                  _isCorrect == false;
 
                               Color bg = GlossaColors.white;
                               Color border = GlossaColors.blueNavy;
                               if (isCorrectOption && _submitted) {
-                                bg = GlossaColors.successGreen.withValues(alpha: 0.25);
+                                bg = GlossaColors.successGreen.withValues(
+                                  alpha: 0.25,
+                                );
                                 border = GlossaColors.successGreen;
                               } else if (isWrongSelection) {
-                                bg = GlossaColors.redAction.withValues(alpha: 0.15);
+                                bg = GlossaColors.redAction.withValues(
+                                  alpha: 0.15,
+                                );
                                 border = GlossaColors.redAction;
                               } else if (isSelected) {
-                                bg = GlossaColors.yellowPrimary.withValues(alpha: 0.6);
+                                bg = GlossaColors.yellowPrimary.withValues(
+                                  alpha: 0.6,
+                                );
                                 border = GlossaColors.blueNavy;
                               }
 
@@ -276,19 +311,25 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
                                   duration: GlossaMotion.selection,
                                   curve: GlossaMotion.snappy,
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 24, vertical: 14),
+                                    horizontal: 24,
+                                    vertical: 14,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: bg,
-                                    borderRadius:
-                                        BorderRadius.circular(Spacing.cardRadius),
-                                    border: Border.all(color: border, width: 2.5),
+                                    borderRadius: BorderRadius.circular(
+                                      Spacing.cardRadius,
+                                    ),
+                                    border: Border.all(
+                                      color: border,
+                                      width: 2.5,
+                                    ),
                                     boxShadow: isSelected
                                         ? const [
                                             BoxShadow(
                                               color: GlossaColors.blueNavy,
                                               offset: Offset(0, 2),
                                               blurRadius: 0,
-                                            )
+                                            ),
                                           ]
                                         : null,
                                   ),
@@ -316,8 +357,9 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
                   child: GlossaButton(
                     label: 'Cast answer',
                     style: GlossaButtonStyle.primary,
-                    onPressed:
-                        _selectedOptionId != null && !_submitted ? _submit : null,
+                    onPressed: _selectedOptionId != null && !_submitted
+                        ? _submit
+                        : null,
                   ),
                 ),
               ],
@@ -339,17 +381,23 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: GlossaColors.blueDeep, width: 1.5),
           ),
-          child: Text('Unit 1',
-              style: GlossaTypography.labelSmall
-                  .copyWith(color: GlossaColors.blueDeep)),
+          child: Text(
+            'Unit 1',
+            style: GlossaTypography.labelSmall.copyWith(
+              color: GlossaColors.blueDeep,
+            ),
+          ),
         ),
         const SizedBox(height: Spacing.sm),
         Row(
           children: [
             GestureDetector(
               onTap: _showLeaveDialog,
-              child: const Icon(Icons.close_rounded,
-                  color: GlossaColors.blueNavy, size: 28),
+              child: const Icon(
+                Icons.close_rounded,
+                color: GlossaColors.blueNavy,
+                size: 28,
+              ),
             ),
             const SizedBox(width: Spacing.sm),
             Expanded(child: LessonProgressBar(progress: progress)),

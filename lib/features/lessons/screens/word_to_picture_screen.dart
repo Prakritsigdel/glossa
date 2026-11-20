@@ -12,7 +12,6 @@ import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
 import 'package:glossa_app/core/widgets/simple_illustration.dart';
 import 'package:glossa_app/core/widgets/xp_tip_banner.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
 import 'package:glossa_app/shared/models/course_models.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
@@ -35,7 +34,7 @@ class _WordToPictureScreenState extends ConsumerState<WordToPictureScreen> {
   @override
   void initState() {
     super.initState();
-    _exercise = wordToPictureExercises[0];
+    _exercise = ref.read(gameStateProvider).exercises.first;
   }
 
   void _selectOption(String id) {
@@ -46,25 +45,41 @@ class _WordToPictureScreenState extends ConsumerState<WordToPictureScreen> {
     });
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_selectedOptionId == null) return;
-    final correct = _selectedOptionId == _exercise.correctAnswerId;
+    bool correct;
+    try {
+      correct = await ref
+          .read(gameStateProvider.notifier)
+          .checkAnswer(_exercise.id, selectedOptionId: _selectedOptionId);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+      return;
+    }
+    if (!mounted) return;
     setState(() {
       _submitted = true;
       _isCorrect = correct;
     });
 
-    if (correct) {
-      ref.read(gameStateProvider.notifier).recordCorrectAnswer();
-    } else {
+    if (!correct) {
       _shakeKey.currentState?.shake();
     }
 
-    Future.delayed(const Duration(milliseconds: 900), () {
+    Future.delayed(const Duration(milliseconds: 900), () async {
       if (!mounted) return;
       if (correct) {
-        ref.read(gameStateProvider.notifier).completeLesson();
-        context.go(AppRoutes.levelUp);
+        try {
+          await ref.read(gameStateProvider.notifier).completeLesson();
+          if (mounted) context.go(AppRoutes.levelUp);
+        } catch (error) {
+          if (mounted)
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(error.toString())));
+        }
       } else {
         setState(() {
           _selectedOptionId = null;
@@ -109,142 +124,157 @@ class _WordToPictureScreenState extends ConsumerState<WordToPictureScreen> {
         if (!didPop) _showLeaveDialog();
       },
       child: Scaffold(
-      backgroundColor: GlossaColors.creamBackground,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Spacing.pagePadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: Spacing.md),
-              // ─── Header ─────────────────────────
-              _buildHeader(gs),
-              const SizedBox(height: Spacing.xl),
+        backgroundColor: GlossaColors.creamBackground,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.pagePadding,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: Spacing.md),
+                // ─── Header ─────────────────────────
+                _buildHeader(gs),
+                const SizedBox(height: Spacing.xl),
 
-              Text('Pick the picture',
-                  style: GlossaTypography.headlineLarge),
-              const SizedBox(height: Spacing.lg),
+                Text('Pick the picture', style: GlossaTypography.headlineLarge),
+                const SizedBox(height: Spacing.lg),
 
-              // ─── Word prompt card ───────────────
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(Spacing.xl),
-                decoration: BoxDecoration(
-                  color: GlossaColors.blueNavy,
-                  borderRadius: BorderRadius.circular(Spacing.cardRadius),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Show the Devanagari prompt for the correct answer
-                    Text(
-                      'ल', // The Devanagari for "House"
-                      style: GlossaTypography.devanagariLarge
-                          .copyWith(color: GlossaColors.yellowPrimary),
-                    ),
-                    const SizedBox(width: Spacing.lg),
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: GlossaColors.blueDeep,
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(
-                            color: GlossaColors.yellowPrimary, width: 2),
+                // ─── Word prompt card ───────────────
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(Spacing.xl),
+                  decoration: BoxDecoration(
+                    color: GlossaColors.blueNavy,
+                    borderRadius: BorderRadius.circular(Spacing.cardRadius),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Show the Devanagari prompt for the correct answer
+                      Text(
+                        'ल', // The Devanagari for "House"
+                        style: GlossaTypography.devanagariLarge.copyWith(
+                          color: GlossaColors.yellowPrimary,
+                        ),
                       ),
-                      child: const Icon(Icons.volume_up_rounded,
-                          color: GlossaColors.yellowPrimary, size: 22),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: Spacing.xxl),
-
-              // ─── 2×2 picture grid ───────────────
-              Expanded(
-                child: ShakeWidget(
-                  key: _shakeKey,
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: Spacing.md,
-                    mainAxisSpacing: Spacing.md,
-                    childAspectRatio: 1.0,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: _exercise.options.map((opt) {
-                      final isSelected = _selectedOptionId == opt.id;
-                      final isCorrectOpt =
-                          _submitted && opt.id == _exercise.correctAnswerId;
-                      final isWrongSelection =
-                          _submitted && isSelected && _isCorrect == false;
-
-                      Color bg = GlossaColors.white;
-                      Color border = GlossaColors.blueNavy;
-                      if (isCorrectOpt && _submitted) {
-                        bg = GlossaColors.successGreen.withValues(alpha: 0.25);
-                        border = GlossaColors.successGreen;
-                      } else if (isWrongSelection) {
-                        bg = GlossaColors.redAction.withValues(alpha: 0.15);
-                        border = GlossaColors.redAction;
-                      } else if (isSelected) {
-                        bg = GlossaColors.yellowPrimary.withValues(alpha: 0.6);
-                      }
-
-                      return GestureDetector(
-                        onTap: () => _selectOption(opt.id),
-                        child: AnimatedContainer(
-                          duration: GlossaMotion.selection,
-                          curve: GlossaMotion.snappy,
-                          decoration: BoxDecoration(
-                            color: bg,
-                            borderRadius:
-                                BorderRadius.circular(Spacing.cardRadius),
-                            border: Border.all(color: border, width: 2.5),
-                            boxShadow: isSelected
-                                ? const [
-                                    BoxShadow(
-                                      color: GlossaColors.blueNavy,
-                                      offset: Offset(0, 2),
-                                      blurRadius: 0,
-                                    )
-                                  ]
-                                : null,
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SimpleIllustration(
-                                imageKey: opt.imageKey ?? 'house',
-                                size: 60,
-                              ),
-                              const SizedBox(height: Spacing.sm),
-                              Text(opt.text,
-                                  style: GlossaTypography.labelMedium),
-                            ],
+                      const SizedBox(width: Spacing.lg),
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: GlossaColors.blueDeep,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: GlossaColors.yellowPrimary,
+                            width: 2,
                           ),
                         ),
-                      );
-                    }).toList(),
+                        child: const Icon(
+                          Icons.volume_up_rounded,
+                          color: GlossaColors.yellowPrimary,
+                          size: 22,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                const SizedBox(height: Spacing.xxl),
 
-              const XpTipBanner(tip: 'Listen to the word and match it!'),
-              const SizedBox(height: Spacing.md),
+                // ─── 2×2 picture grid ───────────────
+                Expanded(
+                  child: ShakeWidget(
+                    key: _shakeKey,
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: Spacing.md,
+                      mainAxisSpacing: Spacing.md,
+                      childAspectRatio: 1.0,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: _exercise.options.map((opt) {
+                        final isSelected = _selectedOptionId == opt.id;
+                        final isCorrectOpt =
+                            _submitted && isSelected && _isCorrect == true;
+                        final isWrongSelection =
+                            _submitted && isSelected && _isCorrect == false;
 
-              Padding(
-                padding: const EdgeInsets.only(bottom: Spacing.xl),
-                child: GlossaButton(
-                  label: 'Cast answer',
-                  style: GlossaButtonStyle.primary,
-                  onPressed:
-                      _selectedOptionId != null && !_submitted ? _submit : null,
+                        Color bg = GlossaColors.white;
+                        Color border = GlossaColors.blueNavy;
+                        if (isCorrectOpt && _submitted) {
+                          bg = GlossaColors.successGreen.withValues(
+                            alpha: 0.25,
+                          );
+                          border = GlossaColors.successGreen;
+                        } else if (isWrongSelection) {
+                          bg = GlossaColors.redAction.withValues(alpha: 0.15);
+                          border = GlossaColors.redAction;
+                        } else if (isSelected) {
+                          bg = GlossaColors.yellowPrimary.withValues(
+                            alpha: 0.6,
+                          );
+                        }
+
+                        return GestureDetector(
+                          onTap: () => _selectOption(opt.id),
+                          child: AnimatedContainer(
+                            duration: GlossaMotion.selection,
+                            curve: GlossaMotion.snappy,
+                            decoration: BoxDecoration(
+                              color: bg,
+                              borderRadius: BorderRadius.circular(
+                                Spacing.cardRadius,
+                              ),
+                              border: Border.all(color: border, width: 2.5),
+                              boxShadow: isSelected
+                                  ? const [
+                                      BoxShadow(
+                                        color: GlossaColors.blueNavy,
+                                        offset: Offset(0, 2),
+                                        blurRadius: 0,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SimpleIllustration(
+                                  imageKey: opt.imageKey ?? 'house',
+                                  size: 60,
+                                ),
+                                const SizedBox(height: Spacing.sm),
+                                Text(
+                                  opt.text,
+                                  style: GlossaTypography.labelMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+
+                const XpTipBanner(tip: 'Listen to the word and match it!'),
+                const SizedBox(height: Spacing.md),
+
+                Padding(
+                  padding: const EdgeInsets.only(bottom: Spacing.xl),
+                  child: GlossaButton(
+                    label: 'Cast answer',
+                    style: GlossaButtonStyle.primary,
+                    onPressed: _selectedOptionId != null && !_submitted
+                        ? _submit
+                        : null,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -259,17 +289,23 @@ class _WordToPictureScreenState extends ConsumerState<WordToPictureScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: GlossaColors.blueDeep, width: 1.5),
           ),
-          child: Text('Unit 1',
-              style: GlossaTypography.labelSmall
-                  .copyWith(color: GlossaColors.blueDeep)),
+          child: Text(
+            'Unit 1',
+            style: GlossaTypography.labelSmall.copyWith(
+              color: GlossaColors.blueDeep,
+            ),
+          ),
         ),
         const SizedBox(height: Spacing.sm),
         Row(
           children: [
             GestureDetector(
               onTap: _showLeaveDialog,
-              child: const Icon(Icons.close_rounded,
-                  color: GlossaColors.blueNavy, size: 28),
+              child: const Icon(
+                Icons.close_rounded,
+                color: GlossaColors.blueNavy,
+                size: 28,
+              ),
             ),
             const SizedBox(width: Spacing.sm),
             Expanded(child: LessonProgressBar(progress: 0.6)),
