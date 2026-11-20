@@ -5,8 +5,8 @@ import 'package:glossa_app/app/theme/glossa_typography.dart';
 import 'package:glossa_app/core/constants/spacing.dart';
 import 'package:glossa_app/core/widgets/greek_key_border.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
 import 'package:glossa_app/shared/models/leaderboard_entry.dart';
+import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
@@ -17,87 +17,105 @@ class LeaderboardScreen extends ConsumerStatefulWidget {
 
 class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   int _selectedTabIndex = 0;
+  late Future<List<LeaderboardEntry>> _entries;
 
-  List<LeaderboardEntry> get _entries {
-    switch (_selectedTabIndex) {
-      case 0:
-        return mockLeaderboardWeekly;
-      case 1:
-        return mockLeaderboardFamily;
-      case 2:
-        return mockLeaderboardAllTime;
-      default:
-        return mockLeaderboardWeekly;
-    }
+  static const _filters = ['weekly', 'family', 'alltime'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEntries();
+  }
+
+  void _loadEntries() {
+    _entries = ref
+        .read(backendApiProvider)
+        .leaderboard(_filters[_selectedTabIndex]);
   }
 
   @override
   Widget build(BuildContext context) {
-    final entries = _entries;
-    final topThree = entries.take(3).toList();
-    final remaining = entries.skip(3).toList();
-
-    return Scaffold(
-      backgroundColor: GlossaColors.creamBackground,
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            SizedBox(height: MediaQuery.of(context).padding.top),
-            const GreekKeyBorder(),
-            Expanded(
-              child: CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Spacing.pagePadding,
-                        vertical: Spacing.md,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Leaderboard',
-                            style: GlossaTypography.displayMedium,
-                          ),
-                          const SizedBox(height: Spacing.md),
-                          _buildFilterTabs(),
-                          const SizedBox(height: Spacing.xl),
-                          if (topThree.isNotEmpty) _buildPodium(topThree),
-                          const SizedBox(height: Spacing.xl),
-                          Text(
-                            'Top Adventurers',
-                            style: GlossaTypography.headlineSmall,
-                          ),
-                          const SizedBox(height: Spacing.sm),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Spacing.pagePadding,
-                    ),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final entry = remaining[index];
-                          return _buildLeaderboardTile(entry);
-                        },
-                        childCount: remaining.length,
-                      ),
-                    ),
-                  ),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: Spacing.xxl),
-                  ),
-                ],
-              ),
+    return FutureBuilder<List<LeaderboardEntry>>(
+      future: _entries,
+      builder: (context, snapshot) {
+        final entries = snapshot.data ?? const <LeaderboardEntry>[];
+        final topThree = entries.take(3).toList();
+        final remaining = entries.skip(3).toList();
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Text('Could not load leaderboard: ${snapshot.error}'),
             ),
-          ],
-        ),
-      ),
+          );
+        }
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        return Scaffold(
+          backgroundColor: GlossaColors.creamBackground,
+          body: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                SizedBox(height: MediaQuery.of(context).padding.top),
+                const GreekKeyBorder(),
+                Expanded(
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Spacing.pagePadding,
+                            vertical: Spacing.md,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Leaderboard',
+                                style: GlossaTypography.displayMedium,
+                              ),
+                              const SizedBox(height: Spacing.md),
+                              _buildFilterTabs(),
+                              const SizedBox(height: Spacing.xl),
+                              if (topThree.isNotEmpty) _buildPodium(topThree),
+                              const SizedBox(height: Spacing.xl),
+                              Text(
+                                'Top Adventurers',
+                                style: GlossaTypography.headlineSmall,
+                              ),
+                              const SizedBox(height: Spacing.sm),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.pagePadding,
+                        ),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final entry = remaining[index];
+                            return _buildLeaderboardTile(entry);
+                          }, childCount: remaining.length),
+                        ),
+                      ),
+                      const SliverToBoxAdapter(
+                        child: SizedBox(height: Spacing.xxl),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -115,18 +133,25 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           final isSelected = _selectedTabIndex == i;
           return Expanded(
             child: GestureDetector(
-              onTap: () => setState(() => _selectedTabIndex = i),
+              onTap: () => setState(() {
+                _selectedTabIndex = i;
+                _loadEntries();
+              }),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? GlossaColors.blueNavy : Colors.transparent,
+                  color: isSelected
+                      ? GlossaColors.blueNavy
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(Spacing.cardRadius - 4),
                 ),
                 child: Center(
                   child: Text(
                     tabs[i],
                     style: GlossaTypography.labelSmall.copyWith(
-                      color: isSelected ? GlossaColors.white : GlossaColors.textDark,
+                      color: isSelected
+                          ? GlossaColors.white
+                          : GlossaColors.textDark,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -230,9 +255,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           width: 72,
           height: height,
           decoration: BoxDecoration(
-            color: rank == 1
-                ? GlossaColors.yellowPrimary
-                : GlossaColors.white,
+            color: rank == 1 ? GlossaColors.yellowPrimary : GlossaColors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
             border: Border.all(color: GlossaColors.blueNavy, width: 2),
           ),
@@ -269,7 +292,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                   color: GlossaColors.blueNavy,
                   offset: Offset(0, 2),
                   blurRadius: 0,
-                )
+                ),
               ]
             : null,
       ),
@@ -285,11 +308,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               ),
             ),
           ),
-          HeroAvatar(
-            heroIndex: entry.heroIndex,
-            level: entry.level,
-            size: 38,
-          ),
+          HeroAvatar(heroIndex: entry.heroIndex, level: entry.level, size: 38),
           const SizedBox(width: Spacing.md),
           Expanded(
             child: Column(
@@ -307,7 +326,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                       const SizedBox(width: Spacing.xs),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: GlossaColors.redAction,
                           borderRadius: BorderRadius.circular(8),

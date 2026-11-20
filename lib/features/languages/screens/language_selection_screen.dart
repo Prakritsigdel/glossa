@@ -14,10 +14,7 @@ import 'package:glossa_app/shared/models/hero_choice.dart';
 class LanguageSelectionScreen extends ConsumerStatefulWidget {
   final bool isEditing;
 
-  const LanguageSelectionScreen({
-    super.key,
-    this.isEditing = false,
-  });
+  const LanguageSelectionScreen({super.key, this.isEditing = false});
 
   @override
   ConsumerState<LanguageSelectionScreen> createState() =>
@@ -51,17 +48,26 @@ class _LanguageSelectionScreenState
     }
   }
 
-  void _handleSave() {
+  Future<void> _handleSave() async {
     final lang = languageChoices.firstWhere((l) => l.id == _selectedId);
-    ref.read(gameStateProvider.notifier).selectLanguage(
-          lang.id,
-          lang.nameEnglish,
-          lang.nameNative,
-        );
+    try {
+      await ref
+          .read(gameStateProvider.notifier)
+          .selectLanguage(lang.id, lang.nameEnglish, lang.nameNative);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+      return;
+    }
 
+    if (!mounted) return;
     if (widget.isEditing) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Target language changed to ${lang.nameEnglish}!')),
+        SnackBar(
+          content: Text('Target language changed to ${lang.nameEnglish}!'),
+        ),
       );
       if (context.canPop()) {
         context.pop();
@@ -95,8 +101,11 @@ class _LanguageSelectionScreenState
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_rounded,
-                          color: GlossaColors.blueNavy, size: 28),
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: GlossaColors.blueNavy,
+                        size: 28,
+                      ),
                       onPressed: _handleBack,
                     ),
                     if (widget.isEditing)
@@ -104,15 +113,18 @@ class _LanguageSelectionScreenState
                         onPressed: _handleBack,
                         child: Text(
                           'Cancel',
-                          style: GlossaTypography.labelMedium
-                              .copyWith(color: GlossaColors.textSubtle),
+                          style: GlossaTypography.labelMedium.copyWith(
+                            color: GlossaColors.textSubtle,
+                          ),
                         ),
                       ),
                   ],
                 ),
                 const SizedBox(height: Spacing.md),
                 Text(
-                  widget.isEditing ? 'Change target\nlanguage' : 'Choose your\nlanguage',
+                  widget.isEditing
+                      ? 'Change target\nlanguage'
+                      : 'Choose your\nlanguage',
                   style: GlossaTypography.displayMedium,
                 ),
                 const SizedBox(height: Spacing.md),
@@ -246,7 +258,9 @@ class _LanguageCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: GlossaColors.yellowPrimary,
                             borderRadius: BorderRadius.circular(8),
@@ -277,8 +291,11 @@ class _LanguageCard extends StatelessWidget {
               ),
             ),
             if (isSelected)
-              const Icon(Icons.check_circle_rounded,
-                  color: GlossaColors.yellowPrimary, size: 24),
+              const Icon(
+                Icons.check_circle_rounded,
+                color: GlossaColors.yellowPrimary,
+                size: 24,
+              ),
           ],
         ),
       ),

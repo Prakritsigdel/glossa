@@ -1,144 +1,196 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/demo_user.dart';
 import '../models/course_models.dart';
 import '../mock_data/mock_data.dart';
+import '../repositories/backend_api.dart';
 
-/// Central game state that tracks the demo user, selections, and progress.
 class GameState {
   final DemoUser user;
   final bool isAuthenticated;
+  final bool isLoading;
+  final String? errorMessage;
   final List<Lesson> lessons;
+  final List<Exercise> exercises;
   final String? activeLessonId;
   final int currentExerciseIndex;
   final int correctAnswersInLesson;
   final bool lessonComplete;
   final Set<String> matchedPairIds;
+  final Map<String, Map<String, dynamic>> answers;
 
   const GameState({
     required this.user,
     this.isAuthenticated = false,
+    this.isLoading = false,
+    this.errorMessage,
     this.lessons = const [],
+    this.exercises = const [],
     this.activeLessonId,
     this.currentExerciseIndex = 0,
     this.correctAnswersInLesson = 0,
     this.lessonComplete = false,
     this.matchedPairIds = const {},
+    this.answers = const {},
   });
 
   GameState copyWith({
     DemoUser? user,
     bool? isAuthenticated,
+    bool? isLoading,
+    String? errorMessage,
+    bool clearError = false,
     List<Lesson>? lessons,
+    List<Exercise>? exercises,
     String? activeLessonId,
     bool clearActiveLesson = false,
     int? currentExerciseIndex,
     int? correctAnswersInLesson,
     bool? lessonComplete,
     Set<String>? matchedPairIds,
-  }) {
-    return GameState(
-      user: user ?? this.user,
-      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
-      lessons: lessons ?? this.lessons,
-      activeLessonId: clearActiveLesson ? null : (activeLessonId ?? this.activeLessonId),
-      currentExerciseIndex: currentExerciseIndex ?? this.currentExerciseIndex,
-      correctAnswersInLesson: correctAnswersInLesson ?? this.correctAnswersInLesson,
-      lessonComplete: lessonComplete ?? this.lessonComplete,
-      matchedPairIds: matchedPairIds ?? this.matchedPairIds,
-    );
-  }
+    Map<String, Map<String, dynamic>>? answers,
+  }) => GameState(
+    user: user ?? this.user,
+    isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+    isLoading: isLoading ?? this.isLoading,
+    errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    lessons: lessons ?? this.lessons,
+    exercises: exercises ?? this.exercises,
+    activeLessonId: clearActiveLesson
+        ? null
+        : (activeLessonId ?? this.activeLessonId),
+    currentExerciseIndex: currentExerciseIndex ?? this.currentExerciseIndex,
+    correctAnswersInLesson:
+        correctAnswersInLesson ?? this.correctAnswersInLesson,
+    lessonComplete: lessonComplete ?? this.lessonComplete,
+    matchedPairIds: matchedPairIds ?? this.matchedPairIds,
+    answers: answers ?? this.answers,
+  );
 }
 
 class GameStateNotifier extends StateNotifier<GameState> {
-  GameStateNotifier()
-      : super(GameState(
-          user: seedUser,
-          lessons: mockLessons,
-          isAuthenticated: true, // Default to demo user LeBron authenticated
-        ));
+  GameStateNotifier(this.api) : super(GameState(user: seedUser)) {
+    restoreSession();
+  }
 
-  // ─── Auth ─────────────────────────────────────────────────
-  void signUp({required String name, required String email, required int heroIndex}) {
-    state = state.copyWith(
-      user: state.user.copyWith(
-        name: name,
-        email: email,
-        heroIndex: heroIndex,
-        level: 1,
-        xp: 0,
-        xpToNextLevel: 100,
-        streak: 0,
-        wordsFound: 0,
-        lessonsCompleted: 0,
-      ),
-      isAuthenticated: true,
-      lessons: mockLessons.map((l) {
-        if (l.status == LessonStatus.cleared) {
-          return l.copyWith(status: LessonStatus.current);
-        }
-        return l;
-      }).toList(),
+  final BackendApi api;
+
+  Future<void> restoreSession() async {
+    if (await api.token == null) return;
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final user = await api.me();
+      final lessons = await api.lessons();
+      state = state.copyWith(
+        user: user,
+        lessons: lessons,
+        isAuthenticated: true,
+        isLoading: false,
+      );
+    } catch (_) {
+      await api.logout();
+      state = state.copyWith(
+        isLoading: false,
+        isAuthenticated: false,
+        clearError: true,
+      );
+    }
+  }
+
+  Future<void> signUp({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    await _authenticate(
+      () => api.register(name: name, email: email, password: password),
     );
   }
 
-  void logIn() {
+  Future<void> logIn({required String email, required String password}) async {
+    await _authenticate(() => api.login(email: email, password: password));
+  }
+
+  Future<void> _authenticate(Future<DemoUser> Function() action) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final user = await action();
+      final lessons = await api.lessons();
+      state = GameState(user: user, isAuthenticated: true, lessons: lessons);
+    } catch (error) {
+      state = state.copyWith(isLoading: false, errorMessage: error.toString());
+      rethrow;
+    }
+  }
+
+  Future<void> logOut() async {
+    await api.logout();
+    state = GameState(user: seedUser);
+  }
+
+  Future<void> selectHero(int index, String name) async {
+    final user = await api.updateProfile(heroIndex: index, name: name);
+    state = state.copyWith(user: user);
+  }
+
+  Future<void> selectLanguage(String id, String name, String script) async {
+    final user = await api.updateProfile(languageId: id);
     state = state.copyWith(
-      user: seedUser,
-      isAuthenticated: true,
-      lessons: mockLessons,
+      user: user.copyWith(languageName: name, languageScript: script),
     );
   }
 
-  void logOut() {
-    state = state.copyWith(
-      isAuthenticated: false,
-      clearActiveLesson: true,
-      lessonComplete: false,
-    );
-  }
+  bool canStartLesson(String lessonId) => state.lessons.any(
+    (l) => l.id == lessonId && l.status != LessonStatus.locked,
+  );
 
-  // ─── Character & language ─────────────────────────────────
-  void selectHero(int index, String name) {
-    state = state.copyWith(
-      user: state.user.copyWith(heroIndex: index, name: name),
-    );
-  }
-
-  void selectLanguage(String id, String name, String script) {
-    state = state.copyWith(
-      user: state.user.copyWith(
-        languageId: id,
-        languageName: name,
-        languageScript: script,
-      ),
-    );
-  }
-
-  // ─── Lessons ──────────────────────────────────────────────
-  bool canStartLesson(String lessonId) {
-    final lesson = state.lessons.cast<Lesson?>().firstWhere(
-          (l) => l?.id == lessonId,
-          orElse: () => null,
-        );
-    if (lesson == null) return false;
-    return lesson.status != LessonStatus.locked;
-  }
-
-  void startLesson(String lessonId) {
+  Future<void> startLesson(String lessonId) async {
     if (!canStartLesson(lessonId)) return;
+    final exercises = await api.exercises(lessonId);
     state = state.copyWith(
       activeLessonId: lessonId,
+      exercises: exercises,
       currentExerciseIndex: 0,
       correctAnswersInLesson: 0,
       lessonComplete: false,
       matchedPairIds: {},
+      answers: {},
+      clearError: true,
     );
   }
 
-  void recordCorrectAnswer() {
-    state = state.copyWith(
-      correctAnswersInLesson: state.correctAnswersInLesson + 1,
-    );
+  Future<bool> checkAnswer(
+    String exerciseId, {
+    String? selectedOptionId,
+    Map<String, String>? selectedPairs,
+  }) async {
+    final lessonId = state.activeLessonId;
+    if (lessonId == null) return false;
+    final answer = <String, dynamic>{'exercise_id': exerciseId};
+    if (selectedOptionId != null)
+      answer['selected_option_id'] = selectedOptionId;
+    if (selectedPairs != null) answer['selected_pairs'] = selectedPairs;
+    final correct = await api.checkAnswer(lessonId, answer);
+    if (correct) {
+      final answers = Map<String, Map<String, dynamic>>.from(state.answers);
+      final existing = answers[exerciseId];
+      if (selectedPairs != null) {
+        final previousPairs =
+            existing?['selected_pairs'] as Map<String, dynamic>? ?? {};
+        answers[exerciseId] = {
+          ...?existing,
+          'exercise_id': exerciseId,
+          'selected_pairs': {...previousPairs, ...selectedPairs},
+        };
+      } else {
+        answers[exerciseId] = answer;
+      }
+      state = state.copyWith(
+        answers: answers,
+        correctAnswersInLesson: state.correctAnswersInLesson + 1,
+      );
+    }
+    return correct;
   }
 
   void addMatchedPair(String devanagariId, String englishId) {
@@ -147,74 +199,49 @@ class GameStateNotifier extends StateNotifier<GameState> {
     );
   }
 
-  void nextExercise() {
-    state = state.copyWith(
-      currentExerciseIndex: state.currentExerciseIndex + 1,
-    );
-  }
+  void nextExercise() => state = state.copyWith(
+    currentExerciseIndex: state.currentExerciseIndex + 1,
+  );
 
-  void completeLesson() {
+  Future<void> completeLesson() async {
     final lessonId = state.activeLessonId;
-    if (lessonId == null) return;
-    // Guard against duplicate XP and multiple completion calls
-    if (state.lessonComplete) return;
-
-    final xpEarned = 20;
-    final newXp = state.user.xp + xpEarned;
-    final newWordsFound = state.user.wordsFound + 4;
-    final newLessonsCompleted = state.user.lessonsCompleted + 1;
-
-    // Check level up
-    var newLevel = state.user.level;
-    var newXpToNext = state.user.xpToNextLevel;
-    if (newXp >= state.user.xpToNextLevel) {
-      newLevel += 1;
-      newXpToNext = newLevel * 150; // Simple scaling
-    }
-
-    // Update lesson statuses
-    final updatedLessons = state.lessons.map((l) {
-      if (l.id == lessonId) {
-        return l.copyWith(status: LessonStatus.cleared);
-      }
-      // Unlock next lesson
-      if (l.status == LessonStatus.locked && l.requiredLevel <= newLevel) {
-        final currentIndex = state.lessons.indexWhere((x) => x.id == lessonId);
-        final thisIndex = state.lessons.indexOf(l);
-        if (thisIndex == currentIndex + 1) {
-          return l.copyWith(status: LessonStatus.current);
-        }
-      }
-      return l;
-    }).toList();
-
-    state = state.copyWith(
-      user: state.user.copyWith(
-        xp: newXp,
-        xpToNextLevel: newXpToNext,
-        level: newLevel,
-        wordsFound: newWordsFound,
-        lessonsCompleted: newLessonsCompleted,
-        heroClassName: state.user.copyWith(level: newLevel).levelTitle,
-      ),
-      lessons: updatedLessons,
-      lessonComplete: true,
+    if (lessonId == null || state.lessonComplete) return;
+    final result = await api.submitAttempt(
+      lessonId,
+      state.answers.values.toList(),
     );
+    final userRow = result['user'] as Map<String, dynamic>;
+    final user = DemoUser(
+      name: userRow['name'],
+      email: userRow['email'],
+      heroIndex: userRow['hero_index'],
+      heroClassName: userRow['hero_class_name'],
+      level: userRow['level'],
+      xp: userRow['xp'],
+      xpToNextLevel: userRow['xp_to_next_level'],
+      streak: userRow['streak'],
+      wordsFound: userRow['words_found'],
+      lessonsCompleted: userRow['lessons_completed'],
+      languageId: userRow['language_id'],
+      languageName: state.user.languageName,
+      languageScript: state.user.languageScript,
+    );
+    final lessons = await api.lessons();
+    state = state.copyWith(user: user, lessons: lessons, lessonComplete: true);
   }
 
-  void resetLesson() {
-    state = state.copyWith(
-      clearActiveLesson: true,
-      currentExerciseIndex: 0,
-      correctAnswersInLesson: 0,
-      lessonComplete: false,
-      matchedPairIds: {},
-    );
-  }
+  void resetLesson() => state = state.copyWith(
+    clearActiveLesson: true,
+    exercises: [],
+    currentExerciseIndex: 0,
+    correctAnswersInLesson: 0,
+    lessonComplete: false,
+    matchedPairIds: {},
+    answers: {},
+  );
 }
 
-/// The central game state provider.
-final gameStateProvider =
-    StateNotifierProvider<GameStateNotifier, GameState>((ref) {
-  return GameStateNotifier();
-});
+final backendApiProvider = Provider<BackendApi>((ref) => BackendApi());
+final gameStateProvider = StateNotifierProvider<GameStateNotifier, GameState>(
+  (ref) => GameStateNotifier(ref.watch(backendApiProvider)),
+);
