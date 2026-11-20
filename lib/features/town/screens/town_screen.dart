@@ -10,7 +10,6 @@ import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 import 'package:glossa_app/shared/models/course_models.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
 
 class TownScreen extends ConsumerStatefulWidget {
   const TownScreen({super.key});
@@ -21,18 +20,30 @@ class TownScreen extends ConsumerStatefulWidget {
 
 class _TownScreenState extends ConsumerState<TownScreen> {
   bool _isExpanded = false;
+  final Map<String, String> wordOfTheDay = {
+    'devanagari': 'नमस्ते',
+    'english': 'Hello',
+  };
 
-  void _startLesson(Lesson lesson) {
+  Future<void> _startLesson(Lesson lesson) async {
     if (lesson.status == LessonStatus.locked) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Level ${lesson.requiredLevel} required to unlock "${lesson.title}"!'),
+          content: Text(
+            'Complete the previous lesson to unlock "${lesson.title}".',
+          ),
         ),
       );
       return;
     }
-    ref.read(gameStateProvider.notifier).startLesson(lesson.id);
-    context.go(AppRoutes.battleLoading);
+    try {
+      await ref.read(gameStateProvider.notifier).startLesson(lesson.id);
+      if (context.mounted) context.go(AppRoutes.battleLoading);
+    } catch (error) {
+      if (context.mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 
   @override
@@ -40,7 +51,9 @@ class _TownScreenState extends ConsumerState<TownScreen> {
     final gs = ref.watch(gameStateProvider);
     final user = gs.user;
     final lessons = gs.lessons;
-    final cleared = lessons.where((l) => l.status == LessonStatus.cleared).length;
+    final cleared = lessons
+        .where((l) => l.status == LessonStatus.cleared)
+        .length;
     final displayLessons = _isExpanded ? lessons : lessons.take(3).toList();
 
     return Scaffold(
@@ -50,7 +63,9 @@ class _TownScreenState extends ConsumerState<TownScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: Spacing.pagePadding),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.pagePadding,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -73,8 +88,10 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                                 '${user.languageName} · Lv ${user.level} ${user.heroClassName}',
                                 style: GlossaTypography.bodySmall,
                               ),
-                              Text('Ready, ${user.name}?',
-                                  style: GlossaTypography.headlineLarge),
+                              Text(
+                                'Ready, ${user.name}?',
+                                style: GlossaTypography.headlineLarge,
+                              ),
                             ],
                           ),
                         ),
@@ -88,18 +105,27 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                     const SizedBox(height: Spacing.xs),
                     Row(
                       children: [
-                        Text('${user.xp} / ${user.xpToNextLevel} XP',
-                            style: GlossaTypography.bodySmall),
+                        Text(
+                          '${user.xp} / ${user.xpToNextLevel} XP',
+                          style: GlossaTypography.bodySmall,
+                        ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: GlossaColors.streakGreen,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text('🔥 ${user.streak} day streak',
-                              style: GlossaTypography.labelSmall
-                                  .copyWith(color: GlossaColors.white, fontWeight: FontWeight.w700)),
+                          child: Text(
+                            '🔥 ${user.streak} day streak',
+                            style: GlossaTypography.labelSmall.copyWith(
+                              color: GlossaColors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -116,15 +142,19 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Word of the day',
-                                  style: GlossaTypography.labelSmall
-                                      .copyWith(color: Colors.white60)),
+                              Text(
+                                'Word of the day',
+                                style: GlossaTypography.labelSmall.copyWith(
+                                  color: Colors.white60,
+                                ),
+                              ),
                               const SizedBox(height: 2),
                             ],
                           ),
                           const SizedBox(width: Spacing.md),
                           Container(
-                            width: 36, height: 36,
+                            width: 36,
+                            height: 36,
                             decoration: BoxDecoration(
                               color: GlossaColors.yellowPrimary,
                               borderRadius: BorderRadius.circular(8),
@@ -134,25 +164,33 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                                 wordOfTheDay['devanagari']!,
                                 style: const TextStyle(
                                   fontFamily: 'NotoSansDevanagari',
-                                  fontSize: 18, fontWeight: FontWeight.w700,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
                           ),
                           const SizedBox(width: Spacing.md),
                           Expanded(
-                            child: Text(wordOfTheDay['english']!,
-                                style: GlossaTypography.headlineMedium
-                                    .copyWith(color: GlossaColors.white)),
+                            child: Text(
+                              wordOfTheDay['english']!,
+                              style: GlossaTypography.headlineMedium.copyWith(
+                                color: GlossaColors.white,
+                              ),
+                            ),
                           ),
                           Container(
-                            width: 36, height: 36,
+                            width: 36,
+                            height: 36,
                             decoration: const BoxDecoration(
                               color: GlossaColors.redAction,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.play_arrow,
-                                color: GlossaColors.white, size: 20),
+                            child: const Icon(
+                              Icons.play_arrow,
+                              color: GlossaColors.white,
+                              size: 20,
+                            ),
                           ),
                         ],
                       ),
@@ -162,18 +200,29 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: Text('World 1: Home & Food',
-                              style: GlossaTypography.headlineMedium),
+                          child: Text(
+                            'World 1: Home & Food',
+                            style: GlossaTypography.headlineMedium,
+                          ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: GlossaColors.blueNavy, width: 1.5),
+                            border: Border.all(
+                              color: GlossaColors.blueNavy,
+                              width: 1.5,
+                            ),
                           ),
-                          child: Text('$cleared / ${lessons.length} cleared',
-                              style: GlossaTypography.labelSmall
-                                  .copyWith(color: GlossaColors.textDark)),
+                          child: Text(
+                            '$cleared / ${lessons.length} cleared',
+                            style: GlossaTypography.labelSmall.copyWith(
+                              color: GlossaColors.textDark,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -201,11 +250,15 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                       child: GestureDetector(
                         onTap: () => setState(() => _isExpanded = !_isExpanded),
                         child: Container(
-                          width: 44, height: 44,
+                          width: 44,
+                          height: 44,
                           decoration: BoxDecoration(
                             color: GlossaColors.yellowPrimary,
                             shape: BoxShape.circle,
-                            border: Border.all(color: GlossaColors.blueNavy, width: 2),
+                            border: Border.all(
+                              color: GlossaColors.blueNavy,
+                              width: 2,
+                            ),
                           ),
                           child: Icon(
                             _isExpanded
@@ -223,28 +276,39 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                       decoration: BoxDecoration(
                         color: GlossaColors.creamPale,
                         borderRadius: BorderRadius.circular(Spacing.cardRadius),
-                        border: Border.all(color: GlossaColors.blueNavy, width: 1.5),
+                        border: Border.all(
+                          color: GlossaColors.blueNavy,
+                          width: 1.5,
+                        ),
                       ),
                       child: Row(
                         children: [
                           Container(
-                            width: 36, height: 36,
+                            width: 36,
+                            height: 36,
                             decoration: const BoxDecoration(
                               color: GlossaColors.redAction,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.play_arrow,
-                                color: GlossaColors.white, size: 20),
+                            child: const Icon(
+                              Icons.play_arrow,
+                              color: GlossaColors.white,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: Spacing.md),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Family Voices',
-                                    style: GlossaTypography.headlineSmall),
-                                Text('Aji added 12 words.',
-                                    style: GlossaTypography.bodySmall),
+                                Text(
+                                  'Family Voices',
+                                  style: GlossaTypography.headlineSmall,
+                                ),
+                                Text(
+                                  'Aji added 12 words.',
+                                  style: GlossaTypography.bodySmall,
+                                ),
                               ],
                             ),
                           ),
@@ -286,7 +350,8 @@ class _LessonPathItem extends StatelessWidget {
             child: Column(
               children: [
                 Container(
-                  width: 40, height: 40,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: _nodeColor,
                     shape: BoxShape.circle,
@@ -324,15 +389,19 @@ class _LessonPathItem extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(lesson.title,
-                              style: GlossaTypography.headlineSmall.copyWith(
-                                color: lesson.status == LessonStatus.locked
-                                    ? GlossaColors.textSubtle
-                                    : GlossaColors.textDark,
-                              )),
+                          Text(
+                            lesson.title,
+                            style: GlossaTypography.headlineSmall.copyWith(
+                              color: lesson.status == LessonStatus.locked
+                                  ? GlossaColors.textSubtle
+                                  : GlossaColors.textDark,
+                            ),
+                          ),
                           const SizedBox(height: 2),
-                          Text(lesson.subtitle,
-                              style: GlossaTypography.bodySmall),
+                          Text(
+                            lesson.subtitle,
+                            style: GlossaTypography.bodySmall,
+                          ),
                         ],
                       ),
                     ),
@@ -363,11 +432,19 @@ class _LessonPathItem extends StatelessWidget {
       case LessonStatus.cleared:
         return const Icon(Icons.check, color: GlossaColors.white, size: 20);
       case LessonStatus.current:
-        return Text('GO', style: GlossaTypography.labelSmall
-            .copyWith(color: GlossaColors.redAction, fontWeight: FontWeight.w900, fontSize: 10));
+        return Text(
+          'GO',
+          style: GlossaTypography.labelSmall.copyWith(
+            color: GlossaColors.redAction,
+            fontWeight: FontWeight.w900,
+            fontSize: 10,
+          ),
+        );
       case LessonStatus.locked:
-        return Text('Lv ${lesson.requiredLevel}',
-            style: GlossaTypography.labelSmall.copyWith(fontSize: 9));
+        return Text(
+          'Lv ${lesson.requiredLevel}',
+          style: GlossaTypography.labelSmall.copyWith(fontSize: 9),
+        );
     }
   }
 
@@ -380,8 +457,12 @@ class _LessonPathItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: GlossaColors.blueNavy, width: 1.5),
           ),
-          child: Text('Cleared', style: GlossaTypography.labelSmall
-              .copyWith(color: GlossaColors.textDark)),
+          child: Text(
+            'Cleared',
+            style: GlossaTypography.labelSmall.copyWith(
+              color: GlossaColors.textDark,
+            ),
+          ),
         );
       case LessonStatus.current:
         return GestureDetector(
@@ -392,8 +473,13 @@ class _LessonPathItem extends StatelessWidget {
               color: GlossaColors.redAction,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text('Go!', style: GlossaTypography.labelSmall
-                .copyWith(color: GlossaColors.white, fontWeight: FontWeight.w700)),
+            child: Text(
+              'Go!',
+              style: GlossaTypography.labelSmall.copyWith(
+                color: GlossaColors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         );
       case LessonStatus.locked:
@@ -403,8 +489,10 @@ class _LessonPathItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: GlossaColors.disabledGray, width: 1.5),
           ),
-          child: Text('Lv ${lesson.requiredLevel}',
-              style: GlossaTypography.labelSmall),
+          child: Text(
+            'Lv ${lesson.requiredLevel}',
+            style: GlossaTypography.labelSmall,
+          ),
         );
     }
   }
