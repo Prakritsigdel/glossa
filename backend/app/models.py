@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -18,6 +18,7 @@ class User(Base):
     xp: Mapped[int] = mapped_column(Integer, default=0)
     level: Mapped[int] = mapped_column(Integer, default=1)
     streak: Mapped[int] = mapped_column(Integer, default=0)
+    last_activity_date: Mapped[date | None] = mapped_column(nullable=True)
     words_found: Mapped[int] = mapped_column(Integer, default=0)
     lessons_completed: Mapped[int] = mapped_column(Integer, default=0)
     attempts: Mapped[list["Attempt"]] = relationship(back_populates="user")

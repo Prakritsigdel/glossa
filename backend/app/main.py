@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -43,10 +45,19 @@ def xp_to_next(user: User) -> int:
     return user.level * 150 if user.level > 1 else 100
 
 
+def current_streak(user: User) -> int:
+    if user.last_activity_date is None:
+        return 0
+    today = datetime.now(timezone.utc).date()
+    if user.last_activity_date < today - timedelta(days=1):
+        return 0
+    return user.streak
+
+
 def user_output(user: User) -> UserOut:
     return UserOut(id=user.id, name=user.name, email=user.email, hero_index=user.hero_index,
                    hero_class_name=user.hero_class_name, language_id=user.language_id, xp=user.xp,
-                   xp_to_next_level=xp_to_next(user), level=user.level, streak=user.streak,
+                   xp_to_next_level=xp_to_next(user), level=user.level, streak=current_streak(user),
                    words_found=user.words_found, lessons_completed=user.lessons_completed)
 
 
@@ -133,6 +144,12 @@ def get_exercises(lesson_id: str, db: Session = Depends(db_session), user: User 
 
 @app.post("/api/v1/lessons/{lesson_id}/attempts")
 def submit_attempt(lesson_id: str, payload: AttemptIn, db: Session = Depends(db_session), user: User = Depends(current_user)):
+    user = db.scalar(
+        select(User)
+        .where(User.id == user.id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
     lesson = db.scalar(select(Lesson).where(Lesson.id == lesson_id).options(selectinload(Lesson.exercises)))
     if lesson is None:
         raise HTTPException(status_code=404, detail="Lesson not found")
@@ -160,6 +177,11 @@ def submit_attempt(lesson_id: str, payload: AttemptIn, db: Session = Depends(db_
     user.xp += xp_earned
     user.words_found += lesson.word_count
     user.lessons_completed += 1
+    today = datetime.now(timezone.utc).date()
+    if user.last_activity_date != today:
+        yesterday = today - timedelta(days=1)
+        user.streak = user.streak + 1 if user.last_activity_date == yesterday else 1
+        user.last_activity_date = today
     while user.xp >= xp_to_next(user):
         user.level += 1
     levels = [(2, "Traveler"), (4, "Speaker"), (6, "Guardian")]

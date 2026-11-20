@@ -10,6 +10,7 @@ LESSONS = [
     ("lesson_4", "Grandma's Kitchen", "Word to picture", "wordToPicture", 20, 4, 5),
     ("lesson_5", "Family at Home", "Audio lesson", "matchWords", 25, 5, 6),
     ("lesson_6", "Festival Feast", "Speak and record", "fillBlank", 30, 6, 7),
+    ("lesson_7", "Testing exercises", "Test and Test", "fillBlank", 30, 6, 7),
 ]
 EXERCISES = [
     dict(id="mw_1", lesson_id="lesson_1", exercise_type="matchWords", instruction="Match the words", options=[
@@ -30,6 +31,10 @@ EXERCISES = [
         {"id":"fb5_a","text":"ल","is_devanagari":True},{"id":"fb5_b","text":"माँ","is_devanagari":True},{"id":"fb5_c","text":"छें","is_devanagari":True}], answer_id="fb5_a"),
     dict(id="fb6_1", lesson_id="lesson_6", exercise_type="fillBlank", instruction="Fill in the blank", prompt="दौ ___", prompt_hint="Yogurt and beaten rice", options=[
         {"id":"fb6_a","text":"बजि","is_devanagari":True},{"id":"fb6_b","text":"ल","is_devanagari":True},{"id":"fb6_c","text":"छें","is_devanagari":True}], answer_id="fb6_a"),
+    
+    dict(id="fb7_1", lesson_id="lesson_7", exercise_type="fillBlank", instruction="Fill in the blank", prompt="दौ ___", prompt_hint="Yogurt and beaten rice", options=[
+            {"id":"fb6_a","text":"बजि","is_devanagari":True},{"id":"fb6_b","text":"ल","is_devanagari":True},{"id":"fb6_c","text":"छें","is_devanagari":True}], answer_id="fb6_a"),
+        
 ]
 
 Base.metadata.create_all(bind=engine)
