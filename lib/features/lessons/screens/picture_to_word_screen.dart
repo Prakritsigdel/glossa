@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
@@ -15,7 +15,7 @@ import 'package:glossa_app/core/widgets/xp_tip_banner.dart';
 import 'package:glossa_app/shared/models/course_models.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
-/// Picture to word lesson — show a picture, pick the correct word.
+/// Picture to word lesson â€” show a picture, pick the correct word.
 class PictureToWordScreen extends ConsumerStatefulWidget {
   const PictureToWordScreen({super.key});
 
@@ -30,6 +30,13 @@ class _PictureToWordScreenState extends ConsumerState<PictureToWordScreen> {
   String? _selectedOptionId;
   bool? _isCorrect;
   bool _submitted = false;
+
+  /// FIX 2: Calculate dynamic progress from GameState instead of hardcoding 0.6.
+  double _calculateProgress(GameState gs) {
+    if (gs.exercises.isEmpty) return 0.0;
+    return ((gs.currentExerciseIndex + 1) / gs.exercises.length)
+        .clamp(0.0, 1.0);
+  }
 
   @override
   void initState() {
@@ -74,11 +81,14 @@ class _PictureToWordScreenState extends ConsumerState<PictureToWordScreen> {
       if (correct) {
         try {
           await ref.read(gameStateProvider.notifier).completeLesson();
-          if (mounted) context.go(AppRoutes.levelUp);
+          if (mounted) {
+            context.go(AppRoutes.levelUp);
+          }
         } catch (error) {
-          if (mounted)
+          if (mounted) {
             ScaffoldMessenger.of(context)
                 .showSnackBar(SnackBar(content: Text(error.toString())));
+          }
         }
       } else {
         setState(() {
@@ -134,14 +144,14 @@ class _PictureToWordScreenState extends ConsumerState<PictureToWordScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: Spacing.md),
-                // ─── Header ─────────────────────────
+                // â”€â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 _buildHeader(gs),
                 const SizedBox(height: Spacing.xl),
 
                 Text('Name the picture', style: GlossaTypography.headlineLarge),
                 const SizedBox(height: Spacing.lg),
 
-                // ─── Picture card ───────────────────
+                // â”€â”€â”€ Picture card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Center(
                   child: Container(
                     width: 200,
@@ -172,7 +182,7 @@ class _PictureToWordScreenState extends ConsumerState<PictureToWordScreen> {
                 ),
                 const SizedBox(height: Spacing.xxl),
 
-                // ─── 2×2 answer grid ────────────────
+                // â”€â”€â”€ 2Ã—2 answer grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 ShakeWidget(
                   key: _shakeKey,
                   child: GridView.count(
@@ -291,7 +301,7 @@ class _PictureToWordScreenState extends ConsumerState<PictureToWordScreen> {
               ),
             ),
             const SizedBox(width: Spacing.sm),
-            Expanded(child: LessonProgressBar(progress: 0.6)),
+            Expanded(child: LessonProgressBar(progress: _calculateProgress(gs))),
             const SizedBox(width: Spacing.sm),
             HeroAvatar(
               heroIndex: gs.user.heroIndex,
@@ -305,3 +315,4 @@ class _PictureToWordScreenState extends ConsumerState<PictureToWordScreen> {
     );
   }
 }
+

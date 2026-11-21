@@ -284,8 +284,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                     password: _codeController.text,
                                   )
                                   .then((_) {
-                                    if (context.mounted)
+                                    if (context.mounted) {
                                       context.go('/character-select');
+                                    }
                                   })
                                   .catchError((Object error) {
                                     if (context.mounted) {

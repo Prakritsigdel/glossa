@@ -38,11 +38,14 @@ class _TownScreenState extends ConsumerState<TownScreen> {
     }
     try {
       await ref.read(gameStateProvider.notifier).startLesson(lesson.id);
-      if (context.mounted) context.go(AppRoutes.battleLoading);
+      if (mounted) {
+        context.go(AppRoutes.battleLoading);
+      }
     } catch (error) {
-      if (context.mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
     }
   }
 

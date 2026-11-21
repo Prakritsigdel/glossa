@@ -346,8 +346,9 @@ class ProfileScreen extends ConsumerWidget {
                                 await ref
                                     .read(gameStateProvider.notifier)
                                     .logOut();
-                                if (context.mounted)
+                                if (context.mounted) {
                                   context.go(AppRoutes.welcome);
+                                }
                               },
                             ),
                           ],

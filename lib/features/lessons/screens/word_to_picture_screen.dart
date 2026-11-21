@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
@@ -35,6 +35,13 @@ class _WordToPictureScreenState extends ConsumerState<WordToPictureScreen> {
   void initState() {
     super.initState();
     _exercise = ref.read(gameStateProvider).exercises.first;
+  }
+
+  /// FIX 2: Calculate dynamic progress from GameState instead of hardcoding 0.6.
+  double _calculateProgress(GameState gs) {
+    if (gs.exercises.isEmpty) return 0.0;
+    return ((gs.currentExerciseIndex + 1) / gs.exercises.length)
+        .clamp(0.0, 1.0);
   }
 
   void _selectOption(String id) {
@@ -74,11 +81,14 @@ class _WordToPictureScreenState extends ConsumerState<WordToPictureScreen> {
       if (correct) {
         try {
           await ref.read(gameStateProvider.notifier).completeLesson();
-          if (mounted) context.go(AppRoutes.levelUp);
+          if (mounted) {
+            context.go(AppRoutes.levelUp);
+          }
         } catch (error) {
-          if (mounted)
+          if (mounted) {
             ScaffoldMessenger.of(context)
                 .showSnackBar(SnackBar(content: Text(error.toString())));
+          }
         }
       } else {
         setState(() {
@@ -134,14 +144,13 @@ class _WordToPictureScreenState extends ConsumerState<WordToPictureScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: Spacing.md),
-                // ─── Header ─────────────────────────
                 _buildHeader(gs),
                 const SizedBox(height: Spacing.xl),
 
                 Text('Pick the picture', style: GlossaTypography.headlineLarge),
                 const SizedBox(height: Spacing.lg),
 
-                // ─── Word prompt card ───────────────
+                // ─── Word prompt card — FIX 1: reads from actual exercise ───
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(Spacing.xl),
@@ -152,9 +161,9 @@ class _WordToPictureScreenState extends ConsumerState<WordToPictureScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Show the Devanagari prompt for the correct answer
+                      // FIX 1: was hardcoded 'ล'; now reads _exercise.prompt
                       Text(
-                        'ल', // The Devanagari for "House"
+                        _exercise.prompt ?? '?',
                         style: GlossaTypography.devanagariLarge.copyWith(
                           color: GlossaColors.yellowPrimary,
                         ),
@@ -202,17 +211,15 @@ class _WordToPictureScreenState extends ConsumerState<WordToPictureScreen> {
                         Color bg = GlossaColors.white;
                         Color border = GlossaColors.blueNavy;
                         if (isCorrectOpt && _submitted) {
-                          bg = GlossaColors.successGreen.withValues(
-                            alpha: 0.25,
-                          );
+                          bg = GlossaColors.successGreen
+                              .withValues(alpha: 0.25);
                           border = GlossaColors.successGreen;
                         } else if (isWrongSelection) {
                           bg = GlossaColors.redAction.withValues(alpha: 0.15);
                           border = GlossaColors.redAction;
                         } else if (isSelected) {
-                          bg = GlossaColors.yellowPrimary.withValues(
-                            alpha: 0.6,
-                          );
+                          bg = GlossaColors.yellowPrimary
+                              .withValues(alpha: 0.6);
                         }
 
                         return GestureDetector(
@@ -222,9 +229,8 @@ class _WordToPictureScreenState extends ConsumerState<WordToPictureScreen> {
                             curve: GlossaMotion.snappy,
                             decoration: BoxDecoration(
                               color: bg,
-                              borderRadius: BorderRadius.circular(
-                                Spacing.cardRadius,
-                              ),
+                              borderRadius:
+                                  BorderRadius.circular(Spacing.cardRadius),
                               border: Border.all(color: border, width: 2.5),
                               boxShadow: isSelected
                                   ? const [
@@ -308,7 +314,10 @@ class _WordToPictureScreenState extends ConsumerState<WordToPictureScreen> {
               ),
             ),
             const SizedBox(width: Spacing.sm),
-            Expanded(child: LessonProgressBar(progress: 0.6)),
+            // FIX 2: dynamic progress bar
+            Expanded(
+              child: LessonProgressBar(progress: _calculateProgress(gs)),
+            ),
             const SizedBox(width: Spacing.sm),
             HeroAvatar(
               heroIndex: gs.user.heroIndex,
