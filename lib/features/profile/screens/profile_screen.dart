@@ -11,11 +11,18 @@ import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _isLoggingOut = false;
+
+  @override
+  Widget build(BuildContext context) {
     final gs = ref.watch(gameStateProvider);
     final user = gs.user;
 
@@ -302,6 +309,21 @@ class ProfileScreen extends ConsumerWidget {
                           children: [
                             ListTile(
                               leading: const Icon(
+                                Icons.swap_horiz_rounded,
+                                color: GlossaColors.blueNavy,
+                              ),
+                              title: Text(
+                                'Switch Course',
+                                style: GlossaTypography.labelMedium,
+                              ),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: () => context.push(
+                                AppRoutes.courseSwitcher,
+                              ),
+                            ),
+                            const Divider(height: 1, thickness: 1),
+                            ListTile(
+                              leading: const Icon(
                                 Icons.language_rounded,
                                 color: GlossaColors.blueNavy,
                               ),
@@ -336,20 +358,38 @@ class ProfileScreen extends ConsumerWidget {
                                 color: GlossaColors.redAction,
                               ),
                               title: Text(
-                                'Log Out',
+                                _isLoggingOut ? 'Logging out...' : 'Log Out',
                                 style: GlossaTypography.labelMedium.copyWith(
                                   color: GlossaColors.redAction,
                                 ),
                               ),
-                              trailing: const Icon(Icons.chevron_right_rounded),
-                              onTap: () async {
-                                await ref
-                                    .read(gameStateProvider.notifier)
-                                    .logOut();
-                                if (context.mounted) {
-                                  context.go(AppRoutes.welcome);
-                                }
-                              },
+                              trailing: _isLoggingOut
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: GlossaColors.redAction,
+                                      ),
+                                    )
+                                  : const Icon(Icons.chevron_right_rounded),
+                              onTap: _isLoggingOut
+                                  ? null
+                                  : () async {
+                                      setState(() => _isLoggingOut = true);
+                                      try {
+                                        await ref
+                                            .read(gameStateProvider.notifier)
+                                            .logOut();
+                                        if (context.mounted) {
+                                          context.go(AppRoutes.welcome);
+                                        }
+                                      } finally {
+                                        if (mounted) {
+                                          setState(() => _isLoggingOut = false);
+                                        }
+                                      }
+                                    },
                             ),
                           ],
                         ),

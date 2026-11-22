@@ -25,6 +25,7 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _celebrationController;
   late Animation<double> _titleScale;
+  bool _navigating = false;
 
   @override
   void initState() {
@@ -251,11 +252,17 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                             horizontal: Spacing.pagePadding),
                         child: GlossaButton(
                           label: 'Back to Town',
+                          loadingLabel: 'Returning to Town...',
                           style: GlossaButtonStyle.secondary,
-                          onPressed: () {
-                            ref.read(gameStateProvider.notifier).resetLesson();
-                            context.go(AppRoutes.town);
-                          },
+                          onPressed: _navigating
+                              ? null
+                              : () {
+                                  setState(() => _navigating = true);
+                                  ref
+                                      .read(gameStateProvider.notifier)
+                                      .resetLesson();
+                                  context.go(AppRoutes.town);
+                                },
                         ),
                       ),
                       const SizedBox(height: Spacing.xxl),
