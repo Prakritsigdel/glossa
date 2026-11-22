@@ -230,6 +230,7 @@ class _CharacterSelectionScreenState
                 const SizedBox(height: Spacing.xxxl),
                 GlossaButton(
                   label: widget.isEditing ? 'Save changes' : 'Confirm',
+                  loadingLabel: widget.isEditing ? 'Saving hero...' : 'Confirming hero...',
                   onPressed: _handleSave,
                 ),
                 const SizedBox(height: Spacing.xxl),

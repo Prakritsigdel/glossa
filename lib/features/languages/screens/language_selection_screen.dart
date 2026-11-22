@@ -66,8 +66,8 @@ class _LanguageSelectionScreenState
     // The three languages with real lesson content are newari, nepali, english.
     // Maithili, Tharu, and Limbu are selectable but will show Newari lessons
     // until Phase 3 adds their content.
-    const _supportedLanguages = {'newari', 'nepali', 'english'};
-    if (!_supportedLanguages.contains(lang.id) && mounted) {
+    const supportedLanguages = {'newari', 'nepali', 'english'};
+    if (!supportedLanguages.contains(lang.id) && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -186,6 +186,7 @@ class _LanguageSelectionScreenState
                 const SizedBox(height: Spacing.xxl),
                 GlossaButton(
                   label: widget.isEditing ? 'Save language' : 'Begin quest',
+                  loadingLabel: widget.isEditing ? 'Saving language...' : 'Starting quest...',
                   onPressed: _handleSave,
                 ),
                 const SizedBox(height: Spacing.xxl),
