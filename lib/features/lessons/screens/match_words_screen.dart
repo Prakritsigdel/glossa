@@ -13,6 +13,8 @@ import 'package:glossa_app/core/widgets/progress_bar.dart';
 import 'package:glossa_app/core/widgets/xp_tip_banner.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
+import 'lesson_runner_screen.dart';
+
 /// Match words lesson screen â€” tap a Devanagari word then its English pair.
 class MatchWordsScreen extends ConsumerStatefulWidget {
   const MatchWordsScreen({super.key});
@@ -27,24 +29,31 @@ class _MatchWordsScreenState extends ConsumerState<MatchWordsScreen> {
   final Set<String> _matchedIds = {};
   String? _wrongPairFlashId; // briefly flash red on wrong
   bool _completing = false; // FIX 4: guard against duplicate completeLesson() calls
+  List<_MatchItem> _devanagariItems = [];
+  List<_MatchItem> _englishItems = [];
+  bool _initialized = false;
 
-  List<_MatchItem> get _devanagariItems => ref
-      .read(gameStateProvider)
-      .exercises
-      .first
-      .options
-      .where((o) => o.isDevanagari)
-      .map((o) => _MatchItem(id: o.id, text: o.text, isDevanagari: true))
-      .toList();
-
-  List<_MatchItem> get _englishItems => ref
-      .read(gameStateProvider)
-      .exercises
-      .first
-      .options
-      .where((o) => !o.isDevanagari)
-      .map((o) => _MatchItem(id: o.id, text: o.text, isDevanagari: false))
-      .toList();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final exercises = ref.read(gameStateProvider).exercises;
+      if (exercises.isNotEmpty) {
+        final exercise = exercises.first;
+        final randomized = MatchWordsRandomizer.randomize(
+          options: exercise.options,
+          pairs: exercise.pairs,
+        );
+        _devanagariItems = randomized.devanagari
+            .map((o) => _MatchItem(id: o.id, text: o.text, isDevanagari: true))
+            .toList();
+        _englishItems = randomized.english
+            .map((o) => _MatchItem(id: o.id, text: o.text, isDevanagari: false))
+            .toList();
+        _initialized = true;
+      }
+    }
+  }
 
   void _onTapDevanagari(String id) {
     if (_matchedIds.contains(id)) return;

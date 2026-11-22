@@ -11,7 +11,6 @@ import 'package:glossa_app/core/widgets/greek_key_border.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
 import 'package:glossa_app/core/widgets/xp_tip_banner.dart';
-import 'package:glossa_app/shared/models/course_models.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
 class BattleLoadingScreen extends ConsumerStatefulWidget {
@@ -45,31 +44,10 @@ class _BattleLoadingScreenState extends ConsumerState<BattleLoadingScreen>
 
     _controller.addStatusListener((s) {
       if (s == AnimationStatus.completed && mounted) {
-        // FIX 3: Route by exerciseType from the lesson model, not by hardcoded
-        // lesson ID strings. Any lesson can now use any exercise type without
-        // requiring a routing code change.
-        final gs = ref.read(gameStateProvider);
-        final Lesson lesson;
-        if (gs.activeLessonId != null &&
-            gs.lessons.any((l) => l.id == gs.activeLessonId)) {
-          lesson = gs.lessons.firstWhere((l) => l.id == gs.activeLessonId);
-        } else if (gs.lessons.isNotEmpty) {
-          lesson = gs.lessons.first;
-        } else {
-          context.go(AppRoutes.fillBlank);
-          return;
-        }
-
-        switch (lesson.exerciseType) {
-          case ExerciseType.matchWords:
-            context.go(AppRoutes.matchWords);
-          case ExerciseType.fillBlank:
-            context.go(AppRoutes.fillBlank);
-          case ExerciseType.pictureToWord:
-            context.go(AppRoutes.pictureToWord);
-          case ExerciseType.wordToPicture:
-            context.go(AppRoutes.wordToPicture);
-        }
+        // Always route to the unified lesson runner which handles all exercise
+        // types in sequence. The old per-type routes are kept for backwards
+        // compatibility but are no longer used by the battle loading flow.
+        context.go(AppRoutes.lessonRunner);
       }
     });
   }
