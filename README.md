@@ -1,6 +1,6 @@
 # Glossa
 
-Glossa is a Flutter heritage-language learning app backed by a FastAPI API and PostgreSQL database. The backend validates accounts, lesson answers, and lesson completion rewards.
+Glossa is a Flutter based language learning app backed by a FastAPI API and PostgreSQL database. The backend validates accounts, lesson answers, and lesson completion rewards.
 
 ## Requirements
 
