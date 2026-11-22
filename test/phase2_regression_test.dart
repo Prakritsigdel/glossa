@@ -40,7 +40,7 @@ class _NoOpBackendApi extends BackendApi {
   }
 
   @override
-  Future<List<Lesson>> lessons() async => [];
+  Future<List<Lesson>> lessons({String? courseId}) async => [];
 }
 
 // A BackendApi subclass that makes submitAttempt always throw, simulating
