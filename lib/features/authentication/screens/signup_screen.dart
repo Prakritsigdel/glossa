@@ -147,10 +147,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  const AudioWaveform(
-                                    barColor: GlossaColors.redAction,
-                                    height: 20,
-                                    width: 100,
+                                  const Flexible(
+                                    child: AudioWaveform(
+                                      barColor: GlossaColors.redAction,
+                                      height: 20,
+                                      width: 100,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -246,10 +248,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           }),
                         ),
                       ),
-                      const SizedBox(width: Spacing.md),
-                      Text(
-                        'Code strength: $_codeStrengthLabel',
-                        style: GlossaTypography.bodySmall,
+                      const SizedBox(width: Spacing.sm),
+                      Flexible(
+                        child: Text(
+                          'Code strength: $_codeStrengthLabel',
+                          style: GlossaTypography.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -273,30 +278,29 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   const SizedBox(height: Spacing.xl),
                   GlossaButton(
                     label: 'Start adventure',
+                    loadingLabel: 'Creating account...',
                     onPressed: _acceptedTerms
-                        ? () {
-                            if (_formKey.currentState!.validate()) {
-                              ref
+                        ? () async {
+                            if (!_formKey.currentState!.validate()) return;
+                            try {
+                              await ref
                                   .read(gameStateProvider.notifier)
                                   .signUp(
-                                    name: _nameController.text,
-                                    email: _emailController.text,
+                                    name: _nameController.text.trim(),
+                                    email: _emailController.text.trim(),
                                     password: _codeController.text,
-                                  )
-                                  .then((_) {
-                                    if (context.mounted)
-                                      context.go('/character-select');
-                                  })
-                                  .catchError((Object error) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                            SnackBar(
-                                              content: Text(error.toString()),
-                                            ),
-                                          );
-                                    }
-                                  });
+                                  );
+                              if (context.mounted) {
+                                context.go(AppRoutes.characterSelect);
+                              }
+                            } catch (error) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(error.toString()),
+                                  ),
+                                );
+                              }
                             }
                           }
                         : null,
@@ -306,15 +310,19 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   const SizedBox(height: Spacing.lg),
                   GlossaButton(
                     label: 'Link with Google',
+                    loadingLabel: 'Connecting to Google...',
                     style: GlossaButtonStyle.secondary,
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Google login will be available with Firebase integration.',
+                    onPressed: () async {
+                      await Future.delayed(const Duration(milliseconds: 600));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Google login will be available with Firebase integration.',
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      }
                     },
                   ),
                   const SizedBox(height: Spacing.xl),

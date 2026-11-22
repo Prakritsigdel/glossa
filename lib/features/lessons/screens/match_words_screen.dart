@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
@@ -13,7 +13,9 @@ import 'package:glossa_app/core/widgets/progress_bar.dart';
 import 'package:glossa_app/core/widgets/xp_tip_banner.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
-/// Match words lesson screen — tap a Devanagari word then its English pair.
+import 'lesson_runner_screen.dart';
+
+/// Match words lesson screen â€” tap a Devanagari word then its English pair.
 class MatchWordsScreen extends ConsumerStatefulWidget {
   const MatchWordsScreen({super.key});
 
@@ -26,24 +28,32 @@ class _MatchWordsScreenState extends ConsumerState<MatchWordsScreen> {
   String? _selectedEnglishId;
   final Set<String> _matchedIds = {};
   String? _wrongPairFlashId; // briefly flash red on wrong
+  bool _completing = false; // FIX 4: guard against duplicate completeLesson() calls
+  List<_MatchItem> _devanagariItems = [];
+  List<_MatchItem> _englishItems = [];
+  bool _initialized = false;
 
-  List<_MatchItem> get _devanagariItems => ref
-      .read(gameStateProvider)
-      .exercises
-      .first
-      .options
-      .where((o) => o.isDevanagari)
-      .map((o) => _MatchItem(id: o.id, text: o.text, isDevanagari: true))
-      .toList();
-
-  List<_MatchItem> get _englishItems => ref
-      .read(gameStateProvider)
-      .exercises
-      .first
-      .options
-      .where((o) => !o.isDevanagari)
-      .map((o) => _MatchItem(id: o.id, text: o.text, isDevanagari: false))
-      .toList();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final exercises = ref.read(gameStateProvider).exercises;
+      if (exercises.isNotEmpty) {
+        final exercise = exercises.first;
+        final randomized = MatchWordsRandomizer.randomize(
+          options: exercise.options,
+          pairs: exercise.pairs,
+        );
+        _devanagariItems = randomized.devanagari
+            .map((o) => _MatchItem(id: o.id, text: o.text, isDevanagari: true))
+            .toList();
+        _englishItems = randomized.english
+            .map((o) => _MatchItem(id: o.id, text: o.text, isDevanagari: false))
+            .toList();
+        _initialized = true;
+      }
+    }
+  }
 
   void _onTapDevanagari(String id) {
     if (_matchedIds.contains(id)) return;
@@ -93,16 +103,18 @@ class _MatchWordsScreenState extends ConsumerState<MatchWordsScreen> {
       _selectedEnglishId = null;
 
       Future.delayed(const Duration(milliseconds: 400), () async {
-        if (!mounted) return;
-        // Check if all matched
+        if (!mounted || _completing) return;
         if (_matchedIds.length == _devanagariItems.length * 2) {
+          setState(() => _completing = true);
           try {
             await ref.read(gameStateProvider.notifier).completeLesson();
             if (mounted) context.go(AppRoutes.levelUp);
           } catch (error) {
-            if (mounted)
+            if (mounted) {
+              setState(() => _completing = false);
               ScaffoldMessenger.of(context)
                   .showSnackBar(SnackBar(content: Text(error.toString())));
+            }
           }
         }
       });
@@ -165,7 +177,7 @@ class _MatchWordsScreenState extends ConsumerState<MatchWordsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: Spacing.md),
-                // ─── Lesson header ──────────────────
+                // â”€â”€â”€ Lesson header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 _LessonHeader(
                   unitLabel: 'Unit 1',
                   progress: progress,
@@ -175,11 +187,11 @@ class _MatchWordsScreenState extends ConsumerState<MatchWordsScreen> {
                 ),
                 const SizedBox(height: Spacing.xl),
 
-                // ─── Instruction ────────────────────
+                // â”€â”€â”€ Instruction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Text('Match the words', style: GlossaTypography.headlineLarge),
                 const SizedBox(height: Spacing.md),
 
-                // ─── Audio pill ─────────────────────
+                // â”€â”€â”€ Audio pill â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -208,7 +220,7 @@ class _MatchWordsScreenState extends ConsumerState<MatchWordsScreen> {
                 ),
                 const SizedBox(height: Spacing.xl),
 
-                // ─── Match grid ─────────────────────
+                // â”€â”€â”€ Match grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
@@ -264,25 +276,31 @@ class _MatchWordsScreenState extends ConsumerState<MatchWordsScreen> {
                   ),
                 ),
 
-                // ─── Bottom action ──────────────────
+                // â”€â”€â”€ Bottom action â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Padding(
                   padding: const EdgeInsets.only(bottom: Spacing.xl),
                   child: GlossaButton(
                     label: 'Attack!',
                     style: GlossaButtonStyle.dark,
                     onPressed: _matchedIds.length == _devanagariItems.length * 2
+                        && !_completing
                         ? () async {
+                            if (_completing) return;
+                            setState(() => _completing = true);
                             try {
                               await ref
                                   .read(gameStateProvider.notifier)
                                   .completeLesson();
-                              if (context.mounted)
+                              if (context.mounted) {
                                 context.go(AppRoutes.levelUp);
+                              }
                             } catch (error) {
-                              if (context.mounted)
+                              if (context.mounted) {
+                                setState(() => _completing = false);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text(error.toString())),
                                 );
+                              }
                             }
                           }
                         : null,
@@ -450,3 +468,5 @@ class _LessonHeader extends StatelessWidget {
     );
   }
 }
+
+

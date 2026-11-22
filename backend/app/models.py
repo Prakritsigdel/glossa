@@ -6,8 +6,66 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 
+class Language(Base):
+    __tablename__ = "languages"
+
+    id: Mapped[str] = mapped_column(String(10), primary_key=True)
+    name_english: Mapped[str] = mapped_column(String(80))
+    name_native: Mapped[str] = mapped_column(String(80))
+    script: Mapped[str] = mapped_column(String(40))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    courses_as_source: Mapped[list["Course"]] = relationship(
+        foreign_keys="Course.source_language_id", back_populates="source_language"
+    )
+    courses_as_target: Mapped[list["Course"]] = relationship(
+        foreign_keys="Course.target_language_id", back_populates="target_language"
+    )
+
+
+class Course(Base):
+    __tablename__ = "courses"
+    __table_args__ = (
+        UniqueConstraint("source_language_id", "target_language_id", name="uq_source_target"),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    source_language_id: Mapped[str] = mapped_column(ForeignKey("languages.id"))
+    target_language_id: Mapped[str] = mapped_column(ForeignKey("languages.id"))
+    name: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    source_language: Mapped["Language"] = relationship(
+        foreign_keys=[source_language_id], back_populates="courses_as_source"
+    )
+    target_language: Mapped["Language"] = relationship(
+        foreign_keys=[target_language_id], back_populates="courses_as_target"
+    )
+    units: Mapped[list["Unit"]] = relationship(back_populates="course")
+    active_users: Mapped[list["User"]] = relationship(back_populates="active_course")
+
+
+class Unit(Base):
+    __tablename__ = "units"
+    __table_args__ = (
+        UniqueConstraint("course_id", "sequence", name="uq_course_sequence"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    course_id: Mapped[str] = mapped_column(ForeignKey("courses.id"), index=True)
+    sequence: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    course: Mapped["Course"] = relationship(back_populates="units")
+    lessons: Mapped[list["Lesson"]] = relationship(back_populates="unit")
+
+
 class User(Base):
     __tablename__ = "users"
+
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(80))
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
@@ -15,29 +73,49 @@ class User(Base):
     hero_index: Mapped[int] = mapped_column(Integer, default=0)
     hero_class_name: Mapped[str] = mapped_column(String(40), default="Traveler")
     language_id: Mapped[str] = mapped_column(String(40), default="newari")
+    active_course_id: Mapped[str | None] = mapped_column(
+        ForeignKey("courses.id"), nullable=True, index=True
+    )
     xp: Mapped[int] = mapped_column(Integer, default=0)
     level: Mapped[int] = mapped_column(Integer, default=1)
     streak: Mapped[int] = mapped_column(Integer, default=0)
     last_activity_date: Mapped[date | None] = mapped_column(nullable=True)
     words_found: Mapped[int] = mapped_column(Integer, default=0)
     lessons_completed: Mapped[int] = mapped_column(Integer, default=0)
+
     attempts: Mapped[list["Attempt"]] = relationship(back_populates="user")
+    active_course: Mapped["Course | None"] = relationship(back_populates="active_users")
 
 
 class Lesson(Base):
     __tablename__ = "lessons"
+    __table_args__ = (
+        UniqueConstraint("unit_id", "sequence", name="uq_unit_sequence"),
+    )
+
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    unit_id: Mapped[int | None] = mapped_column(
+        ForeignKey("units.id"), nullable=True, index=True
+    )
+    sequence: Mapped[int | None] = mapped_column(Integer, nullable=True)
     title: Mapped[str] = mapped_column(String(120))
     subtitle: Mapped[str] = mapped_column(String(200))
     exercise_type: Mapped[str] = mapped_column(String(40))
     xp_reward: Mapped[int] = mapped_column(Integer, default=20)
     word_count: Mapped[int] = mapped_column(Integer, default=4)
     required_level: Mapped[int] = mapped_column(Integer, default=1)
-    exercises: Mapped[list["Exercise"]] = relationship(back_populates="lesson", cascade="all, delete-orphan")
+    is_published: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    unit: Mapped["Unit | None"] = relationship(back_populates="lessons")
+    exercises: Mapped[list["Exercise"]] = relationship(
+        back_populates="lesson", cascade="all, delete-orphan"
+    )
+    attempts: Mapped[list["Attempt"]] = relationship(back_populates="lesson")
 
 
 class Exercise(Base):
     __tablename__ = "exercises"
+
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
     lesson_id: Mapped[str] = mapped_column(ForeignKey("lessons.id", ondelete="CASCADE"))
     exercise_type: Mapped[str] = mapped_column(String(40))
@@ -45,15 +123,21 @@ class Exercise(Base):
     prompt: Mapped[str | None] = mapped_column(String(300), nullable=True)
     prompt_hint: Mapped[str | None] = mapped_column(String(300), nullable=True)
     image_key: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    audio_key: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    sequence: Mapped[int | None] = mapped_column(Integer, nullable=True)
     options: Mapped[list] = mapped_column(JSON)
     answer_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
     pairs: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
     lesson: Mapped[Lesson] = relationship(back_populates="exercises")
 
 
 class Attempt(Base):
     __tablename__ = "attempts"
-    __table_args__ = (UniqueConstraint("user_id", "lesson_id", name="uq_user_lesson_attempt"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "lesson_id", name="uq_user_lesson_attempt"),
+    )
+
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     lesson_id: Mapped[str] = mapped_column(ForeignKey("lessons.id"))
@@ -61,4 +145,6 @@ class Attempt(Base):
     total_questions: Mapped[int] = mapped_column(Integer)
     xp_earned: Mapped[int] = mapped_column(Integer)
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
     user: Mapped[User] = relationship(back_populates="attempts")
+    lesson: Mapped[Lesson] = relationship(back_populates="attempts")

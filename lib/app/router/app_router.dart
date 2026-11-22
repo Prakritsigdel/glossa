@@ -13,6 +13,7 @@ import '../../features/languages/screens/language_selection_screen.dart';
 import '../../features/town/screens/town_loading_screen.dart';
 import '../../features/town/screens/town_screen.dart';
 import '../../features/lessons/screens/battle_loading_screen.dart';
+import '../../features/lessons/screens/lesson_runner_screen.dart';
 import '../../features/lessons/screens/match_words_screen.dart';
 import '../../features/lessons/screens/fill_blank_screen.dart';
 import '../../features/lessons/screens/picture_to_word_screen.dart';
@@ -20,6 +21,7 @@ import '../../features/lessons/screens/word_to_picture_screen.dart';
 import '../../features/progression/screens/level_up_screen.dart';
 import '../../features/leaderboard/screens/leaderboard_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/courses/screens/course_switcher_screen.dart';
 import '../shell/main_shell_screen.dart';
 
 /// Route path constants.
@@ -34,6 +36,7 @@ abstract final class AppRoutes {
   static const String townLoading = '/town-loading';
   static const String town = '/town';
   static const String battleLoading = '/battle-loading';
+  static const String lessonRunner = '/lesson/runner';
   static const String matchWords = '/lesson/match-words';
   static const String fillBlank = '/lesson/fill-blank';
   static const String pictureToWord = '/lesson/picture-to-word';
@@ -41,6 +44,7 @@ abstract final class AppRoutes {
   static const String levelUp = '/level-up';
   static const String leaderboard = '/leaderboard';
   static const String profile = '/profile';
+  static const String courseSwitcher = '/course-switcher';
 }
 
 final GlobalKey<NavigatorState> rootNavigatorKey =
@@ -157,6 +161,17 @@ final GoRouter appRouter = GoRouter(
       ],
     ),
 
+    // ─── Course Switcher ─────────────────────────────────
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: AppRoutes.courseSwitcher,
+      pageBuilder: (context, state) => fadeTransitionPage(
+        context: context,
+        state: state,
+        child: const CourseSwitcherScreen(),
+      ),
+    ),
+
     // ─── Lesson & Battle Flow (Pushed over root navigator) ──
     GoRoute(
       parentNavigatorKey: rootNavigatorKey,
@@ -165,6 +180,16 @@ final GoRouter appRouter = GoRouter(
         context: context,
         state: state,
         child: const BattleLoadingScreen(),
+      ),
+    ),
+    // ─── Unified lesson runner (replaces 4 separate exercise screens) ──
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: AppRoutes.lessonRunner,
+      pageBuilder: (context, state) => fadeTransitionPage(
+        context: context,
+        state: state,
+        child: const LessonRunnerScreen(),
       ),
     ),
     GoRoute(
