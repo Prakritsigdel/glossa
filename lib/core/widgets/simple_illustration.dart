@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../app/theme/glossa_colors.dart';
 
 /// Simple flat illustrations drawn with CustomPainter.

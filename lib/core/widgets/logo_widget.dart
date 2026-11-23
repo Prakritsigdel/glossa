@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../app/theme/glossa_colors.dart';
+import '../constants/assets.dart';
 
 /// The Glossa concentric-circle logo widget.
 class GlossaLogo extends StatelessWidget {
@@ -113,7 +114,7 @@ class _LogoPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// Small app icon version (speech bubble on dark navy background).
+/// Small app icon, loaded from the real logo image.
 class GlossaAppIcon extends StatelessWidget {
   final double size;
 
@@ -121,18 +122,14 @@ class GlossaAppIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: GlossaColors.blueNavy,
-        borderRadius: BorderRadius.circular(size * 0.25),
-      ),
-      child: Center(
-        child: CustomPaint(
-          size: Size(size * 0.6, size * 0.6),
-          painter: _SpeechBubbleIconPainter(),
-        ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(size * 0.25),
+      child: Image.asset(
+        AssetPaths.logo,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
       ),
     );
   }

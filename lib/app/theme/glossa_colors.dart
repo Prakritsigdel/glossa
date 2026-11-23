@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Color constants measured from the Hero UI design exports.
 abstract final class GlossaColors {

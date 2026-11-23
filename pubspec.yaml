@@ -16,6 +16,7 @@ dependencies:
   flutter_secure_storage: ^11.2.0
   flutter_launcher_icons: ^0.14.4
 
+  material_ui: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

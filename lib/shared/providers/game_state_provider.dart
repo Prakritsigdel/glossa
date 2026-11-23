@@ -167,8 +167,9 @@ class GameStateNotifier extends StateNotifier<GameState> {
     final lessonId = state.activeLessonId;
     if (lessonId == null) return false;
     final answer = <String, dynamic>{'exercise_id': exerciseId};
-    if (selectedOptionId != null)
+    if (selectedOptionId != null) {
       answer['selected_option_id'] = selectedOptionId;
+    }
     if (selectedPairs != null) answer['selected_pairs'] = selectedPairs;
     final correct = await api.checkAnswer(lessonId, answer);
     if (correct) {

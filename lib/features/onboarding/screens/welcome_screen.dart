@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
 import 'package:glossa_app/app/theme/glossa_colors.dart';
@@ -24,11 +24,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return Scaffold(
       backgroundColor: GlossaColors.blueDeep,
       body: SafeArea(
-        top: false,
-        bottom: false,
+        // top and bottom default to true, so the content stays clear of the
+        // status bar (clock, battery) and the system navigation bar
         child: Column(
           children: [
-            const GreekKeyBorder(),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: Spacing.pagePadding),
@@ -140,6 +139,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
               ),
             ),
+            const GreekKeyBorder(),
           ],
         ),
       ),

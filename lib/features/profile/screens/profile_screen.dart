@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
@@ -346,8 +346,9 @@ class ProfileScreen extends ConsumerWidget {
                                 await ref
                                     .read(gameStateProvider.notifier)
                                     .logOut();
-                                if (context.mounted)
+                                if (context.mounted) {
                                   context.go(AppRoutes.welcome);
+                                }
                               },
                             ),
                           ],

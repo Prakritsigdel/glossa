@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
@@ -284,8 +284,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                     password: _codeController.text,
                                   )
                                   .then((_) {
-                                    if (context.mounted)
+                                    if (context.mounted) {
                                       context.go('/character-select');
+                                    }
                                   })
                                   .catchError((Object error) {
                                     if (context.mounted) {
