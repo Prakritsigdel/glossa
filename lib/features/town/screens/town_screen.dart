@@ -6,6 +6,7 @@ import 'package:glossa_app/app/theme/glossa_colors.dart';
 import 'package:glossa_app/app/theme/glossa_typography.dart';
 import 'package:glossa_app/core/constants/spacing.dart';
 import 'package:glossa_app/core/widgets/glossa_card.dart';
+import 'package:glossa_app/core/widgets/glossa_button.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
@@ -20,12 +21,10 @@ class TownScreen extends ConsumerStatefulWidget {
 
 class _TownScreenState extends ConsumerState<TownScreen> {
   bool _isExpanded = false;
-  final Map<String, String> wordOfTheDay = {
-    'devanagari': 'नमस्ते',
-    'english': 'Hello',
-  };
+  bool _isStartingLesson = false;
 
   Future<void> _startLesson(Lesson lesson) async {
+    if (_isStartingLesson) return;
     if (lesson.status == LessonStatus.locked) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -36,13 +35,20 @@ class _TownScreenState extends ConsumerState<TownScreen> {
       );
       return;
     }
+    setState(() => _isStartingLesson = true);
     try {
       await ref.read(gameStateProvider.notifier).startLesson(lesson.id);
-      if (context.mounted) context.go(AppRoutes.battleLoading);
+      if (mounted) {
+        context.go(AppRoutes.battleLoading);
+      }
     } catch (error) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isStartingLesson = false);
       }
     }
   }
@@ -52,10 +58,15 @@ class _TownScreenState extends ConsumerState<TownScreen> {
     final gs = ref.watch(gameStateProvider);
     final user = gs.user;
     final lessons = gs.lessons;
-    final cleared = lessons
-        .where((l) => l.status == LessonStatus.cleared)
-        .length;
-    final displayLessons = _isExpanded ? lessons : lessons.take(3).toList();
+    final units = gs.units;
+
+    // Group lessons by unitId
+    final lessonsByUnit = <int, List<Lesson>>{};
+    for (final lesson in lessons) {
+      if (lesson.unitId != null) {
+        lessonsByUnit.putIfAbsent(lesson.unitId!, () => []).add(lesson);
+      }
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -71,7 +82,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: Spacing.lg),
-                    // Player header
+                    // Player header with course switcher button
                     Row(
                       children: [
                         HeroAvatar(
@@ -86,7 +97,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${user.languageName} · Lv ${user.level} ${user.heroClassName}',
+                                'Lv ${user.level} ${user.heroClassName}',
                                 style: GlossaTypography.bodySmall,
                               ),
                               Text(
@@ -95,6 +106,17 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                               ),
                             ],
                           ),
+                        ),
+                        // Course switcher button
+                        IconButton(
+                          icon: const Icon(
+                            Icons.swap_horiz_rounded,
+                            color: GlossaColors.blueNavy,
+                            size: 28,
+                          ),
+                          onPressed: () =>
+                              context.push(AppRoutes.courseSwitcher),
+                          tooltip: 'Switch course',
                         ),
                       ],
                     ),
@@ -131,145 +153,79 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                       ],
                     ),
                     const SizedBox(height: Spacing.xl),
-                    // Word of the day
-                    Container(
-                      padding: const EdgeInsets.all(Spacing.lg),
-                      decoration: BoxDecoration(
-                        color: GlossaColors.blueNavy,
-                        borderRadius: BorderRadius.circular(Spacing.cardRadius),
-                      ),
-                      child: Row(
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Word of the day',
-                                style: GlossaTypography.labelSmall.copyWith(
-                                  color: Colors.white60,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                            ],
-                          ),
-                          const SizedBox(width: Spacing.md),
-                          Container(
-                            width: 36,
-                            height: 36,
+                    // Dynamic unit sections
+                    if (units.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(Spacing.xl),
+                        decoration: BoxDecoration(
+                          color: GlossaColors.creamPale,
+                          borderRadius:
+                              BorderRadius.circular(Spacing.cardRadius),
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.school_rounded,
+                                size: 48, color: GlossaColors.textSubtle),
+                            const SizedBox(height: Spacing.md),
+                            Text(
+                              'No lessons available yet.\nSwitch to a course or check back soon!',
+                              style: GlossaTypography.bodyMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: Spacing.md),
+                            GlossaButton(
+                              label: 'Browse Courses',
+                              onPressed: () =>
+                                  context.push(AppRoutes.courseSwitcher),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      ...units.map((unit) {
+                        final unitLessons = lessonsByUnit[unit.id] ?? [];
+                        if (unitLessons.isEmpty) return const SizedBox.shrink();
+                        final displayLessons = _isExpanded
+                            ? unitLessons
+                            : unitLessons.take(3).toList();
+                        return _UnitSection(
+                          unit: unit,
+                          clearedInUnit: unitLessons
+                              .where((l) =>
+                                  l.status == LessonStatus.cleared)
+                              .length,
+                          totalInUnit: unitLessons.length,
+                          lessons: displayLessons,
+                          onStart: _startLesson,
+                        );
+                      }),
+                    // Expand/collapse button
+                    if (lessons.isNotEmpty)
+                      Center(
+                        child: GestureDetector(
+                          onTap: () =>
+                              setState(() => _isExpanded = !_isExpanded),
+                          child: Container(
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
                               color: GlossaColors.yellowPrimary,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Center(
-                              child: Text(
-                                wordOfTheDay['devanagari']!,
-                                style: const TextStyle(
-                                  fontFamily: 'NotoSansDevanagari',
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: Spacing.md),
-                          Expanded(
-                            child: Text(
-                              wordOfTheDay['english']!,
-                              style: GlossaTypography.headlineMedium.copyWith(
-                                color: GlossaColors.white,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: const BoxDecoration(
-                              color: GlossaColors.redAction,
                               shape: BoxShape.circle,
+                              border: Border.all(
+                                color: GlossaColors.blueNavy,
+                                width: 2,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.play_arrow,
-                              color: GlossaColors.white,
-                              size: 20,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: Spacing.xl),
-                    // World progress
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'World 1: Home & Food',
-                            style: GlossaTypography.headlineMedium,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: GlossaColors.blueNavy,
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Text(
-                            '$cleared / ${lessons.length} cleared',
-                            style: GlossaTypography.labelSmall.copyWith(
+                            child: Icon(
+                              _isExpanded
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
                               color: GlossaColors.textDark,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: Spacing.sm),
-                    GlossaProgressBar(
-                      progress: cleared / lessons.length,
-                      fillColor: GlossaColors.redAction,
-                    ),
-                    const SizedBox(height: Spacing.xl),
-                    // Lesson path
-                    ...displayLessons.asMap().entries.map((entry) {
-                      final i = entry.key;
-                      final lesson = entry.value;
-                      final isLast = i == displayLessons.length - 1;
-                      return _LessonPathItem(
-                        lesson: lesson,
-                        isLast: isLast,
-                        onStart: lesson.status == LessonStatus.current
-                            ? () => _startLesson(lesson)
-                            : null,
-                      );
-                    }),
-                    // Expand/collapse button
-                    Center(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _isExpanded = !_isExpanded),
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: GlossaColors.yellowPrimary,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: GlossaColors.blueNavy,
-                              width: 2,
-                            ),
-                          ),
-                          child: Icon(
-                            _isExpanded
-                                ? Icons.keyboard_arrow_up
-                                : Icons.keyboard_arrow_down,
-                            color: GlossaColors.textDark,
-                          ),
-                        ),
                       ),
-                    ),
                     const SizedBox(height: Spacing.xl),
                     // Family Voices
                     Container(
@@ -292,7 +248,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
-                              Icons.play_arrow,
+                              Icons.mic_rounded,
                               color: GlossaColors.white,
                               size: 20,
                             ),
@@ -307,7 +263,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                                   style: GlossaTypography.headlineSmall,
                                 ),
                                 Text(
-                                  'Aji added 12 words.',
+                                  'Record words in your native language.',
                                   style: GlossaTypography.bodySmall,
                                 ),
                               ],
@@ -496,5 +452,76 @@ class _LessonPathItem extends StatelessWidget {
           ),
         );
     }
+  }
+}
+
+/// A section for a unit, showing the unit header and its lessons.
+class _UnitSection extends StatelessWidget {
+  final CourseUnit unit;
+  final int clearedInUnit;
+  final int totalInUnit;
+  final List<Lesson> lessons;
+  final Future<void> Function(Lesson) onStart;
+
+  const _UnitSection({
+    required this.unit,
+    required this.clearedInUnit,
+    required this.totalInUnit,
+    required this.lessons,
+    required this.onStart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Unit header with progress
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                unit.title,
+                style: GlossaTypography.headlineMedium,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: GlossaColors.blueNavy, width: 1.5),
+              ),
+              child: Text(
+                '$clearedInUnit / $totalInUnit cleared',
+                style: GlossaTypography.labelSmall.copyWith(
+                  color: GlossaColors.textDark,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: Spacing.sm),
+        GlossaProgressBar(
+          progress: totalInUnit > 0 ? clearedInUnit / totalInUnit : 0,
+          fillColor: clearedInUnit == totalInUnit
+              ? GlossaColors.successGreen
+              : GlossaColors.redAction,
+        ),
+        const SizedBox(height: Spacing.xl),
+        // Lesson path items
+        ...lessons.asMap().entries.map((entry) {
+          final i = entry.key;
+          final lesson = entry.value;
+          final isLast = i == lessons.length - 1;
+          return _LessonPathItem(
+            lesson: lesson,
+            isLast: isLast,
+            onStart: lesson.status == LessonStatus.current
+                ? () => onStart(lesson)
+                : null,
+          );
+        }),
+      ],
+    );
   }
 }

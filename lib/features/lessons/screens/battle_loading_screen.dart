@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
@@ -44,19 +44,10 @@ class _BattleLoadingScreenState extends ConsumerState<BattleLoadingScreen>
 
     _controller.addStatusListener((s) {
       if (s == AnimationStatus.completed && mounted) {
-        final lessonId = ref.read(gameStateProvider).activeLessonId;
-        switch (lessonId) {
-          case 'lesson_1':
-            context.go(AppRoutes.matchWords);
-          case 'lesson_2':
-            context.go(AppRoutes.fillBlank);
-          case 'lesson_3':
-            context.go(AppRoutes.pictureToWord);
-          case 'lesson_4':
-            context.go(AppRoutes.wordToPicture);
-          default:
-            context.go(AppRoutes.fillBlank);
-        }
+        // Always route to the unified lesson runner which handles all exercise
+        // types in sequence. The old per-type routes are kept for backwards
+        // compatibility but are no longer used by the battle loading flow.
+        context.go(AppRoutes.lessonRunner);
       }
     });
   }

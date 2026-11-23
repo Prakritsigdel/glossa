@@ -13,6 +13,7 @@ class DemoUser {
   final String languageId;
   final String languageName;
   final String languageScript;
+  final String? activeCourseId;
 
   const DemoUser({
     required this.name,
@@ -28,6 +29,7 @@ class DemoUser {
     this.languageId = '',
     this.languageName = '',
     this.languageScript = '',
+    this.activeCourseId,
   });
 
   DemoUser copyWith({
@@ -44,6 +46,8 @@ class DemoUser {
     String? languageId,
     String? languageName,
     String? languageScript,
+    String? activeCourseId,
+    bool clearActiveCourse = false,
   }) {
     return DemoUser(
       name: name ?? this.name,
@@ -59,6 +63,7 @@ class DemoUser {
       languageId: languageId ?? this.languageId,
       languageName: languageName ?? this.languageName,
       languageScript: languageScript ?? this.languageScript,
+      activeCourseId: clearActiveCourse ? null : (activeCourseId ?? this.activeCourseId),
     );
   }
 

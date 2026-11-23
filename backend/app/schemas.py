@@ -23,6 +23,7 @@ class UserOut(BaseModel):
     hero_index: int
     hero_class_name: str
     language_id: str
+    active_course_id: str | None = None
     xp: int
     xp_to_next_level: int
     level: int
@@ -56,3 +57,57 @@ class LeaderboardEntryOut(BaseModel):
     xp: int
     hero_index: int
     is_current_user: bool = False
+
+
+# ─── Multi-language course schemas ───────────────────────────
+
+
+class LanguageOut(BaseModel):
+    id: str
+    name_english: str
+    name_native: str
+    script: str
+    is_active: bool
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CourseOut(BaseModel):
+    id: str
+    source_language_id: str
+    target_language_id: str
+    name: str
+    description: str | None = None
+    is_published: bool
+    source_language: LanguageOut
+    target_language: LanguageOut
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CourseUpdate(BaseModel):
+    active_course_id: str = Field(min_length=1, max_length=40)
+
+
+class UnitOut(BaseModel):
+    id: int
+    course_id: str
+    sequence: int
+    title: str
+    description: str | None = None
+    total_lessons: int
+    cleared_lessons: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LessonOut(BaseModel):
+    id: str
+    unit_id: int | None = None
+    sequence: int | None = None
+    title: str
+    subtitle: str
+    exercise_type: str
+    status: str
+    xp_reward: int
+    word_count: int
+    required_level: int
+    is_published: bool
+    model_config = ConfigDict(from_attributes=True)

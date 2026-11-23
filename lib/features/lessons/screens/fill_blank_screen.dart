@@ -97,7 +97,9 @@ class _FillBlankScreenState extends ConsumerState<FillBlankScreen> {
         } else {
           try {
             await ref.read(gameStateProvider.notifier).completeLesson();
-            if (mounted) context.go(AppRoutes.levelUp);
+            if (mounted) {
+              context.go(AppRoutes.levelUp);
+            }
           } catch (error) {
             if (mounted) {
               ScaffoldMessenger.of(context)

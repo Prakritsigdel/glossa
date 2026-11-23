@@ -1,4 +1,5 @@
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
 import 'package:glossa_app/app/theme/glossa_colors.dart';
@@ -8,17 +9,28 @@ import 'package:glossa_app/core/motion/glossa_motion.dart';
 import 'package:glossa_app/core/widgets/greek_key_border.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/audio_waveform.dart';
+import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+
+  void _navigateNext() {
+    if (!mounted) return;
+    final isAuthenticated = ref.read(gameStateProvider).isAuthenticated;
+    if (isAuthenticated) {
+      context.go(AppRoutes.town);
+    } else {
+      context.go(AppRoutes.welcome);
+    }
+  }
 
   @override
   void initState() {
@@ -28,8 +40,8 @@ class _SplashScreenState extends State<SplashScreen>
       duration: GlossaMotion.loadingDuration,
     )..forward();
     _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed && mounted) {
-        context.go(AppRoutes.welcome);
+      if (status == AnimationStatus.completed) {
+        _navigateNext();
       }
     });
   }
@@ -42,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _skip() {
     _controller.stop();
-    context.go(AppRoutes.welcome);
+    _navigateNext();
   }
 
   @override

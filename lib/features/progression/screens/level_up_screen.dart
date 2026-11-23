@@ -11,7 +11,6 @@ import 'package:glossa_app/core/widgets/glossa_button.dart';
 import 'package:glossa_app/core/widgets/greek_key_border.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
 /// Lesson complete / level-up celebration screen with particle fireworks and animated progression.
@@ -26,6 +25,7 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _celebrationController;
   late Animation<double> _titleScale;
+  bool _navigating = false;
 
   @override
   void initState() {
@@ -180,32 +180,39 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                                 style: GlossaTypography.headlineSmall
                                   .copyWith(color: GlossaColors.white)),
                             const SizedBox(height: Spacing.md),
-                            Wrap(
-                              spacing: Spacing.sm,
-                              runSpacing: Spacing.sm,
-                              children: learnedWords
-                                  .map((w) => Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 16, vertical: 8),
-                                        decoration: BoxDecoration(
-                                          color: GlossaColors.yellowPrimary
-                                              .withValues(alpha: 0.25),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                          border: Border.all(
-                                              color: GlossaColors.yellowPrimary,
-                                              width: 1.5),
-                                        ),
-                                        child: Text(
-                                          w,
-                                          style: GlossaTypography.devanagariSmall
-                                              .copyWith(
-                                                  color: GlossaColors
-                                                      .yellowPrimary),
-                                        ),
-                                      ))
-                                  .toList(),
-                            ),
+                            // FIX 5: use real words from the completed lesson
+                            gs.lastWordsLearned.isNotEmpty
+                              ? Wrap(
+                                  spacing: Spacing.sm,
+                                  runSpacing: Spacing.sm,
+                                  children: gs.lastWordsLearned
+                                      .map((w) => Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 16, vertical: 8),
+                                            decoration: BoxDecoration(
+                                              color: GlossaColors.yellowPrimary
+                                                  .withValues(alpha: 0.25),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              border: Border.all(
+                                                  color: GlossaColors.yellowPrimary,
+                                                  width: 1.5),
+                                            ),
+                                            child: Text(
+                                              w,
+                                              style: GlossaTypography.devanagariSmall
+                                                  .copyWith(
+                                                      color: GlossaColors
+                                                          .yellowPrimary),
+                                            ),
+                                          ))
+                                      .toList(),
+                                )
+                              : Text(
+                                  'Keep learning!',
+                                  style: GlossaTypography.bodySmall
+                                      .copyWith(color: GlossaColors.white),
+                                ),
                           ],
                         ),
                       ),
@@ -218,20 +225,20 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                         child: Row(
                           children: [
                             _StatCard(
-                              value: '+20',
+                              value: '+${gs.lastXpEarned}',
                               label: 'XP',
                               color: GlossaColors.yellowPrimary,
                             ),
                             const SizedBox(width: Spacing.md),
                             _StatCard(
-                              value: '4/4',
+                              value: '${gs.lastCorrectAnswers}/${gs.lastTotalQuestions}',
                               label: 'Hits',
                               color: GlossaColors.successGreen,
                             ),
                             const SizedBox(width: Spacing.md),
                             _StatCard(
                               value: '🔥',
-                              label: 'Streak',
+                              label: '${user.streak}d streak',
                               color: GlossaColors.redAction,
                             ),
                           ],
@@ -245,11 +252,17 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                             horizontal: Spacing.pagePadding),
                         child: GlossaButton(
                           label: 'Back to Town',
+                          loadingLabel: 'Returning to Town...',
                           style: GlossaButtonStyle.secondary,
-                          onPressed: () {
-                            ref.read(gameStateProvider.notifier).resetLesson();
-                            context.go(AppRoutes.town);
-                          },
+                          onPressed: _navigating
+                              ? null
+                              : () {
+                                  setState(() => _navigating = true);
+                                  ref
+                                      .read(gameStateProvider.notifier)
+                                      .resetLesson();
+                                  context.go(AppRoutes.town);
+                                },
                         ),
                       ),
                       const SizedBox(height: Spacing.xxl),

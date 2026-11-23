@@ -209,6 +209,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: Spacing.xl),
                 GlossaButton(
                   label: 'Load game',
+                  loadingLabel: 'Loading save file...',
                   onPressed: () async {
                     try {
                       await ref
@@ -232,15 +233,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: Spacing.lg),
                 GlossaButton(
                   label: 'Link with Google',
+                  loadingLabel: 'Connecting to Google...',
                   style: GlossaButtonStyle.secondary,
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Google login will be available with Firebase integration.',
+                  onPressed: () async {
+                    await Future.delayed(const Duration(milliseconds: 600));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Google login will be available with Firebase integration.',
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    }
                   },
                 ),
                 const SizedBox(height: Spacing.xxl),

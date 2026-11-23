@@ -1,4 +1,5 @@
-import 'package:material_ui/material_ui.dart';
+import 'dart:async';
+import 'package:flutter/material.dart';
 import '../../app/theme/glossa_colors.dart';
 import '../../core/constants/spacing.dart';
 import '../motion/glossa_motion.dart';
@@ -6,11 +7,14 @@ import '../motion/glossa_motion.dart';
 /// Primary action button (red), secondary (yellow), dark (navy).
 enum GlossaButtonStyle { primary, secondary, dark }
 
+typedef GlossaButtonCallback = FutureOr<void> Function();
+
 class GlossaButton extends StatefulWidget {
   final String label;
-  final VoidCallback? onPressed;
+  final GlossaButtonCallback? onPressed;
   final GlossaButtonStyle style;
   final bool isLoading;
+  final String? loadingLabel;
   final double? width;
 
   const GlossaButton({
@@ -19,6 +23,7 @@ class GlossaButton extends StatefulWidget {
     this.onPressed,
     this.style = GlossaButtonStyle.primary,
     this.isLoading = false,
+    this.loadingLabel,
     this.width,
   });
 
@@ -29,8 +34,10 @@ class GlossaButton extends StatefulWidget {
 class _GlossaButtonState extends State<GlossaButton> {
   bool _isPressed = false;
   bool _isDebouncing = false;
+  bool _isProcessing = false;
 
-  bool get _isEnabled => widget.onPressed != null && !widget.isLoading;
+  bool get _effectiveLoading => widget.isLoading || _isProcessing;
+  bool get _isEnabled => widget.onPressed != null && !_effectiveLoading;
 
   Color get _backgroundColor {
     if (!_isEnabled) return GlossaColors.disabledGray;
@@ -83,13 +90,33 @@ class _GlossaButtonState extends State<GlossaButton> {
     setState(() => _isPressed = false);
   }
 
-  void _handleTap() {
+  void _handleTap() async {
     if (!_isEnabled || _isDebouncing) return;
     _isDebouncing = true;
-    widget.onPressed?.call();
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) _isDebouncing = false;
-    });
+    final callback = widget.onPressed;
+    if (callback == null) return;
+
+    final result = callback();
+    if (result is Future) {
+      if (mounted) setState(() => _isProcessing = true);
+      try {
+        await result;
+      } catch (error) {
+        // Prevent unhandled exceptions from crashing the UI and ensure button recovery
+        debugPrint('[GlossaButton] Action error: $error');
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+            _isDebouncing = false;
+          });
+        }
+      }
+    } else {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) _isDebouncing = false;
+      });
+    }
   }
 
   @override
@@ -128,14 +155,32 @@ class _GlossaButtonState extends State<GlossaButton> {
             ],
           ),
           child: Center(
-            child: widget.isLoading
-                ? SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: _foregroundColor,
-                    ),
+            child: _effectiveLoading
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: _foregroundColor,
+                        ),
+                      ),
+                      if (widget.loadingLabel != null) ...[
+                        const SizedBox(width: Spacing.sm),
+                        Text(
+                          widget.loadingLabel!,
+                          style: TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: _foregroundColor,
+                          ),
+                        ),
+                      ],
+                    ],
                   )
                 : Text(
                     widget.label,

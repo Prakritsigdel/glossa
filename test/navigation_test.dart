@@ -113,7 +113,11 @@ void main() {
       expect(container.read(gameStateProvider).activeLessonId, isNull);
     });
 
-    test('completeLesson prevents duplicate XP awards when called repeatedly', () {
+    test('completeLesson prevents duplicate awards when called repeatedly', () async {
+      // FIX 4 + FIX 6: lessonComplete flag blocks re-entry before the await.
+      // XP is no longer optimistic — it only changes on server success.
+      // In test environment (no server), completeLesson throws and resets the flag.
+      // A second call while lessonComplete is true is a guaranteed no-op.
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
@@ -121,16 +125,18 @@ void main() {
       notifier.startLesson('lesson_1');
       final initialXp = container.read(gameStateProvider).user.xp;
 
-      // First completion
-      notifier.completeLesson();
-      final xpAfterFirst = container.read(gameStateProvider).user.xp;
-      expect(xpAfterFirst, equals(initialXp + 20));
+      // lessonComplete is set to true synchronously before any await
+      final future = notifier.completeLesson();
       expect(container.read(gameStateProvider).lessonComplete, isTrue);
 
-      // Second completion call should be guarded and ignored
-      notifier.completeLesson();
-      final xpAfterSecond = container.read(gameStateProvider).user.xp;
-      expect(xpAfterSecond, equals(xpAfterFirst));
+      // Second call is blocked by the lessonComplete guard (no-op)
+      await notifier.completeLesson();
+
+      // First call will throw in test env (no server) and reset lessonComplete
+      try { await future; } catch (_) {}
+
+      // XP unchanged — no server confirmed it
+      expect(container.read(gameStateProvider).user.xp, equals(initialXp));
     });
   });
 

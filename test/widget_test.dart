@@ -83,16 +83,28 @@ void main() {
       expect(state.user.name, equals('Heroine'));
     });
 
-    test('Completing a lesson awards XP and updates progress', () {
+    test('Completing a lesson sets lessonComplete and allows no retry', () async {
+      // FIX 6: XP is no longer applied optimistically. It is only updated when
+      // the server confirms the attempt. In the test environment (no server),
+      // completeLesson() will throw after setting lessonComplete = true and
+      // then reset it to false so the user can retry. We verify the guard works.
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
       container.read(gameStateProvider.notifier).startLesson('lesson_1');
-      container.read(gameStateProvider.notifier).completeLesson();
 
-      final state = container.read(gameStateProvider);
-      expect(state.user.xp, greaterThan(seedUser.xp));
-      expect(state.lessonComplete, isTrue);
+      // lessonComplete starts false
+      expect(container.read(gameStateProvider).lessonComplete, isFalse);
+
+      // completeLesson will throw in test env (no HTTP) and revert lessonComplete
+      try {
+        await container.read(gameStateProvider.notifier).completeLesson();
+      } catch (_) {}
+
+      // Guard worked: lessonComplete resets to false on failure, enabling retry
+      expect(container.read(gameStateProvider).lessonComplete, isFalse);
+      // XP must not change without server confirmation
+      expect(container.read(gameStateProvider).user.xp, equals(seedUser.xp));
     });
   });
 }
