@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../app/theme/glossa_colors.dart';
 import '../../app/theme/glossa_typography.dart';
 import '../../core/constants/spacing.dart';
