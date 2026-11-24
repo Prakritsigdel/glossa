@@ -111,3 +111,66 @@ class LessonOut(BaseModel):
     required_level: int
     is_published: bool
     model_config = ConfigDict(from_attributes=True)
+
+
+# ─── Exercise engine schemas ────────────────────────────────────────
+
+class ExerciseOptionOut(BaseModel):
+    id: str
+    text: str
+    is_devanagari: bool = False
+    image_key: str | None = None
+    speaker: str | None = None
+
+
+class ExerciseOut(BaseModel):
+    id: str
+    lesson_id: str
+    exercise_type: str
+    sequence: int | None = None
+    instruction: str
+    prompt: str | None = None
+    prompt_hint: str | None = None
+    image_key: str | None = None
+    audio_key: str | None = None
+    newari_script: str | None = None
+    romanization: str | None = None
+    illustration_id: str | None = None
+    vocabulary_reference: dict | None = None
+
+    options: list[ExerciseOptionOut] | None = None
+    word_tiles: list[ExerciseOptionOut] | None = None
+    dialogue_structure: list[dict] | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExerciseAnswerIn(BaseModel):
+    exercise_id: str
+    selected_option_id: str | None = None
+    selected_pairs: dict[str, str] | None = None
+    selected_tile_ids: list[str] | None = None
+
+
+class LessonAttemptIn(BaseModel):
+    answers: list[ExerciseAnswerIn] = Field(min_length=1)
+    idempotency_key: str | None = Field(default=None, min_length=1, max_length=64)
+
+
+class ExerciseResultOut(BaseModel):
+    exercise_id: str
+    exercise_type: str
+    correct: bool
+    error: str | None = None
+
+
+class LessonAttemptOut(BaseModel):
+    lesson_id: str
+    attempt_number: int
+    is_correct: bool
+    correct_answers: int
+    total_questions: int
+    xp_earned: int
+    results: list[ExerciseResultOut]
+    already_completed: bool = False
+    model_config = ConfigDict(from_attributes=True)

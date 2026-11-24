@@ -144,6 +144,11 @@ class GeneratedExercise:
     options: list[dict[str, Any]] | None = None
     answer_id: str | None = None
     pairs: dict[str, str] | None = None
+    newari_script: str | None = None
+    romanization: str | None = None
+    correct_answer_config: dict[str, Any] | None = None
+    word_tiles: list[dict[str, Any]] | None = None
+    dialogue_structure: list[dict[str, Any]] | None = None
 
 
 @dataclass
@@ -183,6 +188,7 @@ def _make_match_exercise(ex_id: str, lesson_id: str, sequence: int,
         id=ex_id, lesson_id=lesson_id, exercise_type="matchWords",
         instruction="Match the words", sequence=sequence,
         options=options, pairs=pair_map,
+        correct_answer_config={"pairs": pair_map},
     )
 
 
@@ -199,20 +205,39 @@ def _make_fillblank_exercise(ex_id: str, lesson_id: str, sequence: int,
         instruction="Fill in the blank",
         prompt=f"___ ({answer.english_meaning})", prompt_hint=answer.english_meaning,
         sequence=sequence, options=options, answer_id=f"{ex_id}_a",
+        correct_answer_config={"correct_option_id": f"{ex_id}_a"},
+        newari_script=answer.newari_script,
+        romanization=answer.romanization,
     )
 
 
 def _make_translate_exercise(ex_id: str, lesson_id: str, sequence: int,
                              target: WordPair) -> GeneratedExercise | None:
     """Create a translate exercise: build Newari from word tiles."""
-    options = [{"id": f"{ex_id}_t{i + 1}", "text": ch, "is_devanagari": False}
-               for i, ch in enumerate(target.newari_script)]
+    # Each character is a tile; repeated characters get distinct tile IDs
+    tiles = []
+    tile_ids = []
+    for i, ch in enumerate(target.newari_script):
+        tile_id = f"{ex_id}_t{i + 1}"
+        tiles.append({
+            "id": tile_id,
+            "text": ch,
+            "is_devanagari": True,
+        })
+        tile_ids.append(tile_id)
+
     return GeneratedExercise(
         id=ex_id, lesson_id=lesson_id, exercise_type="translate",
         instruction=f"Build the Newari word for '{target.english_meaning}'",
         prompt=target.english_meaning, prompt_hint=target.romanization,
-        sequence=sequence, options=options, answer_id=f"{ex_id}_a",
-        pairs={f"{ex_id}_a": target.newari_script},
+        sequence=sequence,
+        word_tiles=tiles,
+        newari_script=target.newari_script,
+        romanization=target.romanization,
+        correct_answer_config={
+            "correct_sequence": tile_ids,
+            "alternative_sequences": [],
+        },
     )
 
 
@@ -425,6 +450,11 @@ def seed_blueprint(db: Session, course_id: str = "en_new") -> dict[str, int]:
                 image_key=ex.image_key, audio_key=ex.audio_key,
                 sequence=ex.sequence, options=ex.options,
                 answer_id=ex.answer_id, pairs=ex.pairs,
+                newari_script=ex.newari_script,
+                romanization=ex.romanization,
+                correct_answer_config=ex.correct_answer_config,
+                word_tiles=ex.word_tiles,
+                dialogue_structure=ex.dialogue_structure,
             ))
             exercises_created += 1
 

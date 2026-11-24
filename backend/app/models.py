@@ -1,5 +1,6 @@
 from datetime import date, datetime
 
+import sqlalchemy as sa
 from sqlalchemy import (
     Boolean,
     DateTime,
@@ -118,6 +119,22 @@ class Lesson(Base):
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
     is_checkpoint: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # ── Publication-readiness verification flags (Stage 3.1) ──────
+    # All default to False; a lesson is not publication-ready until each
+    # relevant domain is explicitly verified by a native speaker.
+    vocabulary_verified: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default=sa.text("false")
+    )
+    sentence_verified: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default=sa.text("false")
+    )
+    dialogue_verified: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default=sa.text("false")
+    )
+    illustration_verified: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default=sa.text("false")
+    )
+
     unit: Mapped["Unit | None"] = relationship(back_populates="lessons")
     exercises: Mapped[list["Exercise"]] = relationship(
         back_populates="lesson", cascade="all, delete-orphan"
@@ -144,27 +161,39 @@ class Exercise(Base):
     answer_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
     pairs: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
-    lesson: Mapped[Lesson] = relationship(back_populates="exercises")
+    # ── Structured fields for all seven exercise types ──────────
+    newari_script: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    romanization: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    word_tiles: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    dialogue_structure: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    illustration_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    correct_answer_config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    vocabulary_reference: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    lesson: Mapped["Lesson"] = relationship(back_populates="exercises")
 
 
 class Attempt(Base):
     __tablename__ = "attempts"
     __table_args__ = (
-        UniqueConstraint("user_id", "lesson_id", name="uq_user_lesson_attempt"),
+        # Unique constraint on user_id + lesson_id removed to allow retries.
+        # Duplicate submission protection is via idempotency_key.
+        UniqueConstraint("idempotency_key", name="uq_attempts_idempotency_key"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     lesson_id: Mapped[str] = mapped_column(ForeignKey("lessons.id"))
+    attempt_number: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    idempotency_key: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
+    is_correct: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     correct_answers: Mapped[int] = mapped_column(Integer)
     total_questions: Mapped[int] = mapped_column(Integer)
     xp_earned: Mapped[int] = mapped_column(Integer)
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    user: Mapped[User] = relationship(back_populates="attempts")
-    lesson: Mapped[Lesson] = relationship(back_populates="attempts")
-
-
+    user: Mapped["User"] = relationship(back_populates="attempts")
+    lesson: Mapped["Lesson"] = relationship(back_populates="attempts")
 class VocabularyEntry(Base):
     """A single validated Newari vocabulary entry imported from a workbook.
 
