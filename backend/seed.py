@@ -2,16 +2,21 @@
 
 Idempotently seeds languages, courses, units, lessons, and exercises.
 Preserves existing legacy lessons and attempts.
+Also imports validated Newari vocabulary and seeds the Newari
+curriculum blueprint (15 lessons, unpublished until verified).
 
 Run with: python seed.py
 """
 
 import logging
+from pathlib import Path
 
 from sqlalchemy import select
 
 from app.database import SessionLocal, engine
 from app.models import Course, Exercise, Language, Lesson, Unit
+from app.vocabulary_importer import import_vocabulary
+from app.curriculum_blueprint import seed_blueprint
 from curriculum import UNIT_THEMES, generate_course_lessons, get_curriculum_coverage_report
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -218,6 +223,26 @@ def seed():
             db.commit()
 
             logger.info("Seeded lessons and exercises for course: %s", course_id)
+
+        # ─── Newari vocabulary import + curriculum blueprint ─────
+        # Import validated vocabulary (idempotent, no duplicates).
+        xlsx_path = Path(__file__).resolve().parent.parent / "newari_vocabulary.xlsx"
+        vocab_report = import_vocabulary(db, str(xlsx_path))
+        logger.info(
+            "Vocabulary import: %d created, %d already existed, %d total in DB",
+            vocab_report.imported_count, vocab_report.already_existed_count,
+            vocab_report.imported_count + vocab_report.already_existed_count,
+        )
+
+        # Seed the 15-lesson Newari blueprint for en_new (unpublished).
+        blueprint_report = seed_blueprint(db, course_id="en_new")
+        logger.info(
+            "Newari blueprint: %d lessons created, %d existed; "
+            "%d exercises created, %d existed; %d vocab links created",
+            blueprint_report["lessons_created"], blueprint_report["lessons_existed"],
+            blueprint_report["exercises_created"], blueprint_report["exercises_existed"],
+            blueprint_report["vocab_links_created"],
+        )
 
         # ─── Coverage report ────────────────────────────────────
         report = get_curriculum_coverage_report()

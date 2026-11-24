@@ -1,6 +1,17 @@
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint, func
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    JSON,
+    PrimaryKeyConstraint,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -105,12 +116,16 @@ class Lesson(Base):
     word_count: Mapped[int] = mapped_column(Integer, default=4)
     required_level: Mapped[int] = mapped_column(Integer, default=1)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_checkpoint: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     unit: Mapped["Unit | None"] = relationship(back_populates="lessons")
     exercises: Mapped[list["Exercise"]] = relationship(
         back_populates="lesson", cascade="all, delete-orphan"
     )
     attempts: Mapped[list["Attempt"]] = relationship(back_populates="lesson")
+    vocabulary: Mapped[list["LessonVocabulary"]] = relationship(
+        back_populates="lesson", cascade="all, delete-orphan"
+    )
 
 
 class Exercise(Base):
@@ -176,4 +191,40 @@ class VocabularyEntry(Base):
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    lessons: Mapped[list["LessonVocabulary"]] = relationship(
+        back_populates="vocabulary_entry", cascade="all, delete-orphan"
+    )
+
+
+class LessonVocabulary(Base):
+    """Links a lesson to the vocabulary entries it introduces or reviews.
+
+    The workbook's ``Lessons`` column lists every lesson where a word is
+    used; the first number is where it is introduced. This table makes
+    that introduction/review assignment queryable for the curriculum
+    blueprint and lesson renderers.
+    """
+
+    __tablename__ = "lesson_vocabulary"
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "lesson_id", "vocabulary_entry_id", "role", name="pk_lesson_vocabulary"
+        ),
+        Index("ix_lesson_vocabulary_lesson_id", "lesson_id"),
+        Index("ix_lesson_vocabulary_vocab_entry_id", "vocabulary_entry_id"),
+    )
+
+    lesson_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False
+    )
+    vocabulary_entry_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("vocabulary_entries.id", ondelete="CASCADE"), nullable=False
+    )
+    role: Mapped[str] = mapped_column(String(20), nullable=False)
+    sequence: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+    lesson: Mapped["Lesson"] = relationship(back_populates="vocabulary")
+    vocabulary_entry: Mapped["VocabularyEntry"] = relationship(
+        back_populates="lessons"
     )
