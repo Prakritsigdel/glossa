@@ -9,6 +9,7 @@ glossa.db
 backend/.env
 !backend/.env.example
 .DS_Store
+.kiro/
 .atom/
 .build/
 .buildlog/
