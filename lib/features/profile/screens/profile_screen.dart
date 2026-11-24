@@ -5,7 +5,6 @@ import 'package:glossa_app/app/router/app_router.dart';
 import 'package:glossa_app/app/theme/glossa_colors.dart';
 import 'package:glossa_app/app/theme/glossa_typography.dart';
 import 'package:glossa_app/core/constants/spacing.dart';
-import 'package:glossa_app/core/widgets/greek_key_border.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
