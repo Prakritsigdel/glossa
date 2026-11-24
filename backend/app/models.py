@@ -148,3 +148,32 @@ class Attempt(Base):
 
     user: Mapped[User] = relationship(back_populates="attempts")
     lesson: Mapped[Lesson] = relationship(back_populates="attempts")
+
+
+class VocabularyEntry(Base):
+    """A single validated Newari vocabulary entry imported from a workbook.
+
+    Entries are a validated data layer, separate from the curriculum
+    (lessons/exercises). They are kept unverified until a native speaker
+    reviews them, and are never published automatically.
+    """
+
+    __tablename__ = "vocabulary_entries"
+    __table_args__ = (
+        UniqueConstraint(
+            "english_meaning", "newari_script", name="uq_vocabulary_english_newari"
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    source_worksheet: Mapped[str] = mapped_column(String(80), nullable=False)
+    source_row: Mapped[int] = mapped_column(Integer, nullable=False)
+    unit: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    english_meaning: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
+    newari_script: Mapped[str] = mapped_column(String(200), nullable=False)
+    romanization: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    lesson_numbers: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
