@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lottie/lottie.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
 import 'package:glossa_app/app/theme/glossa_colors.dart';
@@ -133,22 +134,26 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                           style: GlossaTypography.bodySmall,
                         ),
                         const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: GlossaColors.streakGreen,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '🔥 ${user.streak} day streak',
-                            style: GlossaTypography.labelSmall.copyWith(
-                              color: GlossaColors.white,
-                              fontWeight: FontWeight.w700,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Lottie.asset(
+                              'assets/animations/Fire.json',
+                              width: 28,
+                              height: 28,
+                              repeat: true,
                             ),
-                          ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${user.streak}',
+                              style: GlossaTypography.labelMedium.copyWith(
+                                color: const Color(0xFFF95F2D),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -160,13 +165,17 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                         padding: const EdgeInsets.all(Spacing.xl),
                         decoration: BoxDecoration(
                           color: GlossaColors.creamPale,
-                          borderRadius:
-                              BorderRadius.circular(Spacing.cardRadius),
+                          borderRadius: BorderRadius.circular(
+                            Spacing.cardRadius,
+                          ),
                         ),
                         child: Column(
                           children: [
-                            const Icon(Icons.school_rounded,
-                                size: 48, color: GlossaColors.textSubtle),
+                            const Icon(
+                              Icons.school_rounded,
+                              size: 48,
+                              color: GlossaColors.textSubtle,
+                            ),
                             const SizedBox(height: Spacing.md),
                             Text(
                               'No lessons available yet.\nSwitch to a course or check back soon!',
@@ -192,8 +201,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                         return _UnitSection(
                           unit: unit,
                           clearedInUnit: unitLessons
-                              .where((l) =>
-                                  l.status == LessonStatus.cleared)
+                              .where((l) => l.status == LessonStatus.cleared)
                               .length,
                           totalInUnit: unitLessons.length,
                           lessons: displayLessons,
@@ -434,10 +442,7 @@ class _UnitSection extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(
-                unit.title,
-                style: GlossaTypography.headlineMedium,
-              ),
+              child: Text(unit.title, style: GlossaTypography.headlineMedium),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
