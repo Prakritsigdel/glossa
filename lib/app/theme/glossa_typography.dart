@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 import 'glossa_colors.dart';
 
 /// Typography constants calibrated against the 390×844 reference designs.

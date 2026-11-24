@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// Centralized motion tokens, durations, curves, and accessibility helpers for Glossa.
 abstract final class GlossaMotion {

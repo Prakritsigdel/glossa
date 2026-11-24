@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
 import 'package:glossa_app/app/theme/glossa_colors.dart';
@@ -141,7 +141,7 @@ class _TownLoadingScreenState extends State<TownLoadingScreen>
                     ),
                     const SizedBox(height: Spacing.xxl),
                     const XpTipBanner(
-                      tip: 'Say each word out loud. Your voice is the loot.',
+                      tip: 'Complete lessons and keep your daily streak alive to earn bonus XP.',
                     ),
                     const SizedBox(height: Spacing.xxl),
                   ],

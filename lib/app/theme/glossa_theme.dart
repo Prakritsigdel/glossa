@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 import 'glossa_colors.dart';
 
 /// App-wide ThemeData for Glossa, applying the RPG visual identity.

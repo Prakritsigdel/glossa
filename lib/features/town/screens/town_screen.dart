@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
@@ -226,53 +226,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                           ),
                         ),
                       ),
-                    const SizedBox(height: Spacing.xl),
-                    // Family Voices
-                    Container(
-                      padding: const EdgeInsets.all(Spacing.lg),
-                      decoration: BoxDecoration(
-                        color: GlossaColors.creamPale,
-                        borderRadius: BorderRadius.circular(Spacing.cardRadius),
-                        border: Border.all(
-                          color: GlossaColors.blueNavy,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: const BoxDecoration(
-                              color: GlossaColors.redAction,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.mic_rounded,
-                              color: GlossaColors.white,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: Spacing.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Family Voices',
-                                  style: GlossaTypography.headlineSmall,
-                                ),
-                                Text(
-                                  'Record words in your native language.',
-                                  style: GlossaTypography.bodySmall,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: Spacing.lg),
+                    const SizedBox(height: Spacing.xxl),
                   ],
                 ),
               ),
