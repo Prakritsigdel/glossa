@@ -158,7 +158,9 @@ class _CharacterSelectionScreenState
                             children: [
                               HeroAvatarLarge(
                                 heroIndex: hero.index,
-                                level: 1,
+                                level: widget.isEditing
+                                    ? ref.watch(gameStateProvider).user.level
+                                    : 1,
                                 size: 100,
                                 animateIdle: isSelected,
                               ),
