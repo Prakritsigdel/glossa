@@ -108,7 +108,15 @@ class CourseUnit {
 enum LessonStatus { cleared, current, locked }
 
 /// Type of exercise within a lesson.
-enum ExerciseType { matchWords, fillBlank, pictureToWord, wordToPicture }
+enum ExerciseType {
+  matchWords,
+  fillBlank,
+  pictureToWord,
+  wordToPicture,
+  translate,
+  wordOrder,
+  dialogueComplete,
+}
 
 /// A single lesson card on the town path.
 class Lesson {
@@ -156,6 +164,11 @@ class Lesson {
 }
 
 /// A single exercise question within a lesson.
+///
+/// All correct-answer configuration (pairs, answer_id, correct_answer_config)
+/// is intentionally NOT exposed in the public model — correctness is
+/// determined server-side via /api/v1/lessons/{id}/answer and
+/// /api/v1/lessons/{id}/attempts.
 class Exercise {
   final String id;
   final ExerciseType type;
@@ -165,8 +178,26 @@ class Exercise {
   final String? imageKey;
   final String? audioKey;
   final List<AnswerOption> options;
-  final String correctAnswerId;
-  final Map<String, String>? pairs;
+
+  // ── Newari typography fields ──
+  /// Devanagari script text (for word/prompt display).
+  final String? newariScript;
+  /// Romanization / pronunciation guide for [newariScript].
+  final String? romanization;
+
+  // ── Word tiles (translate / wordOrder) ──
+  /// Selectable word tiles with stable IDs.
+  final List<AnswerOption> wordTiles;
+
+  // ── Dialogue structure (dialogueComplete) ──
+  /// Ordered dialogue lines, one flagged as missing.
+  final List<Map<String, dynamic>>? dialogueStructure;
+
+  // ── Illustration reference (pictureToWord / wordToPicture) ──
+  final String? illustrationId;
+
+  // ── Vocabulary reference ──
+  final Map<String, dynamic>? vocabularyReference;
 
   const Exercise({
     required this.id,
@@ -177,46 +208,96 @@ class Exercise {
     this.imageKey,
     this.audioKey,
     required this.options,
-    required this.correctAnswerId,
-    this.pairs,
+    this.newariScript,
+    this.romanization,
+    this.wordTiles = const [],
+    this.dialogueStructure,
+    this.illustrationId,
+    this.vocabularyReference,
   });
+
+  /// Returns true if this exercise uses word tiles (translate / wordOrder).
+  bool get usesWordTiles =>
+      type == ExerciseType.translate || type == ExerciseType.wordOrder;
+
+  /// Returns true if this exercise is a dialogue (dialogueComplete).
+  bool get isDialogue => type == ExerciseType.dialogueComplete;
+
+  /// Returns true if this exercise uses illustrations (pictureToWord / wordToPicture).
+  bool get usesIllustration =>
+      type == ExerciseType.pictureToWord ||
+      type == ExerciseType.wordToPicture;
+
+  /// Returns true if this exercise is a matching exercise (matchWords).
+  bool get isMatchWords => type == ExerciseType.matchWords;
+
+  /// Returns true if this exercise is fillBlank.
+  bool get isFillBlank => type == ExerciseType.fillBlank;
 }
 
 /// An answer option in an exercise.
+///
+/// For word tiles (translate/wordOrder), [text] holds the Devanagari
+/// character or word fragment, [isDevanagari] is true, and [id] is the
+/// stable tile instance identifier (repeated words use distinct tile IDs).
+///
+/// [romanization] is the source-provided pronunciation guide for Devanagari
+/// text. It is displayed beneath the Newari script where applicable.
 class AnswerOption {
   final String id;
   final String text;
   final String? imageKey;
   final bool isDevanagari;
+  final String? romanization;
 
   const AnswerOption({
     required this.id,
     required this.text,
     this.imageKey,
     this.isDevanagari = false,
+    this.romanization,
   });
 }
 
 /// Tracks the result of a completed lesson attempt.
 class LessonAttempt {
   final String lessonId;
+  final int attemptNumber;
+  final bool isCorrect;
   final int correctAnswers;
   final int totalQuestions;
   final int xpEarned;
-  final List<String> wordsLearned;
-  final int streakBonus;
+  final List<ExerciseResult> results;
+  final bool alreadyCompleted;
 
   const LessonAttempt({
     required this.lessonId,
+    required this.attemptNumber,
+    required this.isCorrect,
     required this.correctAnswers,
     required this.totalQuestions,
     required this.xpEarned,
-    required this.wordsLearned,
-    this.streakBonus = 0,
+    required this.results,
+    this.alreadyCompleted = false,
   });
 
   double get accuracy =>
       totalQuestions > 0 ? correctAnswers / totalQuestions : 0.0;
+}
+
+/// Per-exercise result returned by the lesson attempt endpoint.
+class ExerciseResult {
+  final String exerciseId;
+  final ExerciseType exerciseType;
+  final bool correct;
+  final String? error;
+
+  const ExerciseResult({
+    required this.exerciseId,
+    required this.exerciseType,
+    required this.correct,
+    this.error,
+  });
 }
 
 /// XP summary after a lesson/session.

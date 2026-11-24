@@ -95,7 +95,9 @@ class BackendApi {
               .timeout(const Duration(seconds: 2));
           if (probe.statusCode == 200) {
             _resolvedUrl = 'http://10.0.2.2:8000';
-            if (kDebugMode) debugPrint('[BackendApi] Resolved emulator URL: $_resolvedUrl');
+            if (kDebugMode) {
+              debugPrint('[BackendApi] Resolved emulator URL: $_resolvedUrl');
+            }
             return await _request(method, path, body: body, authenticated: authenticated);
           }
         } catch (_) {}
@@ -116,7 +118,9 @@ class BackendApi {
               .timeout(const Duration(seconds: 2));
           if (probe.statusCode == 200) {
             _resolvedUrl = 'http://10.0.2.2:8000';
-            if (kDebugMode) debugPrint('[BackendApi] Resolved emulator URL: $_resolvedUrl');
+            if (kDebugMode) {
+              debugPrint('[BackendApi] Resolved emulator URL: $_resolvedUrl');
+            }
             return await _request(method, path, body: body, authenticated: authenticated);
           }
         } catch (_) {}
@@ -233,6 +237,12 @@ class BackendApi {
         .toList();
   }
 
+  /// Fetch exercises for a lesson from the public endpoint.
+  ///
+  /// The backend intentionally excludes correct-answer configuration
+  /// (pairs, answer_id, correct_answer_config) from public responses.
+  /// Correctness is determined server-side via [checkAnswer] and
+  /// [submitAttempt].
   Future<List<Exercise>> exercises(String lessonId) async {
     final result = await _request('GET', '/lessons/$lessonId/exercises');
     return (result['data'] as List)
@@ -240,6 +250,11 @@ class BackendApi {
         .toList();
   }
 
+  /// Check a single exercise answer via the per-exercise endpoint.
+  ///
+  /// Returns true if the answer is correct. Network errors are rethrown
+  /// so the UI can display them and offer retry — they are never silently
+  /// treated as incorrect.
   Future<bool> checkAnswer(String lessonId, Map<String, dynamic> answer) async {
     final result = await _request(
       'POST',
@@ -249,14 +264,30 @@ class BackendApi {
     return result['correct'] as bool;
   }
 
+  /// Submit a complete lesson attempt.
+  ///
+  /// [answers] is a list of per-exercise answer maps matching
+  /// [ExerciseAnswerIn]: exercise_id, selected_option_id, selected_pairs,
+  /// selected_tile_ids.
+  /// [idempotencyKey] scopes the submission to this user+lesson+request
+  /// so duplicate network retries do not award double XP.
   Future<Map<String, dynamic>> submitAttempt(
-    String lessonId,
-    List<Map<String, dynamic>> answers,
-  ) => _request(
-    'POST',
-    '/lessons/$lessonId/attempts',
-    body: {'answers': answers},
-  );
+    String lessonId, {
+    required List<Map<String, dynamic>> answers,
+    String? idempotencyKey,
+  }) async {
+    final body = <String, dynamic>{
+      'answers': answers,
+    };
+    if (idempotencyKey != null) {
+      body['idempotency_key'] = idempotencyKey;
+    }
+    return _request(
+      'POST',
+      '/lessons/$lessonId/attempts',
+      body: body,
+    );
+  }
 
   Future<List<LeaderboardEntry>> leaderboard(String filter) async {
     if (WidgetsBinding.instance.runtimeType.toString().contains('Test')) {
@@ -325,33 +356,70 @@ class BackendApi {
     isPublished: (row['is_published'] as bool?) ?? true,
   );
 
-  Exercise _exercise(Map<String, dynamic> row) => Exercise(
-    id: row['id'] as String,
-    type: _exerciseType(row['type'] as String),
-    instruction: row['instruction'] as String,
-    prompt: row['prompt'] as String?,
-    promptHint: row['prompt_hint'] as String?,
-    imageKey: row['image_key'] as String?,
-    options: (row['options'] as List).map((raw) {
-      final option = raw as Map<String, dynamic>;
-      return AnswerOption(
-        id: option['id'],
-        text: option['text'],
-        imageKey: option['image_key'],
-        isDevanagari: option['is_devanagari'] ?? false,
-      );
-    }).toList(),
-    correctAnswerId: '',
-    pairs: row['pairs'] != null
-        ? (row['pairs'] as Map<String, dynamic>)
-            .map((k, v) => MapEntry(k, v.toString()))
-        : null,
-  );
+  Exercise _exercise(Map<String, dynamic> row) {
+    final type = _exerciseType(row['type'] as String);
+    final optionsRaw = row['options'] as List? ?? [];
+    final options = optionsRaw
+        .map((raw) {
+          final option = raw as Map<String, dynamic>;
+          return AnswerOption(
+            id: option['id'] as String,
+            text: option['text'] as String,
+            imageKey: option['image_key'] as String?,
+            isDevanagari: option['is_devanagari'] ?? false,
+            romanization: option['romanization'] as String?,
+          );
+        })
+        .toList();
+
+    final wordTilesRaw = row['word_tiles'] as List? ?? [];
+    final wordTiles = wordTilesRaw
+        .map((raw) {
+          final tile = raw as Map<String, dynamic>;
+          return AnswerOption(
+            id: tile['id'] as String,
+            text: tile['text'] as String,
+            imageKey: tile['image_key'] as String?,
+            isDevanagari: tile['is_devanagari'] ?? false,
+            romanization: tile['romanization'] as String?,
+          );
+        })
+        .toList();
+
+    final dialogueRaw = row['dialogue_structure'] as List?;
+    final dialogueStructure = dialogueRaw
+        ?.map((raw) => raw as Map<String, dynamic>)
+        .toList();
+
+    return Exercise(
+      id: row['id'] as String,
+      type: type,
+      instruction: row['instruction'] as String,
+      prompt: row['prompt'] as String?,
+      promptHint: row['prompt_hint'] as String?,
+      imageKey: row['image_key'] as String?,
+      audioKey: row['audio_key'] as String?,
+      options: options,
+      newariScript: row['newari_script'] as String?,
+      romanization: row['romanization'] as String?,
+      wordTiles: wordTiles,
+      dialogueStructure: dialogueStructure,
+      illustrationId: row['illustration_id'] as String?,
+      vocabularyReference:
+          row['vocabulary_reference'] != null
+              ? (row['vocabulary_reference'] as Map<String, dynamic>)
+              : null,
+    );
+  }
 
   ExerciseType _exerciseType(String value) => switch (value) {
     'matchWords' => ExerciseType.matchWords,
+    'fillBlank' => ExerciseType.fillBlank,
     'pictureToWord' => ExerciseType.pictureToWord,
     'wordToPicture' => ExerciseType.wordToPicture,
+    'translate' => ExerciseType.translate,
+    'wordOrder' => ExerciseType.wordOrder,
+    'dialogueComplete' => ExerciseType.dialogueComplete,
     _ => ExerciseType.fillBlank,
   };
 

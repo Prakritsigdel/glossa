@@ -22,6 +22,9 @@ class GameState {
   final int lastCorrectAnswers;
   final int lastTotalQuestions;
   final List<String> lastWordsLearned;
+  final List<ExerciseResult> lastResults;
+  final bool lastAlreadyCompleted;
+  final String? lastIdempotencyKey;
   // ─── Course architecture ───────────────────────────────────
   final List<Language> languages;
   final List<Course> courses;
@@ -44,6 +47,9 @@ class GameState {
     this.lastCorrectAnswers = 0,
     this.lastTotalQuestions = 0,
     this.lastWordsLearned = const [],
+    this.lastResults = const [],
+    this.lastAlreadyCompleted = false,
+    this.lastIdempotencyKey,
     this.languages = const [],
     this.courses = const [],
     this.units = const [],
@@ -68,6 +74,9 @@ class GameState {
     int? lastCorrectAnswers,
     int? lastTotalQuestions,
     List<String>? lastWordsLearned,
+    List<ExerciseResult>? lastResults,
+    bool? lastAlreadyCompleted,
+    String? lastIdempotencyKey,
     List<Language>? languages,
     List<Course>? courses,
     List<CourseUnit>? units,
@@ -92,6 +101,10 @@ class GameState {
         lastCorrectAnswers: lastCorrectAnswers ?? this.lastCorrectAnswers,
         lastTotalQuestions: lastTotalQuestions ?? this.lastTotalQuestions,
         lastWordsLearned: lastWordsLearned ?? this.lastWordsLearned,
+        lastResults: lastResults ?? this.lastResults,
+        lastAlreadyCompleted:
+            lastAlreadyCompleted ?? this.lastAlreadyCompleted,
+        lastIdempotencyKey: lastIdempotencyKey ?? this.lastIdempotencyKey,
         languages: languages ?? this.languages,
         courses: courses ?? this.courses,
         units: units ?? this.units,
@@ -311,10 +324,19 @@ class GameStateNotifier extends StateNotifier<GameState> {
     } catch (_) {}
   }
 
+  /// Check a single exercise answer via the per-exercise endpoint.
+  ///
+  /// Supports [selectedOptionId] (fillBlank, pictureToWord, wordToPicture,
+  /// dialogueComplete), [selectedPairs] (matchWords), and
+  /// [selectedTileIds] (translate, wordOrder).
+  ///
+  /// Returns true if correct. Network errors are rethrown so the UI can
+  /// display them and offer retry — never silently treated as incorrect.
   Future<bool> checkAnswer(
     String exerciseId, {
     String? selectedOptionId,
     Map<String, String>? selectedPairs,
+    List<String>? selectedTileIds,
   }) async {
     final lessonId = state.activeLessonId;
     if (lessonId == null) return false;
@@ -324,6 +346,9 @@ class GameStateNotifier extends StateNotifier<GameState> {
     }
     if (selectedPairs != null) {
       answer['selected_pairs'] = selectedPairs;
+    }
+    if (selectedTileIds != null) {
+      answer['selected_tile_ids'] = selectedTileIds;
     }
     bool correct = false;
     try {
@@ -336,11 +361,11 @@ class GameStateNotifier extends StateNotifier<GameState> {
     if (correct && mounted) {
       final answers = Map<String, Map<String, dynamic>>.from(state.answers);
       final existing = answers[exerciseId];
-      if (selectedPairs != null) {
+      if (selectedPairs != null && existing != null) {
         final previousPairs =
-            existing?['selected_pairs'] as Map<String, dynamic>? ?? {};
+            existing['selected_pairs'] as Map<String, dynamic>? ?? {};
         answers[exerciseId] = {
-          ...?existing,
+          ...existing,
           'exercise_id': exerciseId,
           'selected_pairs': {...previousPairs, ...selectedPairs},
         };
@@ -365,7 +390,13 @@ class GameStateNotifier extends StateNotifier<GameState> {
     currentExerciseIndex: state.currentExerciseIndex + 1,
   );
 
-  Future<void> completeLesson() async {
+  /// Submit the complete lesson attempt to the backend.
+  ///
+  /// [idempotencyKey] scopes the submission to this user+lesson+request
+  /// so duplicate network retries do not award double XP. Reuse the same
+  /// key when retrying the same submission after a timeout or uncertain
+  /// network failure; generate a new key only for a genuinely new attempt.
+  Future<void> completeLesson({String? idempotencyKey}) async {
     final lessonId = state.activeLessonId;
     if (lessonId == null || state.lessonComplete) return;
     if (state.exercises.isNotEmpty &&
@@ -383,12 +414,29 @@ class GameStateNotifier extends StateNotifier<GameState> {
     try {
       final result = await api.submitAttempt(
         lessonId,
-        state.answers.values.toList(),
+        answers: state.answers.values.toList(),
+        idempotencyKey: idempotencyKey,
       );
 
       final xpEarned = (result['xp_earned'] as num?)?.toInt() ?? 0;
       final correctAnswers = (result['correct_answers'] as num?)?.toInt() ?? 0;
       final totalQuestions = (result['total_questions'] as num?)?.toInt() ?? 0;
+      final alreadyCompleted = (result['already_completed'] as bool?) ?? false;
+
+      final resultsRaw = result['results'] as List?;
+      final results = resultsRaw != null
+          ? resultsRaw.map((r) {
+              final res = r as Map<String, dynamic>;
+              return ExerciseResult(
+                exerciseId: res['exercise_id'] as String,
+                exerciseType: _parseExerciseType(
+                  res['exercise_type'] as String?,
+                ),
+                correct: res['correct'] as bool,
+                error: res['error'] as String?,
+              );
+            }).toList()
+          : <ExerciseResult>[];
 
       final userRow = result['user'] as Map<String, dynamic>;
       final user = DemoUser(
@@ -418,6 +466,9 @@ class GameStateNotifier extends StateNotifier<GameState> {
           lastCorrectAnswers: correctAnswers,
           lastTotalQuestions: totalQuestions,
           lastWordsLearned: wordsLearned,
+          lastResults: results,
+          lastAlreadyCompleted: alreadyCompleted,
+          lastIdempotencyKey: idempotencyKey,
         );
       }
     } catch (error) {
@@ -431,6 +482,27 @@ class GameStateNotifier extends StateNotifier<GameState> {
     }
   }
 
+  ExerciseType _parseExerciseType(String? value) {
+    switch (value) {
+      case 'matchWords':
+        return ExerciseType.matchWords;
+      case 'fillBlank':
+        return ExerciseType.fillBlank;
+      case 'pictureToWord':
+        return ExerciseType.pictureToWord;
+      case 'wordToPicture':
+        return ExerciseType.wordToPicture;
+      case 'translate':
+        return ExerciseType.translate;
+      case 'wordOrder':
+        return ExerciseType.wordOrder;
+      case 'dialogueComplete':
+        return ExerciseType.dialogueComplete;
+      default:
+        return ExerciseType.fillBlank;
+    }
+  }
+
   void resetLesson() => state = state.copyWith(
     clearActiveLesson: true,
     exercises: [],
@@ -439,7 +511,7 @@ class GameStateNotifier extends StateNotifier<GameState> {
     lessonComplete: false,
     matchedPairIds: {},
     answers: {},
-      );
+  );
 }
 
 final backendApiProvider = Provider<BackendApi>((ref) => BackendApi());

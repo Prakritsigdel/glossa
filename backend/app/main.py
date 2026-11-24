@@ -541,6 +541,7 @@ def get_exercises(
                     is_devanagari=opt.get("is_devanagari", False),
                     image_key=opt.get("image_key"),
                     speaker=opt.get("speaker"),
+                    romanization=opt.get("romanization"),
                 )
                 for opt in e.options
                 if isinstance(opt, dict)
@@ -552,6 +553,7 @@ def get_exercises(
                     id=tile["id"],
                     text=tile["text"],
                     is_devanagari=tile.get("is_devanagari", False),
+                    romanization=tile.get("romanization"),
                 )
                 for tile in e.word_tiles
                 if isinstance(tile, dict)
@@ -848,13 +850,35 @@ def check_answer(
         )
     if lesson_statuses(db, user).get(lesson_id) == "locked":
         raise HTTPException(status_code=403, detail="Lesson is locked")
-    if exercise.pairs is not None:
-        correct = bool(answer.selected_pairs) and all(
-            exercise.pairs.get(key) == value for key, value in answer.selected_pairs.items()
-        )
+
+    # Build exercise config dict for the validator
+    ex_config = {
+        "exercise_type": exercise.exercise_type,
+        "options": exercise.options or [],
+        "pairs": exercise.pairs,
+        "answer_id": exercise.answer_id,
+        "correct_answer_config": exercise.correct_answer_config or {},
+        "word_tiles": exercise.word_tiles or [],
+        "dialogue_structure": exercise.dialogue_structure,
+    }
+
+    # Extract submitted payload based on exercise type
+    if exercise.exercise_type == "matchWords":
+        submitted_payload = answer.selected_pairs
+    elif exercise.exercise_type in ("translate", "wordOrder"):
+        submitted_payload = answer.selected_tile_ids
     else:
-        correct = answer.selected_option_id == exercise.answer_id
-    return {"correct": correct}
+        submitted_payload = answer.selected_option_id
+
+    validation = validate_exercise(
+        exercise.exercise_type, submitted_payload, ex_config
+    )
+    if not validation.valid:
+        raise HTTPException(
+            status_code=422,
+            detail=validation.error or "Invalid submission",
+        )
+    return {"correct": validation.correct}
 
 
 # ─── Leaderboard ───────────────────────────────────────────────

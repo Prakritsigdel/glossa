@@ -43,6 +43,7 @@ class AnswerIn(BaseModel):
     exercise_id: str
     selected_option_id: str | None = None
     selected_pairs: dict[str, str] | None = None
+    selected_tile_ids: list[str] | None = None
 
 
 class AttemptIn(BaseModel):
@@ -121,6 +122,7 @@ class ExerciseOptionOut(BaseModel):
     is_devanagari: bool = False
     image_key: str | None = None
     speaker: str | None = None
+    romanization: str | None = None
 
 
 class ExerciseOut(BaseModel):

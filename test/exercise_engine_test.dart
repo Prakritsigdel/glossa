@@ -28,9 +28,10 @@ class _RecordingApi extends BackendApi {
 
   @override
   Future<Map<String, dynamic>> submitAttempt(
-    String lessonId,
-    List<Map<String, dynamic>> answers,
-  ) async {
+    String lessonId, {
+    required List<Map<String, dynamic>> answers,
+    String? idempotencyKey,
+  }) async {
     submitCount++;
     submitCalls.add({'lesson_id': lessonId, 'answers': answers});
     if (submitShouldThrow) throw const BackendException('Network failure');
@@ -73,7 +74,6 @@ class _RecordingApi extends BackendApi {
           AnswerOption(id: 'd2', text: 'धन्यवाद', isDevanagari: true),
           AnswerOption(id: 'e2', text: 'Thank you'),
         ],
-        correctAnswerId: '',
       ),
       const Exercise(
         id: 'ex_fb',
@@ -84,7 +84,6 @@ class _RecordingApi extends BackendApi {
           AnswerOption(id: 'fb_a', text: 'नमस्ते', isDevanagari: true),
           AnswerOption(id: 'fb_b', text: 'धन्यवाद', isDevanagari: true),
         ],
-        correctAnswerId: 'fb_a',
       ),
     ];
   }
@@ -109,7 +108,6 @@ Exercise _matchExercise({int pairCount = 4}) {
     type: ExerciseType.matchWords,
     instruction: 'Match',
     options: options,
-    correctAnswerId: '',
   );
 }
 
@@ -275,7 +273,6 @@ void main() {
             type: ExerciseType.fillBlank,
             instruction: 'Fill',
             options: [AnswerOption(id: 'opt1', text: 'A')],
-            correctAnswerId: 'opt1',
           ),
         ],
       );
@@ -300,9 +297,8 @@ void main() {
             id: 'ex_ptw',
             type: ExerciseType.pictureToWord,
             instruction: 'Pick',
-            imageKey: 'bowl',
+            illustrationId: 'bowl',
             options: [AnswerOption(id: 'opt1', text: 'बजि', isDevanagari: true)],
-            correctAnswerId: 'opt1',
           ),
         ],
       );
@@ -312,6 +308,99 @@ void main() {
 
       final ans = container.read(gameStateProvider).answers;
       expect(ans['ex_ptw']?['selected_option_id'], 'opt1');
+    });
+
+    test('translate records selected_tile_ids correctly', () async {
+      final api = _RecordingApi();
+      final container = _makeContainer(api);
+      addTearDown(container.dispose);
+
+      container.read(gameStateProvider.notifier).state =
+          container.read(gameStateProvider).copyWith(
+        activeLessonId: 'lesson_tr',
+        exercises: const [
+          Exercise(
+            id: 'ex_tr',
+            type: ExerciseType.translate,
+            instruction: 'Build the Newari word',
+            prompt: 'Hello',
+            newariScript: 'नमस्ते',
+            romanization: 'namaste',
+            options: [],
+            wordTiles: [
+              AnswerOption(id: 't1', text: 'न', isDevanagari: true),
+              AnswerOption(id: 't2', text: 'म', isDevanagari: true),
+            ],
+          ),
+        ],
+      );
+
+      await container.read(gameStateProvider.notifier)
+          .checkAnswer('ex_tr', selectedTileIds: ['t1', 't2']);
+
+      final ans = container.read(gameStateProvider).answers;
+      expect(ans['ex_tr']?['selected_tile_ids'], equals(['t1', 't2']));
+    });
+
+    test('wordOrder records selected_tile_ids correctly', () async {
+      final api = _RecordingApi();
+      final container = _makeContainer(api);
+      addTearDown(container.dispose);
+
+      container.read(gameStateProvider.notifier).state =
+          container.read(gameStateProvider).copyWith(
+        activeLessonId: 'lesson_wo',
+        exercises: const [
+          Exercise(
+            id: 'ex_wo',
+            type: ExerciseType.wordOrder,
+            instruction: 'Order the words',
+            options: [],
+            wordTiles: [
+              AnswerOption(id: 'w1', text: 'म', isDevanagari: true),
+              AnswerOption(id: 'w2', text: 'ाँ', isDevanagari: true),
+            ],
+          ),
+        ],
+      );
+
+      await container.read(gameStateProvider.notifier)
+          .checkAnswer('ex_wo', selectedTileIds: ['w1', 'w2']);
+
+      final ans = container.read(gameStateProvider).answers;
+      expect(ans['ex_wo']?['selected_tile_ids'], equals(['w1', 'w2']));
+    });
+
+    test('dialogueComplete records selected_option_id correctly', () async {
+      final api = _RecordingApi();
+      final container = _makeContainer(api);
+      addTearDown(container.dispose);
+
+      container.read(gameStateProvider.notifier).state =
+          container.read(gameStateProvider).copyWith(
+        activeLessonId: 'lesson_dc',
+        exercises: const [
+          Exercise(
+            id: 'ex_dc',
+            type: ExerciseType.dialogueComplete,
+            instruction: 'Complete the dialogue',
+            dialogueStructure: [
+              {'speaker': 'A', 'text': 'नमस्ते', 'order': 1},
+              {'speaker': 'B', 'text': '__', 'missing': true, 'order': 2},
+            ],
+            options: [
+              AnswerOption(id: 'r1', text: 'नमस्ते'),
+              AnswerOption(id: 'r2', text: 'धन्यवाद'),
+            ],
+          ),
+        ],
+      );
+
+      await container.read(gameStateProvider.notifier)
+          .checkAnswer('ex_dc', selectedOptionId: 'r1');
+
+      final ans = container.read(gameStateProvider).answers;
+      expect(ans['ex_dc']?['selected_option_id'], 'r1');
     });
   });
 
@@ -326,11 +415,11 @@ void main() {
         activeLessonId: 'lesson_x',
         exercises: const [
           Exercise(id: 'e1', type: ExerciseType.matchWords,
-              instruction: 'A', options: [], correctAnswerId: ''),
+              instruction: 'A', options: []),
           Exercise(id: 'e2', type: ExerciseType.fillBlank,
-              instruction: 'B', options: [], correctAnswerId: ''),
+              instruction: 'B', options: []),
           Exercise(id: 'e3', type: ExerciseType.pictureToWord,
-              instruction: 'C', options: [], correctAnswerId: ''),
+              instruction: 'C', options: []),
         ],
       );
 
@@ -350,13 +439,13 @@ void main() {
           container.read(gameStateProvider).copyWith(
         exercises: const [
           Exercise(id: 'e1', type: ExerciseType.matchWords,
-              instruction: 'A', options: [], correctAnswerId: ''),
+              instruction: 'A', options: []),
           Exercise(id: 'e2', type: ExerciseType.fillBlank,
-              instruction: 'B', options: [], correctAnswerId: ''),
+              instruction: 'B', options: []),
           Exercise(id: 'e3', type: ExerciseType.pictureToWord,
-              instruction: 'C', options: [], correctAnswerId: ''),
+              instruction: 'C', options: []),
           Exercise(id: 'e4', type: ExerciseType.wordToPicture,
-              instruction: 'D', options: [], correctAnswerId: ''),
+              instruction: 'D', options: []),
         ],
       );
 
@@ -380,9 +469,9 @@ void main() {
         activeLessonId: 'lesson_full',
         exercises: const [
           Exercise(id: 'e1', type: ExerciseType.matchWords,
-              instruction: 'A', options: [], correctAnswerId: ''),
+              instruction: 'A', options: []),
           Exercise(id: 'e2', type: ExerciseType.fillBlank,
-              instruction: 'B', options: [], correctAnswerId: ''),
+              instruction: 'B', options: []),
         ],
         answers: {
           'e1': {'exercise_id': 'e1', 'selected_pairs': {'d1': 'e1'}},
@@ -519,10 +608,10 @@ void main() {
           container.read(gameStateProvider).copyWith(
         activeLessonId: 'lesson_4ex',
         exercises: [
-          const Exercise(id: 'e1', type: ExerciseType.matchWords, instruction: '', options: [], correctAnswerId: ''),
-          const Exercise(id: 'e2', type: ExerciseType.fillBlank, instruction: '', options: [], correctAnswerId: ''),
-          const Exercise(id: 'e3', type: ExerciseType.pictureToWord, instruction: '', options: [], correctAnswerId: ''),
-          const Exercise(id: 'e4', type: ExerciseType.wordToPicture, instruction: '', options: [], correctAnswerId: ''),
+          const Exercise(id: 'e1', type: ExerciseType.matchWords, instruction: '', options: []),
+          const Exercise(id: 'e2', type: ExerciseType.fillBlank, instruction: '', options: []),
+          const Exercise(id: 'e3', type: ExerciseType.pictureToWord, instruction: '', options: []),
+          const Exercise(id: 'e4', type: ExerciseType.wordToPicture, instruction: '', options: []),
         ],
         answers: {
           'e1': {'exercise_id': 'e1'},
@@ -546,10 +635,10 @@ void main() {
           container.read(gameStateProvider).copyWith(
         activeLessonId: 'lesson_4ex',
         exercises: [
-          const Exercise(id: 'e1', type: ExerciseType.matchWords, instruction: '', options: [], correctAnswerId: ''),
-          const Exercise(id: 'e2', type: ExerciseType.fillBlank, instruction: '', options: [], correctAnswerId: ''),
-          const Exercise(id: 'e3', type: ExerciseType.pictureToWord, instruction: '', options: [], correctAnswerId: ''),
-          const Exercise(id: 'e4', type: ExerciseType.wordToPicture, instruction: '', options: [], correctAnswerId: ''),
+          const Exercise(id: 'e1', type: ExerciseType.matchWords, instruction: '', options: []),
+          const Exercise(id: 'e2', type: ExerciseType.fillBlank, instruction: '', options: []),
+          const Exercise(id: 'e3', type: ExerciseType.pictureToWord, instruction: '', options: []),
+          const Exercise(id: 'e4', type: ExerciseType.wordToPicture, instruction: '', options: []),
         ],
         answers: {
           'e1': {'exercise_id': 'e1', 'selected_pairs': {'d1': 'e1'}},

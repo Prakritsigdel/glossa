@@ -13,6 +13,9 @@ import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
 import 'package:glossa_app/core/widgets/simple_illustration.dart';
 import 'package:glossa_app/core/widgets/xp_tip_banner.dart';
+import 'package:glossa_app/features/lessons/widgets/dialogue_complete_widget.dart';
+import 'package:glossa_app/features/lessons/widgets/translate_widget.dart';
+import 'package:glossa_app/features/lessons/widgets/word_order_widget.dart';
 import 'package:glossa_app/shared/models/course_models.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
@@ -217,6 +220,21 @@ class _LessonRunnerScreenState extends ConsumerState<LessonRunnerScreen> {
           exercise: exercise,
           onComplete: _onExerciseComplete,
         );
+      case ExerciseType.translate:
+        return TranslateContent(
+          exercise: exercise,
+          onComplete: _onExerciseComplete,
+        );
+      case ExerciseType.wordOrder:
+        return WordOrderContent(
+          exercise: exercise,
+          onComplete: _onExerciseComplete,
+        );
+      case ExerciseType.dialogueComplete:
+        return DialogueCompleteContent(
+          exercise: exercise,
+          onComplete: _onExerciseComplete,
+        );
     }
   }
 
@@ -339,7 +357,7 @@ class _MatchWordsContentState extends ConsumerState<_MatchWordsContent> {
     super.initState();
     final randomized = MatchWordsRandomizer.randomize(
       options: exercise.options,
-      pairs: exercise.pairs,
+      pairs: null, // Backend no longer exposes correct pairs; client-side matching uses index fallback
     );
     _devanagariItems = randomized.devanagari;
     _shuffledEnglishItems = randomized.english;
@@ -430,6 +448,7 @@ class _MatchWordsContentState extends ConsumerState<_MatchWordsContent> {
                   Expanded(
                     child: _MatchChip(
                       text: _devanagariItems[i].text,
+                      romanization: _devanagariItems[i].romanization,
                       isDevanagari: true,
                       isMatched: _matchedIds.contains(_devanagariItems[i].id),
                       isSelected: _selectedDevanagariId == _devanagariItems[i].id,
@@ -441,6 +460,7 @@ class _MatchWordsContentState extends ConsumerState<_MatchWordsContent> {
                   Expanded(
                     child: _MatchChip(
                       text: _shuffledEnglishItems[i].text,
+                      romanization: _shuffledEnglishItems[i].romanization,
                       isDevanagari: false,
                       isMatched:
                           _matchedIds.contains(_shuffledEnglishItems[i].id),
@@ -623,11 +643,30 @@ class _FillBlankContentState extends ConsumerState<_FillBlankContent> {
                       borderRadius: BorderRadius.circular(Spacing.cardRadius),
                       border: Border.all(color: border, width: 2.5),
                     ),
-                    child: Text(
-                      opt.text,
-                      style: opt.isDevanagari
-                          ? GlossaTypography.devanagariSmall
-                          : GlossaTypography.headlineSmall,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          opt.text,
+                          style: opt.isDevanagari
+                              ? GlossaTypography.devanagariSmall
+                              : GlossaTypography.headlineSmall,
+                        ),
+                        if (opt.isDevanagari &&
+                            opt.romanization != null &&
+                            opt.romanization!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              opt.romanization!,
+                              style: GlossaTypography.bodySmall.copyWith(
+                                color: GlossaColors.textSubtle,
+                                fontStyle: FontStyle.italic,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 );
@@ -799,11 +838,30 @@ class _PictureToWordContentState extends ConsumerState<_PictureToWordContent> {
                       border: Border.all(color: border, width: 2.5),
                     ),
                     child: Center(
-                      child: Text(
-                        opt.text,
-                        style: opt.isDevanagari
-                            ? GlossaTypography.devanagariSmall
-                            : GlossaTypography.headlineSmall,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            opt.text,
+                            style: opt.isDevanagari
+                                ? GlossaTypography.devanagariSmall
+                                : GlossaTypography.headlineSmall,
+                          ),
+                          if (opt.isDevanagari &&
+                              opt.romanization != null &&
+                              opt.romanization!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                opt.romanization!,
+                                style: GlossaTypography.bodySmall.copyWith(
+                                  color: GlossaColors.textSubtle,
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -918,10 +976,27 @@ class _WordToPictureContentState extends ConsumerState<_WordToPictureContent> {
             borderRadius: BorderRadius.circular(Spacing.cardRadius),
           ),
           child: Center(
-            child: Text(
-              exercise.prompt ?? '?',
-              style: GlossaTypography.devanagariLarge
-                  .copyWith(color: GlossaColors.yellowPrimary),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  exercise.prompt ?? '?',
+                  style: GlossaTypography.devanagariLarge
+                      .copyWith(color: GlossaColors.yellowPrimary),
+                ),
+                if (exercise.romanization != null &&
+                    exercise.romanization!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      exercise.romanization!,
+                      style: GlossaTypography.bodySmall.copyWith(
+                        color: GlossaColors.textSubtle,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -998,6 +1073,7 @@ class _WordToPictureContentState extends ConsumerState<_WordToPictureContent> {
 
 class _MatchChip extends StatelessWidget {
   final String text;
+  final String? romanization;
   final bool isDevanagari;
   final bool isMatched;
   final bool isSelected;
@@ -1006,6 +1082,7 @@ class _MatchChip extends StatelessWidget {
 
   const _MatchChip({
     required this.text,
+    this.romanization,
     required this.isDevanagari,
     required this.isMatched,
     required this.isSelected,
@@ -1048,7 +1125,24 @@ class _MatchChip extends StatelessWidget {
                   .copyWith(color: GlossaColors.textDark)
               : GlossaTypography.headlineSmall
                   .copyWith(color: GlossaColors.textDark),
-          child: Text(text),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(text),
+              if (isDevanagari && romanization != null && romanization!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    romanization!,
+                    style: GlossaTypography.bodySmall.copyWith(
+                      color: GlossaColors.textSubtle,
+                      fontStyle: FontStyle.italic,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

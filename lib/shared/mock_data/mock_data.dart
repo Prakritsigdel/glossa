@@ -26,7 +26,7 @@ const List<HeroChoice> heroChoices = [
   HeroChoice(index: 1, label: 'Girl', description: 'A courageous explorer.'),
 ];
 
-// ─── Language choices ───────────────────────────────────────
+// ─── Language choices ──────────────────────────────────────
 const List<LanguageChoice> languageChoices = [
   LanguageChoice(
     id: 'nepali',
@@ -133,7 +133,6 @@ List<Exercise> get matchWordsExercises => [
       AnswerOption(id: 'mw_d4', text: 'बजि', isDevanagari: true),
       AnswerOption(id: 'mw_e4', text: 'Beaten rice'),
     ],
-    correctAnswerId: '', // Matching pairs; handled by lesson logic
   ),
 ];
 
@@ -158,7 +157,6 @@ List<Exercise> get fillBlankExercises => [
       AnswerOption(id: 'fb_b', text: 'ल', isDevanagari: true),
       AnswerOption(id: 'fb_c', text: 'छें', isDevanagari: true),
     ],
-    correctAnswerId: 'fb_a',
   ),
   const Exercise(
     id: 'fb_2',
@@ -171,7 +169,6 @@ List<Exercise> get fillBlankExercises => [
       AnswerOption(id: 'fb2_b', text: 'माँ', isDevanagari: true),
       AnswerOption(id: 'fb2_c', text: 'छें', isDevanagari: true),
     ],
-    correctAnswerId: 'fb2_a',
   ),
 ];
 
@@ -182,14 +179,13 @@ List<Exercise> get pictureToWordExercises => [
     type: ExerciseType.pictureToWord,
     instruction: 'Name the picture',
     prompt: 'What is this called?',
-    imageKey: 'bowl',
+    illustrationId: 'bowl',
     options: [
       AnswerOption(id: 'ptw_a', text: 'बजि', isDevanagari: true),
       AnswerOption(id: 'ptw_b', text: 'छें', isDevanagari: true),
       AnswerOption(id: 'ptw_c', text: 'ल', isDevanagari: true),
       AnswerOption(id: 'ptw_d', text: 'माँ', isDevanagari: true),
     ],
-    correctAnswerId: 'ptw_a',
   ),
 ];
 
@@ -200,13 +196,13 @@ List<Exercise> get wordToPictureExercises => [
     type: ExerciseType.wordToPicture,
     instruction: 'Pick the picture',
     prompt: 'Which picture is this?',
+    illustrationId: 'house',
     options: [
       AnswerOption(id: 'wtp_a', text: 'House', imageKey: 'house'),
       AnswerOption(id: 'wtp_b', text: 'Water', imageKey: 'droplet'),
       AnswerOption(id: 'wtp_c', text: 'Bowl', imageKey: 'bowl'),
       AnswerOption(id: 'wtp_d', text: 'Person', imageKey: 'person'),
     ],
-    correctAnswerId: 'wtp_a',
   ),
 ];
 

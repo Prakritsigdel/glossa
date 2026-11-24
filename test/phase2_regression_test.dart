@@ -14,9 +14,10 @@ import 'package:glossa_app/shared/mock_data/mock_data.dart';
 class _NoOpBackendApi extends BackendApi {
   @override
   Future<Map<String, dynamic>> submitAttempt(
-    String lessonId,
-    List<Map<String, dynamic>> answers,
-  ) async {
+    String lessonId, {
+    required List<Map<String, dynamic>> answers,
+    String? idempotencyKey,
+  }) async {
     return {
       'completed': true,
       'already_completed': false,
@@ -48,9 +49,10 @@ class _NoOpBackendApi extends BackendApi {
 class _FailingBackendApi extends BackendApi {
   @override
   Future<Map<String, dynamic>> submitAttempt(
-    String lessonId,
-    List<Map<String, dynamic>> answers,
-  ) async {
+    String lessonId, {
+    required List<Map<String, dynamic>> answers,
+    String? idempotencyKey,
+  }) async {
     throw const BackendException('Simulated network failure');
   }
 }
@@ -69,7 +71,6 @@ void main() {
         instruction: 'Pick the picture',
         prompt: 'ल',
         options: [],
-        correctAnswerId: '',
       );
       expect(exercise.prompt, equals('ल'));
     });
@@ -80,7 +81,6 @@ void main() {
         type: ExerciseType.wordToPicture,
         instruction: 'Pick the picture',
         options: [],
-        correctAnswerId: '',
       );
       final display = exercise.prompt ?? '?';
       expect(display, equals('?'));
@@ -93,7 +93,6 @@ void main() {
         instruction: 'Pick',
         prompt: 'माँ',
         options: [],
-        correctAnswerId: '',
       );
       const e2 = Exercise(
         id: 'e2',
@@ -101,7 +100,6 @@ void main() {
         instruction: 'Pick',
         prompt: 'ल',
         options: [],
-        correctAnswerId: '',
       );
       expect(e1.prompt, isNot(equals(e2.prompt)));
     });
@@ -158,6 +156,12 @@ void main() {
           return '/lesson/picture-to-word';
         case ExerciseType.wordToPicture:
           return '/lesson/word-to-picture';
+        case ExerciseType.translate:
+          return '/lesson/translate';
+        case ExerciseType.wordOrder:
+          return '/lesson/word-order';
+        case ExerciseType.dialogueComplete:
+          return '/lesson/dialogue-complete';
       }
     }
 
@@ -177,10 +181,22 @@ void main() {
       expect(routeForType(ExerciseType.wordToPicture), equals('/lesson/word-to-picture'));
     });
 
+    test('translate routes to /lesson/translate', () {
+      expect(routeForType(ExerciseType.translate), equals('/lesson/translate'));
+    });
+
+    test('wordOrder routes to /lesson/word-order', () {
+      expect(routeForType(ExerciseType.wordOrder), equals('/lesson/word-order'));
+    });
+
+    test('dialogueComplete routes to /lesson/dialogue-complete', () {
+      expect(routeForType(ExerciseType.dialogueComplete), equals('/lesson/dialogue-complete'));
+    });
+
     test('Every ExerciseType value has a /lesson/ route', () {
       for (final type in ExerciseType.values) {
         expect(routeForType(type), startsWith('/lesson/'),
-            reason: 'ExerciseType.\$type must map to a /lesson/ route');
+            reason: 'ExerciseType.$type must map to a /lesson/ route');
       }
     });
 
@@ -349,5 +365,3 @@ void main() {
     });
   });
 }
-
-

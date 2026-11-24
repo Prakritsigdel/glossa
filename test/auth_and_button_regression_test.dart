@@ -81,9 +81,10 @@ class _MockApi extends BackendApi {
 
   @override
   Future<Map<String, dynamic>> submitAttempt(
-    String lessonId,
-    List<Map<String, dynamic>> answers,
-  ) async {
+    String lessonId, {
+    required List<Map<String, dynamic>> answers,
+    String? idempotencyKey,
+  }) async {
     submitAttemptCallCount++;
     return {
       'completed': true,

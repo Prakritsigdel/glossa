@@ -181,7 +181,7 @@ def _make_match_exercise(ex_id: str, lesson_id: str, sequence: int,
     for i, pair in enumerate(pairs):
         d_id = f"{ex_id}_d{i + 1}"
         e_id = f"{ex_id}_e{i + 1}"
-        options.append({"id": d_id, "text": pair.newari_script, "is_devanagari": True})
+        options.append({"id": d_id, "text": pair.newari_script, "is_devanagari": True, "romanization": pair.romanization})
         options.append({"id": e_id, "text": pair.english_meaning})
         pair_map[d_id] = e_id
     return GeneratedExercise(
@@ -197,9 +197,9 @@ def _make_fillblank_exercise(ex_id: str, lesson_id: str, sequence: int,
     """Create a fillBlank exercise: show English hint, pick the Newari word."""
     if not distractors:
         return None
-    options = [{"id": f"{ex_id}_a", "text": answer.newari_script, "is_devanagari": True}]
+    options = [{"id": f"{ex_id}_a", "text": answer.newari_script, "is_devanagari": True, "romanization": answer.romanization}]
     for i, distractor in enumerate(distractors):
-        options.append({"id": f"{ex_id}_d{i + 1}", "text": distractor.newari_script, "is_devanagari": True})
+        options.append({"id": f"{ex_id}_d{i + 1}", "text": distractor.newari_script, "is_devanagari": True, "romanization": distractor.romanization})
     return GeneratedExercise(
         id=ex_id, lesson_id=lesson_id, exercise_type="fillBlank",
         instruction="Fill in the blank",
@@ -223,6 +223,7 @@ def _make_translate_exercise(ex_id: str, lesson_id: str, sequence: int,
             "id": tile_id,
             "text": ch,
             "is_devanagari": True,
+            "romanization": target.romanization,
         })
         tile_ids.append(tile_id)
 
