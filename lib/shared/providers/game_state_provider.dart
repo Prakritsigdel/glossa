@@ -190,6 +190,10 @@ class GameStateNotifier extends StateNotifier<GameState> {
           units: units,
           lessons: lessons,
         );
+        // Auto-assign en_new if user has no active course or a retired one.
+        if (user.activeCourseId == null || user.activeCourseId != 'en_new') {
+          await ensureActiveCourse();
+        }
       }
     } catch (error) {
       // Even if courses fail to load, still set authenticated state.
@@ -223,81 +227,16 @@ class GameStateNotifier extends StateNotifier<GameState> {
     } catch (_) {}
   }
 
-  Future<void> selectLanguage(String id, String name, String script) async {
-    final targetCourseId = id == 'english' ? 'ne_en' : 'en_ne';
-    state = state.copyWith(
-      user: state.user.copyWith(
-        languageId: id,
-        languageName: name,
-        languageScript: script,
-        activeCourseId: targetCourseId,
-      ),
-    );
+  // ─── Single course (English -> Newari) ─────────────────────────
+  /// Glossa is English->Newari only. en_new is assigned automatically;
+  /// there is no language or course selection for the user.
+  Future<void> ensureActiveCourse() async {
+    final current = state.user.activeCourseId;
+    if (current == 'en_new') return;
     try {
-      final user = await api.updateProfile(languageId: id);
-      DemoUser updatedUser = user;
-      try {
-        updatedUser = await api.updateActiveCourse(targetCourseId);
-      } catch (_) {}
-      List<CourseUnit> units = [];
-      List<Lesson> lessons = [];
-      try {
-        units = await api.getUnitsForCourse(targetCourseId);
-      } catch (_) {}
-      try {
-        lessons = await api.lessons(courseId: targetCourseId);
-      } catch (_) {}
-      if (mounted) {
-        state = state.copyWith(
-          user: updatedUser.copyWith(languageName: name, languageScript: script),
-          units: units.isNotEmpty ? units : state.units,
-          lessons: lessons.isNotEmpty ? lessons : state.lessons,
-        );
-      }
+      final user = await api.updateActiveCourse('en_new');
+      if (mounted) state = state.copyWith(user: user);
     } catch (_) {}
-  }
-
-  // ─── Course switching ────────────────────────────────────────
-
-  Future<void> switchCourse(String courseId) async {
-    final previousCourseId = state.user.activeCourseId;
-    state = state.copyWith(isLoading: true, clearError: true);
-    try {
-      final user = await api.updateActiveCourse(courseId);
-      // Reload units and lessons for the new course
-      List<CourseUnit> units = [];
-      List<Lesson> lessons = [];
-      try {
-        units = await api.getUnitsForCourse(courseId);
-      } catch (_) {}
-      try {
-        lessons = await api.lessons(courseId: courseId);
-      } catch (_) {}
-      if (mounted) {
-        state = state.copyWith(
-          user: user,
-          isLoading: false,
-          units: units,
-          lessons: lessons,
-          clearActiveLesson: true,
-          exercises: [],
-          currentExerciseIndex: 0,
-          correctAnswersInLesson: 0,
-          lessonComplete: false,
-          matchedPairIds: {},
-          answers: {},
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: error.toString(),
-          user: state.user.copyWith(activeCourseId: previousCourseId),
-        );
-      }
-      rethrow;
-    }
   }
 
   bool canStartLesson(String lessonId) => state.lessons.any(

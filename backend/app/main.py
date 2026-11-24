@@ -269,12 +269,15 @@ def auth_output(user: User) -> AuthOut:
 
 
 def _resolve_course_id(course_id: str | None, user: User) -> str:
-    """Resolve which course to use: explicit param or user's active course."""
+    """Resolve which course to use: explicit param or user's active course.
+
+    Glossa is English->Newari only; en_new is the single active course.
+    """
     if course_id is not None:
         return course_id
     if user.active_course_id is not None:
         return user.active_course_id
-    return "en_ne"
+    return "en_new"
 
 
 def lesson_statuses(db: Session, user: User, course_id: str | None = None) -> dict[str, str]:
@@ -330,11 +333,13 @@ def health():
 def register(payload: Registration, db: Session = Depends(db_session)):
     if db.scalar(select(User).where(User.email == payload.email.lower())):
         raise HTTPException(status_code=409, detail="An account with this email already exists")
+    # Glossa is English->Newari only; new users are assigned en_new.
+    en_new_course = db.scalar(select(Course).where(Course.id == "en_new"))
     user = User(
         name=payload.name.strip(),
         email=payload.email.lower(),
         password_hash=hash_password(payload.password),
-        active_course_id=None,
+        active_course_id="en_new" if en_new_course is not None else None,
     )
     db.add(user)
     try:
@@ -381,11 +386,16 @@ def update_active_course(
     db: Session = Depends(db_session),
     user: User = Depends(current_user),
 ):
+    # Glossa is English->Newari only; en_new is the single active course.
+    if payload.active_course_id != "en_new":
+        raise HTTPException(status_code=403, detail="Only English->Newari is available")
     course = db.get(Course, payload.active_course_id)
     if course is None:
         raise HTTPException(status_code=404, detail="Course not found")
     if not course.is_published:
         raise HTTPException(status_code=403, detail="Course is not available yet")
+    if not course.is_active:
+        raise HTTPException(status_code=403, detail="Course is not active")
     user.active_course_id = course.id
     db.commit()
     db.refresh(user)
@@ -413,6 +423,8 @@ def get_courses(
         selectinload(Course.source_language),
         selectinload(Course.target_language),
     )
+    # Glossa is English->Newari only; only active courses are visible.
+    query = query.where(Course.is_active == True)
     if published_only:
         query = query.where(Course.is_published == True)
     return list(db.scalars(query).all())
@@ -479,6 +491,9 @@ def get_lessons(
     db: Session = Depends(db_session),
     user: User = Depends(current_user),
 ):
+    # Glossa is English->Newari only; reject requests for retired courses.
+    if course_id is not None and course_id != "en_new":
+        raise HTTPException(status_code=403, detail="Only English->Newari is available")
     cid = _resolve_course_id(course_id, user)
     statuses = lesson_statuses(db, user, cid)
 
@@ -520,6 +535,12 @@ def get_exercises(
     )
     if lesson is None:
         raise HTTPException(status_code=404, detail="Lesson not found")
+    # Enforce en_new course membership: retired course lessons are inaccessible.
+    lesson_unit = db.scalar(
+        select(Unit).where(Unit.id == lesson.unit_id)
+    )
+    if lesson_unit is None or lesson_unit.course_id != "en_new":
+        raise HTTPException(status_code=403, detail="Lesson is not available")
     if lesson_statuses(db, user).get(lesson_id) == "locked":
         raise HTTPException(status_code=403, detail="Lesson is locked")
     # Publication-readiness: unreviewed lessons remain unpublished and
@@ -606,6 +627,13 @@ def submit_attempt(
     )
     if lesson is None:
         raise HTTPException(status_code=404, detail="Lesson not found")
+
+    # Enforce en_new course membership: retired course lessons are inaccessible.
+    lesson_unit = db.scalar(
+        select(Unit).where(Unit.id == lesson.unit_id)
+    )
+    if lesson_unit is None or lesson_unit.course_id != "en_new":
+        raise HTTPException(status_code=403, detail="Lesson is not available")
 
     # Publication check: unreviewed lessons cannot be played.
     if not lesson.is_published:
@@ -842,6 +870,12 @@ def check_answer(
     lesson = db.get(Lesson, lesson_id)
     if lesson is None:
         raise HTTPException(status_code=404, detail="Lesson not found")
+    # Enforce en_new course membership.
+    lesson_unit = db.scalar(
+        select(Unit).where(Unit.id == lesson.unit_id)
+    )
+    if lesson_unit is None or lesson_unit.course_id != "en_new":
+        raise HTTPException(status_code=403, detail="Lesson is not available")
     # Publication check: unreviewed lessons cannot be played or probed.
     if not lesson.is_published:
         raise HTTPException(

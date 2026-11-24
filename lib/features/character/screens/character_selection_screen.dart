@@ -83,7 +83,7 @@ class _CharacterSelectionScreenState
         context.go(AppRoutes.profile);
       }
     } else {
-      context.go(AppRoutes.languageSelect);
+      context.go(AppRoutes.townLoading);
     }
   }
 

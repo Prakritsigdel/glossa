@@ -326,7 +326,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   const SizedBox(height: Spacing.sm),
                   Center(
                     child: Text(
-                      'Next: pick a character and a language.',
+                      'Next: pick a character.',
                       style: GlossaTypography.bodySmall,
                     ),
                   ),

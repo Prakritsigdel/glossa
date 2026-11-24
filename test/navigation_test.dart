@@ -7,7 +7,6 @@ import 'package:glossa_app/core/widgets/bottom_nav_bar.dart';
 import 'package:glossa_app/core/widgets/not_found_screen.dart';
 import 'package:glossa_app/features/authentication/screens/signup_screen.dart';
 import 'package:glossa_app/features/character/screens/character_selection_screen.dart';
-import 'package:glossa_app/features/languages/screens/language_selection_screen.dart';
 import 'package:glossa_app/features/town/screens/town_screen.dart';
 import 'package:glossa_app/features/leaderboard/screens/leaderboard_screen.dart';
 import 'package:glossa_app/features/profile/screens/profile_screen.dart';
@@ -154,22 +153,6 @@ void main() {
 
       expect(find.text('Edit your\nhero'), findsOneWidget);
       expect(find.text('Save changes'), findsOneWidget);
-      expect(find.text('Cancel'), findsOneWidget);
-    });
-
-    testWidgets('LanguageSelectionScreen in edit mode displays Change Language and Save language',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: LanguageSelectionScreen(isEditing: true),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Change target\nlanguage'), findsOneWidget);
-      expect(find.text('Save language'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
     });
   });

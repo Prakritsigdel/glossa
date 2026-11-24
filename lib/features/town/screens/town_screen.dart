@@ -107,17 +107,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                             ],
                           ),
                         ),
-                        // Course switcher button
-                        IconButton(
-                          icon: const Icon(
-                            Icons.swap_horiz_rounded,
-                            color: GlossaColors.blueNavy,
-                            size: 28,
-                          ),
-                          onPressed: () =>
-                              context.push(AppRoutes.courseSwitcher),
-                          tooltip: 'Switch course',
-                        ),
+                        // Course switcher removed - English->Newari is the only course
                       ],
                     ),
                     const SizedBox(height: Spacing.md),
@@ -169,15 +159,14 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                                 size: 48, color: GlossaColors.textSubtle),
                             const SizedBox(height: Spacing.md),
                             Text(
-                              'No lessons available yet.\nSwitch to a course or check back soon!',
+                              'No lessons available yet. Check back soon!',
                               style: GlossaTypography.bodyMedium,
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: Spacing.md),
                             GlossaButton(
-                              label: 'Browse Courses',
-                              onPressed: () =>
-                                  context.push(AppRoutes.courseSwitcher),
+                              label: 'Back to Town',
+                              onPressed: () => context.go(AppRoutes.town),
                             ),
                           ],
                         ),

@@ -9,7 +9,6 @@ import '../../features/onboarding/screens/welcome_screen.dart';
 import '../../features/authentication/screens/signup_screen.dart';
 import '../../features/authentication/screens/login_screen.dart';
 import '../../features/character/screens/character_selection_screen.dart';
-import '../../features/languages/screens/language_selection_screen.dart';
 import '../../features/town/screens/town_loading_screen.dart';
 import '../../features/town/screens/town_screen.dart';
 import '../../features/lessons/screens/battle_loading_screen.dart';
@@ -17,7 +16,6 @@ import '../../features/lessons/screens/lesson_runner_screen.dart';
 import '../../features/progression/screens/level_up_screen.dart';
 import '../../features/leaderboard/screens/leaderboard_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
-import '../../features/courses/screens/course_switcher_screen.dart';
 import '../shell/main_shell_screen.dart';
 
 /// Route path constants.
@@ -28,7 +26,6 @@ abstract final class AppRoutes {
   static const String signup = '/signup';
   static const String login = '/login';
   static const String characterSelect = '/character-select';
-  static const String languageSelect = '/language-select';
   static const String townLoading = '/town-loading';
   static const String town = '/town';
   static const String battleLoading = '/battle-loading';
@@ -40,6 +37,8 @@ abstract final class AppRoutes {
   static const String levelUp = '/level-up';
   static const String leaderboard = '/leaderboard';
   static const String profile = '/profile';
+  // ─── Legacy route paths (redirects only) ─────────────────────
+  static const String languageSelect = '/language-select';
   static const String courseSwitcher = '/course-switcher';
 }
 
@@ -90,7 +89,7 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
 
-    // ─── Character & Language Selection (Onboarding + Profile Edit) ──
+    // ─── Character Selection (Onboarding + Profile Edit) ──
     GoRoute(
       path: AppRoutes.characterSelect,
       pageBuilder: (context, state) {
@@ -102,16 +101,15 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
+
+    // ─── Legacy route redirects (language/course selection removed) ────
     GoRoute(
       path: AppRoutes.languageSelect,
-      pageBuilder: (context, state) {
-        final isEditing = state.uri.queryParameters['mode'] == 'edit';
-        return slideFadeTransitionPage(
-          context: context,
-          state: state,
-          child: LanguageSelectionScreen(isEditing: isEditing),
-        );
-      },
+      redirect: (context, state) => AppRoutes.characterSelect,
+    ),
+    GoRoute(
+      path: AppRoutes.courseSwitcher,
+      redirect: (context, state) => AppRoutes.town,
     ),
 
     // ─── Town Loading Transition ──────────────────────
@@ -155,17 +153,6 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
       ],
-    ),
-
-    // ─── Course Switcher ─────────────────────────────────
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: AppRoutes.courseSwitcher,
-      pageBuilder: (context, state) => fadeTransitionPage(
-        context: context,
-        state: state,
-        child: const CourseSwitcherScreen(),
-      ),
     ),
 
     // ─── Lesson & Battle Flow (Pushed over root navigator) ──

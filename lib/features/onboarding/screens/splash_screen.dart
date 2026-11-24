@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,9 @@ import 'package:glossa_app/core/widgets/greek_key_border.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
+/// Minimum splash-screen display duration (3 seconds).
+const _kMinSplashDuration = Duration(seconds: 3);
+
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -20,9 +24,13 @@ class SplashScreen extends ConsumerStatefulWidget {
 class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  Timer? _minDurationTimer;
+  bool _minDurationElapsed = false;
+  bool _initializationComplete = false;
 
   void _navigateNext() {
     if (!mounted) return;
+    if (!_minDurationElapsed || !_initializationComplete) return;
     final isAuthenticated = ref.read(gameStateProvider).isAuthenticated;
     if (isAuthenticated) {
       context.go(AppRoutes.town);
@@ -40,20 +48,37 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     )..forward();
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
+        setState(() => _minDurationElapsed = true);
         _navigateNext();
       }
+    });
+    // Run session restoration concurrently with the splash display.
+    ref.read(gameStateProvider.notifier).restoreSession().then((_) {
+      if (!mounted) return;
+      setState(() => _initializationComplete = true);
+      _navigateNext();
+    });
+    // Enforce a minimum 3-second splash duration.
+    _minDurationTimer = Timer(_kMinSplashDuration, () {
+      if (!mounted) return;
+      setState(() => _minDurationElapsed = true);
+      _navigateNext();
     });
   }
 
   @override
   void dispose() {
+    _minDurationTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
   void _skip() {
-    _controller.stop();
-    _navigateNext();
+    // Skip is disabled: the splash must show for at least 3 seconds
+    // and initialization must complete before navigating.
+    if (_minDurationElapsed && _initializationComplete) {
+      _navigateNext();
+    }
   }
 
   @override

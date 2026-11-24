@@ -341,8 +341,8 @@ class TestExerciseApiContracts(unittest.TestCase):
         # Create course
         self.session.execute(
             text(
-                "INSERT INTO courses (id, source_language_id, target_language_id, name, description, is_published) "
-                "VALUES ('en_new','en','new','English -> Newari','Test',0)"
+                "INSERT INTO courses (id, source_language_id, target_language_id, name, description, is_published, is_active) "
+                "VALUES ('en_new','en','new','English -> Newari','Test',0,1)"
             )
         )
         # Create unit

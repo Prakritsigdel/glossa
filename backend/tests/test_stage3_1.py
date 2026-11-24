@@ -35,8 +35,8 @@ def seed_minimal(session):
     session.execute(
         text(
             "INSERT INTO courses (id, source_language_id, target_language_id, "
-            "name, description, is_published) "
-            "VALUES ('en_new','en','new','English -> Newari','Test',0)"
+            "name, description, is_published, is_active) "
+            "VALUES ('en_new','en','new','English -> Newari','Test',0,1)"
         )
     )
     session.add(Unit(course_id="en_new", sequence=1, title="Greetings", description="Unit 1"))

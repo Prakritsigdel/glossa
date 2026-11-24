@@ -189,32 +189,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           children: [
                             ListTile(
                               leading: const Icon(
-                                Icons.swap_horiz_rounded,
-                                color: GlossaColors.blueNavy,
-                              ),
-                              title: Text(
-                                'Switch Course',
-                                style: GlossaTypography.labelMedium,
-                              ),
-                              trailing: const Icon(Icons.chevron_right_rounded),
-                              onTap: () => context.push(
-                                AppRoutes.courseSwitcher,
-                              ),
-                            ),
-                            const Divider(height: 1, thickness: 1),
-                            ListTile(
-                              leading: const Icon(
                                 Icons.language_rounded,
                                 color: GlossaColors.blueNavy,
                               ),
                               title: Text(
-                                'Change Target Language',
+                                'Course: English \u2192 Newari',
                                 style: GlossaTypography.labelMedium,
                               ),
-                              trailing: const Icon(Icons.chevron_right_rounded),
-                              onTap: () => context.push(
-                                '${AppRoutes.languageSelect}?mode=edit',
+                              trailing: const Icon(
+                                Icons.lock_rounded,
+                                color: GlossaColors.textSubtle,
+                                size: 20,
                               ),
+                              onTap: null,
                             ),
                             const Divider(height: 1, thickness: 1),
                             ListTile(

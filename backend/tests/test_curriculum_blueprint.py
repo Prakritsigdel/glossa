@@ -59,11 +59,11 @@ def seed_minimal_course(session):
     session.execute(
         text(
             "INSERT INTO courses (id, source_language_id, target_language_id, "
-            "name, description, is_published) "
-            "VALUES (:id, :src, :tgt, :name, :desc, :pub)"
+            "name, description, is_published, is_active) "
+            "VALUES (:id, :src, :tgt, :name, :desc, :pub, :active)"
         ),
         {"id": "en_new", "src": "en", "tgt": "new",
-         "name": "English -> Newari", "desc": "Learn Newari starting from English", "pub": 0},
+         "name": "English -> Newari", "desc": "Learn Newari starting from English", "pub": 0, "active": 1},
     )
     for seq in range(1, 11):
         session.add(Unit(course_id="en_new", sequence=seq,

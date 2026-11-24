@@ -74,17 +74,11 @@ LEGACY_EXERCISES = [
 ]
 
 COURSES = [
-    ("en_ne", "en", "ne", "English → Nepali", "Learn Nepali starting from English"),
-    ("ne_en", "ne", "en", "Nepali → English", "Learn English starting from Nepali"),
     ("en_new", "en", "new", "English → Newari", "Learn Newari starting from English"),
-    ("new_en", "new", "en", "Newari → English", "Learn English starting from Newari"),
-    ("ne_new", "ne", "new", "Nepali → Newari", "Learn Newari starting from Nepali"),
-    ("new_ne", "new", "ne", "Newari → Nepali", "Learn Nepali starting from Newari"),
 ]
 
 LANGUAGES = [
     ("en", "English", "English", "Latin", True),
-    ("ne", "Nepali", "नेपाली", "Devanagari", True),
     ("new", "Newari", "नेपाल भाषा", "Devanagari", True),
 ]
 
@@ -101,9 +95,10 @@ def seed():
         db.commit()
 
         # ─── Courses ────────────────────────────────────────────
-        # en_ne and ne_en are published (have verified content).
-        # Newari courses are unpublished (content not verified).
-        published_courses = {"en_ne", "ne_en"}
+        # Only en_new (English -> Newari) is active. Legacy course directions
+        # are retired but their rows are preserved for historical data.
+        published_courses = {"en_new"}
+        active_courses = {"en_new"}
         for course_id, src, tgt, name, desc in COURSES:
             existing = db.get(Course, course_id)
             if existing is None:
@@ -111,13 +106,21 @@ def seed():
                     id=course_id, source_language_id=src, target_language_id=tgt,
                     name=name, description=desc,
                     is_published=course_id in published_courses,
+                    is_active=course_id in active_courses,
                 ))
-                logger.info("Created course: %s (published=%s)", course_id, course_id in published_courses)
+                logger.info("Created course: %s (published=%s, active=%s)",
+                            course_id, course_id in published_courses, course_id in active_courses)
             else:
-                # Update published status for courses that have content
+                # Update published/active status for existing courses
                 if course_id in published_courses and not existing.is_published:
                     existing.is_published = True
                     logger.info("Published course: %s", course_id)
+                if course_id in active_courses and not existing.is_active:
+                    existing.is_active = True
+                    logger.info("Activated course: %s", course_id)
+                if course_id not in active_courses and existing.is_active:
+                    existing.is_active = False
+                    logger.info("Retired course: %s", course_id)
         db.commit()
 
         # ─── Legacy lessons (preserve existing) ─────────────────
