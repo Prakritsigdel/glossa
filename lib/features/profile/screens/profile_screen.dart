@@ -36,7 +36,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         child: Column(
           children: [
             SizedBox(height: MediaQuery.of(context).padding.top),
-            const GreekKeyBorder(),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(

@@ -72,7 +72,6 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
             child: Column(
               children: [
                 SizedBox(height: MediaQuery.of(context).padding.top),
-                const GreekKeyBorder(),
                 Expanded(
                   child: CustomScrollView(
                     slivers: [
