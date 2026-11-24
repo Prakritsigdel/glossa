@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 import 'router/app_router.dart';
 import 'theme/glossa_theme.dart';
 

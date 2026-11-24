@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:glossa_app/app/theme/glossa_colors.dart';
 import 'package:glossa_app/app/theme/glossa_typography.dart';
