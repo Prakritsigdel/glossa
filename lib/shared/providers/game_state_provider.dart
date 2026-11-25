@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/demo_user.dart';
 import '../models/course_models.dart';
-import '../mock_data/mock_data.dart';
 import '../repositories/backend_api.dart';
 
 class GameState {
@@ -21,21 +20,10 @@ class GameState {
   final int lastXpEarned;
   final int lastCorrectAnswers;
   final int lastTotalQuestions;
-  final List<String> lastWordsLearned;
-  final List<ExerciseResult> lastResults;
   final bool lastAlreadyCompleted;
-  final String? lastIdempotencyKey;
-  final int lastAttemptNumber;
-  final bool lastIsCorrect;
   final double lastScore;
   final int lastPassingThreshold;
   final bool lastPassed;
-  final List<LessonCompletion> lessonCompletions;
-
-  // ─── Course architecture ───────────────────────────────────
-  final List<Language> languages;
-  final List<Course> courses;
-  final List<CourseUnit> units;
 
   const GameState({
     required this.user,
@@ -53,19 +41,10 @@ class GameState {
     this.lastXpEarned = 0,
     this.lastCorrectAnswers = 0,
     this.lastTotalQuestions = 0,
-    this.lastWordsLearned = const [],
-    this.lastResults = const [],
     this.lastAlreadyCompleted = false,
-    this.lastIdempotencyKey,
-    this.lastAttemptNumber = 1,
-    this.lastIsCorrect = false,
     this.lastScore = 0,
     this.lastPassingThreshold = 100,
     this.lastPassed = false,
-    this.lessonCompletions = const [],
-    this.languages = const [],
-    this.courses = const [],
-    this.units = const [],
   });
 
   GameState copyWith({
@@ -86,59 +65,38 @@ class GameState {
     int? lastXpEarned,
     int? lastCorrectAnswers,
     int? lastTotalQuestions,
-    List<String>? lastWordsLearned,
-    List<ExerciseResult>? lastResults,
     bool? lastAlreadyCompleted,
-    String? lastIdempotencyKey,
-    int? lastAttemptNumber,
-    bool? lastIsCorrect,
     double? lastScore,
     int? lastPassingThreshold,
     bool? lastPassed,
-    List<LessonCompletion>? lessonCompletions,
-    List<Language>? languages,
-    List<Course>? courses,
-    List<CourseUnit>? units,
-  }) =>
-      GameState(
-        user: user ?? this.user,
-        isAuthenticated: isAuthenticated ?? this.isAuthenticated,
-        isLoading: isLoading ?? this.isLoading,
-        errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-        lessons: lessons ?? this.lessons,
-        exercises: exercises ?? this.exercises,
-        activeLessonId: clearActiveLesson
-            ? null
-            : (activeLessonId ?? this.activeLessonId),
-        currentExerciseIndex: currentExerciseIndex ?? this.currentExerciseIndex,
-        correctAnswersInLesson:
-            correctAnswersInLesson ?? this.correctAnswersInLesson,
-        lessonComplete: lessonComplete ?? this.lessonComplete,
-        matchedPairIds: matchedPairIds ?? this.matchedPairIds,
-        answers: answers ?? this.answers,
-        lastXpEarned: lastXpEarned ?? this.lastXpEarned,
-        lastCorrectAnswers: lastCorrectAnswers ?? this.lastCorrectAnswers,
-        lastTotalQuestions: lastTotalQuestions ?? this.lastTotalQuestions,
-        lastWordsLearned: lastWordsLearned ?? this.lastWordsLearned,
-        lastResults: lastResults ?? this.lastResults,
-        lastAlreadyCompleted:
-            lastAlreadyCompleted ?? this.lastAlreadyCompleted,
-        lastIdempotencyKey: lastIdempotencyKey ?? this.lastIdempotencyKey,
-        lastAttemptNumber: lastAttemptNumber ?? this.lastAttemptNumber,
-        lastIsCorrect: lastIsCorrect ?? this.lastIsCorrect,
-        lastScore: lastScore ?? this.lastScore,
-        lastPassingThreshold: lastPassingThreshold ?? this.lastPassingThreshold,
-        lastPassed: lastPassed ?? this.lastPassed,
-        lessonCompletions: lessonCompletions ?? this.lessonCompletions,
-        languages: languages ?? this.languages,
-        courses: courses ?? this.courses,
-        units: units ?? this.units,
-      );
+  }) => GameState(
+    user: user ?? this.user,
+    isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+    isLoading: isLoading ?? this.isLoading,
+    errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    lessons: lessons ?? this.lessons,
+    exercises: exercises ?? this.exercises,
+    activeLessonId: clearActiveLesson
+        ? null
+        : (activeLessonId ?? this.activeLessonId),
+    currentExerciseIndex: currentExerciseIndex ?? this.currentExerciseIndex,
+    correctAnswersInLesson:
+        correctAnswersInLesson ?? this.correctAnswersInLesson,
+    lessonComplete: lessonComplete ?? this.lessonComplete,
+    matchedPairIds: matchedPairIds ?? this.matchedPairIds,
+    answers: answers ?? this.answers,
+    lastXpEarned: lastXpEarned ?? this.lastXpEarned,
+    lastCorrectAnswers: lastCorrectAnswers ?? this.lastCorrectAnswers,
+    lastTotalQuestions: lastTotalQuestions ?? this.lastTotalQuestions,
+    lastAlreadyCompleted: lastAlreadyCompleted ?? this.lastAlreadyCompleted,
+    lastScore: lastScore ?? this.lastScore,
+    lastPassingThreshold: lastPassingThreshold ?? this.lastPassingThreshold,
+    lastPassed: lastPassed ?? this.lastPassed,
+  );
 }
 
 class GameStateNotifier extends StateNotifier<GameState> {
-  GameStateNotifier(this.api)
-      : super(GameState(user: seedUser, lessons: mockLessons)) {
+  GameStateNotifier(this.api) : super(const GameState(user: guestUser)) {
     restoreSession();
   }
 
@@ -150,17 +108,13 @@ class GameStateNotifier extends StateNotifier<GameState> {
       if (token == null) return;
       if (mounted) state = state.copyWith(isLoading: true, clearError: true);
       final user = await api.me();
-      await _loadCoursesAndLanguages(user);
+      await _loadAuthenticatedState(user);
     } catch (_) {
       try {
         await api.logout();
       } catch (_) {}
       if (mounted) {
-        state = state.copyWith(
-          isLoading: false,
-          isAuthenticated: false,
-          clearError: true,
-        );
+        state = const GameState(user: guestUser);
       }
     }
   }
@@ -180,46 +134,36 @@ class GameStateNotifier extends StateNotifier<GameState> {
   }
 
   Future<void> _authenticate(Future<DemoUser> Function() action) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = const GameState(user: guestUser, isLoading: true);
     try {
       final user = await action();
-      await _loadCoursesAndLanguages(user);
+      await _loadAuthenticatedState(user);
     } catch (error) {
       if (mounted) {
-        state = state.copyWith(isLoading: false, errorMessage: error.toString());
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: error.toString(),
+        );
       }
       rethrow;
     }
   }
 
   /// Load courses, languages, units, and lessons after authentication.
-  Future<void> _loadCoursesAndLanguages(DemoUser user) async {
+  Future<void> _loadAuthenticatedState(DemoUser user) async {
     try {
-      final languages = await api.getLanguages();
-      final courses = await api.getCourses(publishedOnly: true);
-      List<CourseUnit> units = [];
-      List<Lesson> lessons = [];
-      // Auto-assign en_new if user has no active course or a retired one.
-      if (user.activeCourseId == null || user.activeCourseId != 'en_new') {
-        await ensureActiveCourse();
-        // Re-read the user to get the updated activeCourseId
-        final updatedUser = await api.me();
-        user = updatedUser;
+      if (user.activeCourseId != 'en_new') {
+        await api.updateActiveCourse('en_new');
+        user = await api.me();
       }
-      if (user.activeCourseId != null) {
-        try {
-          units = await api.getUnitsForCourse(user.activeCourseId!);
-          lessons = await api.lessons(courseId: user.activeCourseId);
-        } catch (_) {}
-      }
+      final lessons = user.activeCourseId == 'en_new'
+          ? await api.lessons(courseId: 'en_new')
+          : <Lesson>[];
       if (mounted) {
         state = GameState(
           user: user,
           isAuthenticated: true,
           isLoading: false,
-          languages: languages,
-          courses: courses,
-          units: units,
           lessons: lessons,
         );
       }
@@ -241,7 +185,7 @@ class GameStateNotifier extends StateNotifier<GameState> {
       await api.logout();
     } catch (_) {}
     if (mounted) {
-      state = GameState(user: seedUser, lessons: mockLessons);
+      state = const GameState(user: guestUser);
     }
   }
 
@@ -258,17 +202,11 @@ class GameStateNotifier extends StateNotifier<GameState> {
   // ─── Single course (English -> Newari) ─────────────────────────
   /// Glossa is English->Newari only. en_new is assigned automatically;
   /// there is no language or course selection for the user.
-  Future<void> ensureActiveCourse() async {
-    final current = state.user.activeCourseId;
-    if (current == 'en_new') return;
-    try {
-      final user = await api.updateActiveCourse('en_new');
-      if (mounted) state = state.copyWith(user: user);
-    } catch (_) {}
-  }
-
   bool canStartLesson(String lessonId) => state.lessons.any(
-    (l) => l.id == lessonId && l.status != LessonStatus.locked && l.status != LessonStatus.unavailable,
+    (l) =>
+        l.id == lessonId &&
+        l.status != LessonStatus.locked &&
+        l.status != LessonStatus.unavailable,
   );
 
   Future<void> startLesson(String lessonId) async {
@@ -373,11 +311,6 @@ class GameStateNotifier extends StateNotifier<GameState> {
     }
     state = state.copyWith(lessonComplete: true);
 
-    final wordsLearned = state.exercises
-        .expand((e) => e.options.where((o) => o.isDevanagari).map((o) => o.text))
-        .toSet()
-        .toList();
-
     try {
       final result = await api.submitAttempt(
         lessonId,
@@ -389,28 +322,15 @@ class GameStateNotifier extends StateNotifier<GameState> {
       final correctAnswers = (result['correct_answers'] as num?)?.toInt() ?? 0;
       final totalQuestions = (result['total_questions'] as num?)?.toInt() ?? 0;
       final alreadyCompleted = (result['already_completed'] as bool?) ?? false;
-      final attemptNumber = (result['attempt_number'] as num?)?.toInt() ?? 1;
-      final isCorrect = (result['is_correct'] as bool?) ?? false;
-      final score = (result['score'] as num?)?.toDouble() ??
+      final score =
+          (result['score'] as num?)?.toDouble() ??
           (totalQuestions > 0 ? correctAnswers / totalQuestions : 0.0);
-      final passingThreshold = (result['passing_threshold'] as num?)?.toInt() ?? 100;
-      final passed = (result['passed'] as bool?) ??
-          (totalQuestions > 0 && correctAnswers * 100 >= totalQuestions * passingThreshold);
-
-      final resultsRaw = result['results'] as List?;
-      final results = resultsRaw != null
-          ? resultsRaw.map((r) {
-              final res = r as Map<String, dynamic>;
-              return ExerciseResult(
-                exerciseId: res['exercise_id'] as String,
-                exerciseType: _parseExerciseType(
-                  res['exercise_type'] as String?,
-                ),
-                correct: res['correct'] as bool,
-                error: res['error'] as String?,
-              );
-            }).toList()
-          : <ExerciseResult>[];
+      final passingThreshold =
+          (result['passing_threshold'] as num?)?.toInt() ?? 100;
+      final passed =
+          (result['passed'] as bool?) ??
+          (totalQuestions > 0 &&
+              correctAnswers * 100 >= totalQuestions * passingThreshold);
 
       var user = state.user;
       try {
@@ -429,15 +349,10 @@ class GameStateNotifier extends StateNotifier<GameState> {
           lastXpEarned: xpEarned,
           lastCorrectAnswers: correctAnswers,
           lastTotalQuestions: totalQuestions,
-          lastAttemptNumber: attemptNumber,
-          lastIsCorrect: isCorrect,
           lastScore: score,
           lastPassingThreshold: passingThreshold,
           lastPassed: passed,
-          lastWordsLearned: wordsLearned,
-          lastResults: results,
           lastAlreadyCompleted: alreadyCompleted,
-          lastIdempotencyKey: idempotencyKey,
         );
       }
     } catch (error) {
@@ -448,27 +363,6 @@ class GameStateNotifier extends StateNotifier<GameState> {
         );
       }
       rethrow;
-    }
-  }
-
-  ExerciseType _parseExerciseType(String? value) {
-    switch (value) {
-      case 'matchWords':
-        return ExerciseType.matchWords;
-      case 'fillBlank':
-        return ExerciseType.fillBlank;
-      case 'pictureToWord':
-        return ExerciseType.pictureToWord;
-      case 'wordToPicture':
-        return ExerciseType.wordToPicture;
-      case 'translate':
-        return ExerciseType.translate;
-      case 'wordOrder':
-        return ExerciseType.wordOrder;
-      case 'dialogueComplete':
-        return ExerciseType.dialogueComplete;
-      default:
-        return ExerciseType.fillBlank;
     }
   }
 
@@ -493,26 +387,32 @@ final townMapProvider = FutureProvider<List<Lesson>>((ref) async {
   final api = ref.watch(backendApiProvider);
   final raw = await api.townMap('en_new');
   return raw
-      .map((r) => Lesson(
-        id: r['id'] as String,
-        unitId: r['unit_sequence'] != null
-            ? (r['unit_sequence'] as num).toInt()
-            : null,
-        sequence: r['sequence'] != null ? (r['sequence'] as num).toInt() : null,
-        title: r['title'] as String,
-        subtitle: r['subtitle'] as String,
-        exerciseType: _parseExerciseType(r['exercise_type'] as String),
-        status: _lessonStatus(r['availability'] as String?),
-        xpReward: (r['xp_reward'] as num?)?.toInt() ?? 20,
-        wordCount: (r['word_count'] as num?)?.toInt() ?? 4,
-        requiredLevel: (r['required_level'] as num?)?.toInt() ?? 1,
-        isPublished: (r['is_published'] as bool?) ?? true,
-        isCheckpoint: (r['is_checkpoint'] as bool?) ?? false,
-        isCapstone: (r['is_capstone'] as bool?) ?? false,
-        availability: r['availability'] as String? ?? 'locked',
-        plannedExerciseCount: (r['planned_exercise_count'] as num?)?.toInt() ?? 0,
-        populatedExerciseCount: (r['populated_exercise_count'] as num?)?.toInt() ?? 0,
-      ))
+      .map(
+        (r) => Lesson(
+          id: r['id'] as String,
+          unitId: r['unit_sequence'] != null
+              ? (r['unit_sequence'] as num).toInt()
+              : null,
+          sequence: r['sequence'] != null
+              ? (r['sequence'] as num).toInt()
+              : null,
+          title: r['title'] as String,
+          subtitle: r['subtitle'] as String,
+          exerciseType: _parseExerciseType(r['exercise_type'] as String),
+          status: _lessonStatus(r['availability'] as String?),
+          xpReward: (r['xp_reward'] as num?)?.toInt() ?? 20,
+          wordCount: (r['word_count'] as num?)?.toInt() ?? 4,
+          requiredLevel: (r['required_level'] as num?)?.toInt() ?? 1,
+          isPublished: (r['is_published'] as bool?) ?? true,
+          isCheckpoint: (r['is_checkpoint'] as bool?) ?? false,
+          isCapstone: (r['is_capstone'] as bool?) ?? false,
+          availability: r['availability'] as String? ?? 'locked',
+          plannedExerciseCount:
+              (r['planned_exercise_count'] as num?)?.toInt() ?? 0,
+          populatedExerciseCount:
+              (r['populated_exercise_count'] as num?)?.toInt() ?? 0,
+        ),
+      )
       .toList();
 });
 

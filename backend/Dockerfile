@@ -6,6 +6,5 @@ COPY app ./app
 COPY migrations ./migrations
 COPY alembic.ini ./alembic.ini
 COPY seed.py ./seed.py
-COPY curriculum.py ./curriculum.py
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

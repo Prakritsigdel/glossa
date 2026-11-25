@@ -106,9 +106,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         ),
                                       ),
                                       child: Text(
-                                        user.languageScript.isNotEmpty
-                                            ? '${user.languageScript} (${user.languageName})'
-                                            : 'Nepal Bhasa (Newari)',
+                                        'नेपाल भाषा (Newari)',
                                         style: GlossaTypography.labelSmall
                                             .copyWith(
                                               color: GlossaColors.blueNavy,

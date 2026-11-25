@@ -5,12 +5,13 @@ import 'package:glossa_app/app/glossa_app.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/logo_widget.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
 void main() {
   group('Glossa App & Landing Smoke Tests', () {
-    testWidgets('GlossaApp renders landing screen correctly', (WidgetTester tester) async {
+    testWidgets('GlossaApp renders landing screen correctly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(const ProviderScope(child: GlossaApp()));
       await tester.pump();
 
@@ -19,7 +20,9 @@ void main() {
       expect(find.text('Glossa'), findsOneWidget);
     });
 
-    testWidgets('Tapping Landing navigates to splash', (WidgetTester tester) async {
+    testWidgets('Tapping Landing navigates to splash', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(const ProviderScope(child: GlossaApp()));
       await tester.pump();
 
@@ -32,7 +35,9 @@ void main() {
   });
 
   group('Glossa Core Components Tests', () {
-    testWidgets('HeroAvatar renders both boy and girl variants', (WidgetTester tester) async {
+    testWidgets('HeroAvatar renders both boy and girl variants', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -49,12 +54,12 @@ void main() {
       expect(find.byType(HeroAvatar), findsNWidgets(2));
     });
 
-    testWidgets('GlossaProgressBar renders progress correctly', (WidgetTester tester) async {
+    testWidgets('GlossaProgressBar renders progress correctly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: GlossaProgressBar(progress: 0.5),
-          ),
+          home: Scaffold(body: GlossaProgressBar(progress: 0.5)),
         ),
       );
 
@@ -63,15 +68,19 @@ void main() {
   });
 
   group('GameState Provider & Progression Tests', () {
-    test('Initial game state contains seed user and mock lessons', () {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+    test(
+      'Initial game state is an empty guest without fabricated progression',
+      () {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
 
-      final state = container.read(gameStateProvider);
-      expect(state.user.name, equals('LeBron'));
-      expect(state.user.level, equals(4));
-      expect(state.lessons.length, equals(mockLessons.length));
-    });
+        final state = container.read(gameStateProvider);
+        expect(state.user.name, equals('Guest'));
+        expect(state.user.xp, 0);
+        expect(state.user.streak, 0);
+        expect(state.lessons, isEmpty);
+      },
+    );
 
     test('Selecting hero updates user heroIndex and name', () {
       final container = ProviderContainer();
@@ -104,7 +113,7 @@ void main() {
       // Guard worked: lessonComplete resets to false on failure, enabling retry
       expect(container.read(gameStateProvider).lessonComplete, isFalse);
       // XP must not change without server confirmation
-      expect(container.read(gameStateProvider).user.xp, equals(seedUser.xp));
+      expect(container.read(gameStateProvider).user.xp, 0);
     });
   });
 }

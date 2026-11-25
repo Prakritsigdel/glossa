@@ -9,7 +9,7 @@ import 'package:glossa_app/core/widgets/glossa_button.dart';
 import 'package:glossa_app/core/widgets/glossa_card.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
+import 'package:glossa_app/shared/models/hero_choice.dart';
 
 class CharacterSelectionScreen extends ConsumerStatefulWidget {
   final bool isEditing;

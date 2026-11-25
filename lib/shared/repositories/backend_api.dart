@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,7 +8,6 @@ import 'package:http/http.dart' as http;
 import 'package:glossa_app/shared/models/course_models.dart';
 import 'package:glossa_app/shared/models/demo_user.dart';
 import 'package:glossa_app/shared/models/leaderboard_entry.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
 
 import 'dart:convert';
 
@@ -98,7 +98,12 @@ class BackendApi {
             if (kDebugMode) {
               debugPrint('[BackendApi] Resolved emulator URL: $_resolvedUrl');
             }
-            return await _request(method, path, body: body, authenticated: authenticated);
+            return await _request(
+              method,
+              path,
+              body: body,
+              authenticated: authenticated,
+            );
           }
         } catch (_) {}
       }
@@ -121,7 +126,12 @@ class BackendApi {
             if (kDebugMode) {
               debugPrint('[BackendApi] Resolved emulator URL: $_resolvedUrl');
             }
-            return await _request(method, path, body: body, authenticated: authenticated);
+            return await _request(
+              method,
+              path,
+              body: body,
+              authenticated: authenticated,
+            );
           }
         } catch (_) {}
       }
@@ -179,46 +189,14 @@ class BackendApi {
 
   Future<DemoUser> me() async => _user(await _request('GET', '/me'));
 
-  Future<DemoUser> updateProfile({
-    String? name,
-    int? heroIndex,
-    String? languageId,
-  }) async {
+  Future<DemoUser> updateProfile({String? name, int? heroIndex}) async {
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
     if (heroIndex != null) body['hero_index'] = heroIndex;
-    if (languageId != null) body['language_id'] = languageId;
     return _user(await _request('PATCH', '/me', body: body));
   }
 
   // ─── Multi-language course endpoints ────────────────────────
-
-  Future<List<Language>> getLanguages() async {
-    final result = await _request('GET', '/languages');
-    final rows = result['data'] as List? ?? [];
-    return rows
-        .map((raw) => Language.fromJson(raw as Map<String, dynamic>))
-        .toList();
-  }
-
-  Future<List<Course>> getCourses({bool publishedOnly = true}) async {
-    final result = await _request(
-      'GET',
-      '/courses?published_only=${publishedOnly.toString()}',
-    );
-    final rows = result['data'] as List? ?? [];
-    return rows
-        .map((raw) => Course.fromJson(raw as Map<String, dynamic>))
-        .toList();
-  }
-
-  Future<List<CourseUnit>> getUnitsForCourse(String courseId) async {
-    final result = await _request('GET', '/courses/$courseId/units');
-    final rows = result['data'] as List? ?? [];
-    return rows
-        .map((raw) => CourseUnit.fromJson(raw as Map<String, dynamic>))
-        .toList();
-  }
 
   Future<DemoUser> updateActiveCourse(String courseId) async {
     final data = await _request(
@@ -276,17 +254,11 @@ class BackendApi {
     required List<Map<String, dynamic>> answers,
     String? idempotencyKey,
   }) async {
-    final body = <String, dynamic>{
-      'answers': answers,
-    };
+    final body = <String, dynamic>{'answers': answers};
     if (idempotencyKey != null) {
       body['idempotency_key'] = idempotencyKey;
     }
-    return _request(
-      'POST',
-      '/lessons/$lessonId/attempts',
-      body: body,
-    );
+    return _request('POST', '/lessons/$lessonId/attempts', body: body);
   }
 
   /// Fetch the town map: all lessons for a course with availability status.
@@ -297,15 +269,6 @@ class BackendApi {
   }
 
   Future<List<LeaderboardEntry>> leaderboard(String filter) async {
-    if (WidgetsBinding.instance.runtimeType.toString().contains('Test')) {
-      switch (filter) {
-        case 'alltime':
-          return mockLeaderboardAllTime;
-        case 'weekly':
-        default:
-          return mockLeaderboardWeekly;
-      }
-    }
     final result = await _request('GET', '/leaderboard?filter=$filter');
     final rows = result['data'] as List;
     return rows.map((raw) {
@@ -334,20 +297,7 @@ class BackendApi {
     streak: row['streak'] as int,
     wordsFound: row['words_found'] as int,
     lessonsCompleted: row['lessons_completed'] as int,
-    languageId: row['language_id'] as String,
     activeCourseId: row['active_course_id'] as String?,
-    languageName: switch (row['language_id']) {
-      'newari' => 'Newari',
-      'nepali' => 'Nepali',
-      'english' => 'English',
-      _ => row['language_id'],
-    },
-    languageScript: switch (row['language_id']) {
-      'newari' => 'नेपाल भाषा',
-      'nepali' => 'नेपाली',
-      'english' => 'English',
-      _ => '',
-    },
   );
 
   Lesson _lesson(Map<String, dynamic> row) => Lesson(
@@ -366,38 +316,35 @@ class BackendApi {
     isCapstone: (row['is_capstone'] as bool?) ?? false,
     availability: row['availability'] as String? ?? 'locked',
     plannedExerciseCount: (row['planned_exercise_count'] as num?)?.toInt() ?? 0,
-    populatedExerciseCount: (row['populated_exercise_count'] as num?)?.toInt() ?? 0,
+    populatedExerciseCount:
+        (row['populated_exercise_count'] as num?)?.toInt() ?? 0,
   );
 
   Exercise _exercise(Map<String, dynamic> row) {
     final type = _exerciseType(row['type'] as String);
     final optionsRaw = row['options'] as List? ?? [];
-    final options = optionsRaw
-        .map((raw) {
-          final option = raw as Map<String, dynamic>;
-          return AnswerOption(
-            id: option['id'] as String,
-            text: option['text'] as String,
-            imageKey: option['image_key'] as String?,
-            isDevanagari: option['is_devanagari'] ?? false,
-            romanization: option['romanization'] as String?,
-          );
-        })
-        .toList();
+    final options = optionsRaw.map((raw) {
+      final option = raw as Map<String, dynamic>;
+      return AnswerOption(
+        id: option['id'] as String,
+        text: option['text'] as String,
+        imageKey: option['image_key'] as String?,
+        isDevanagari: option['is_devanagari'] ?? false,
+        romanization: option['romanization'] as String?,
+      );
+    }).toList();
 
     final wordTilesRaw = row['word_tiles'] as List? ?? [];
-    final wordTiles = wordTilesRaw
-        .map((raw) {
-          final tile = raw as Map<String, dynamic>;
-          return AnswerOption(
-            id: tile['id'] as String,
-            text: tile['text'] as String,
-            imageKey: tile['image_key'] as String?,
-            isDevanagari: tile['is_devanagari'] ?? false,
-            romanization: tile['romanization'] as String?,
-          );
-        })
-        .toList();
+    final wordTiles = wordTilesRaw.map((raw) {
+      final tile = raw as Map<String, dynamic>;
+      return AnswerOption(
+        id: tile['id'] as String,
+        text: tile['text'] as String,
+        imageKey: tile['image_key'] as String?,
+        isDevanagari: tile['is_devanagari'] ?? false,
+        romanization: tile['romanization'] as String?,
+      );
+    }).toList();
 
     final dialogueRaw = row['dialogue_structure'] as List?;
     final dialogueStructure = dialogueRaw
@@ -418,10 +365,9 @@ class BackendApi {
       wordTiles: wordTiles,
       dialogueStructure: dialogueStructure,
       illustrationId: row['illustration_id'] as String?,
-      vocabularyReference:
-          row['vocabulary_reference'] != null
-              ? (row['vocabulary_reference'] as Map<String, dynamic>)
-              : null,
+      vocabularyReference: row['vocabulary_reference'] != null
+          ? (row['vocabulary_reference'] as Map<String, dynamic>)
+          : null,
     );
   }
 

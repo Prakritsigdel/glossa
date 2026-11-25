@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:glossa_app/features/progression/screens/level_up_screen.dart';
 import 'package:glossa_app/shared/models/course_models.dart';
 import 'package:glossa_app/shared/models/demo_user.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 import 'package:glossa_app/shared/repositories/backend_api.dart';
 
@@ -16,8 +15,12 @@ class _Stage6Api extends BackendApi {
   List<Lesson> accountALessons = [_lesson('a-lesson', LessonStatus.completed)];
   List<Lesson> accountBLessons = [_lesson('b-lesson', LessonStatus.available)];
   List<Exercise> exercisesForLesson = const [
-    Exercise(id: 'e1', type: ExerciseType.fillBlank, instruction: 'choose',
-        options: [AnswerOption(id: 'yes', text: 'yes')]),
+    Exercise(
+      id: 'e1',
+      type: ExerciseType.fillBlank,
+      instruction: 'choose',
+      options: [AnswerOption(id: 'yes', text: 'yes')],
+    ),
   ];
   final List<String?> submittedKeys = [];
   final List<List<Map<String, dynamic>>> submittedAnswers = [];
@@ -31,23 +34,16 @@ class _Stage6Api extends BackendApi {
   Future<String?> get token async => null;
 
   @override
-  Future<DemoUser> login({required String email, required String password}) async =>
-      currentUser = email.startsWith('b') ? accountB : accountA;
+  Future<DemoUser> login({
+    required String email,
+    required String password,
+  }) async => currentUser = email.startsWith('b') ? accountB : accountA;
 
   @override
   Future<DemoUser> me() async => currentUser ?? accountA;
 
   @override
   Future<void> logout() async {}
-
-  @override
-  Future<List<Language>> getLanguages() async => [];
-
-  @override
-  Future<List<Course>> getCourses({bool publishedOnly = true}) async => [];
-
-  @override
-  Future<List<CourseUnit>> getUnitsForCourse(String courseId) async => [];
 
   @override
   Future<List<Lesson>> lessons({String? courseId}) async =>
@@ -57,10 +53,14 @@ class _Stage6Api extends BackendApi {
   Future<List<Exercise>> exercises(String lessonId) async => exercisesForLesson;
 
   @override
-  Future<bool> checkAnswer(String lessonId, Map<String, dynamic> answer) async => true;
+  Future<bool> checkAnswer(
+    String lessonId,
+    Map<String, dynamic> answer,
+  ) async => true;
 
   @override
-  Future<Map<String, dynamic>> submitAttempt(String lessonId, {
+  Future<Map<String, dynamic>> submitAttempt(
+    String lessonId, {
     required List<Map<String, dynamic>> answers,
     String? idempotencyKey,
   }) async {
@@ -71,8 +71,11 @@ class _Stage6Api extends BackendApi {
       throw const BackendException('Request timed out');
     }
     return {
-      'xp_earned': 20, 'correct_answers': 1, 'total_questions': 1,
-      'passed': submissionPassed, 'score': submissionPassed ? 1.0 : 0.6,
+      'xp_earned': 20,
+      'correct_answers': 1,
+      'total_questions': 1,
+      'passed': submissionPassed,
+      'score': submissionPassed ? 1.0 : 0.6,
       'passing_threshold': 80,
     };
   }
@@ -84,23 +87,45 @@ class _Stage6Api extends BackendApi {
   }
 }
 
-DemoUser _user(String id, {int xp = 0, int streak = 0, int lessons = 0}) => DemoUser(
-  id: id, name: 'User $id', email: '$id@example.test', xp: xp, streak: streak,
-  lessonsCompleted: lessons, level: xp ~/ 100 + 1, activeCourseId: 'en_new',
-);
+DemoUser _user(String id, {int xp = 0, int streak = 0, int lessons = 0}) =>
+    DemoUser(
+      id: id,
+      name: 'User $id',
+      email: '$id@example.test',
+      xp: xp,
+      streak: streak,
+      lessonsCompleted: lessons,
+      level: xp ~/ 100 + 1,
+      activeCourseId: 'en_new',
+    );
 
-Lesson _lesson(String id, LessonStatus status, {bool checkpoint = false}) => Lesson(
-  id: id, title: id, subtitle: '', exerciseType: ExerciseType.fillBlank,
-  status: status, isCheckpoint: checkpoint,
-  availability: status.name,
-);
+Lesson _lesson(String id, LessonStatus status, {bool checkpoint = false}) =>
+    Lesson(
+      id: id,
+      title: id,
+      subtitle: '',
+      exerciseType: ExerciseType.fillBlank,
+      status: status,
+      isCheckpoint: checkpoint,
+      availability: status.name,
+    );
 
 Map<String, dynamic> _townRow(String id, String availability) => {
-  'id': id, 'unit_sequence': 1, 'sequence': 1, 'title': id, 'subtitle': '',
-  'exercise_type': 'fillBlank', 'availability': availability,
-  'xp_reward': 20, 'word_count': 1, 'required_level': 1,
-  'is_published': availability != 'unavailable', 'is_checkpoint': false,
-  'is_capstone': false, 'planned_exercise_count': 1, 'populated_exercise_count': 1,
+  'id': id,
+  'unit_sequence': 1,
+  'sequence': 1,
+  'title': id,
+  'subtitle': '',
+  'exercise_type': 'fillBlank',
+  'availability': availability,
+  'xp_reward': 20,
+  'word_count': 1,
+  'required_level': 1,
+  'is_published': availability != 'unavailable',
+  'is_checkpoint': false,
+  'is_capstone': false,
+  'planned_exercise_count': 1,
+  'populated_exercise_count': 1,
 };
 
 void main() {
@@ -110,53 +135,67 @@ void main() {
 
   setUp(() {
     api = _Stage6Api();
-    container = ProviderContainer(overrides: [backendApiProvider.overrideWithValue(api)]);
+    container = ProviderContainer(
+      overrides: [backendApiProvider.overrideWithValue(api)],
+    );
     notifier = container.read(gameStateProvider.notifier);
   });
   tearDown(() => container.dispose());
 
-  test('account switching replaces the previous user and progression', () async {
-    await notifier.logIn(email: 'a@example.test', password: 'pw');
-    expect(container.read(gameStateProvider).user.xp, 400);
-    expect(container.read(gameStateProvider).lessons.single.id, 'a-lesson');
+  test(
+    'account switching replaces the previous user and progression',
+    () async {
+      await notifier.logIn(email: 'a@example.test', password: 'pw');
+      expect(container.read(gameStateProvider).user.xp, 400);
+      expect(container.read(gameStateProvider).lessons.single.id, 'a-lesson');
 
-    await notifier.logIn(email: 'b@example.test', password: 'pw');
-    final state = container.read(gameStateProvider);
-    expect(state.user.id, 'b');
-    expect(state.user.xp, 0);
-    expect(state.user.streak, 0);
-    expect(state.user.lessonsCompleted, 0);
-    expect(state.lessons.map((lesson) => lesson.id), ['b-lesson']);
-  });
+      await notifier.logIn(email: 'b@example.test', password: 'pw');
+      final state = container.read(gameStateProvider);
+      expect(state.user.id, 'b');
+      expect(state.user.xp, 0);
+      expect(state.user.streak, 0);
+      expect(state.user.lessonsCompleted, 0);
+      expect(state.lessons.map((lesson) => lesson.id), ['b-lesson']);
+    },
+  );
 
-  test('logout clears protected user, lesson, answer, and submission state', () async {
-    await notifier.logIn(email: 'a@example.test', password: 'pw');
-    await notifier.startLesson('a-lesson');
-    await notifier.checkAnswer('e1', selectedOptionId: 'yes');
-    await notifier.completeLesson(idempotencyKey: 'logout-key');
-    await notifier.logOut();
-    final state = container.read(gameStateProvider);
-    expect(state.isAuthenticated, isFalse);
-    expect(state.user.id, isNot('a'));
-    expect(state.user.xp, seedUser.xp);
-    expect(state.user.streak, seedUser.streak);
-    expect(state.user.lessonsCompleted, seedUser.lessonsCompleted);
-    expect(state.exercises, isEmpty);
-    expect(state.answers, isEmpty);
-    expect(state.lessonCompletions, isEmpty);
-    expect(state.lastXpEarned, 0);
-    expect(state.lastIdempotencyKey, isNull);
-  });
+  test(
+    'logout clears protected user, lesson, answer, and submission state',
+    () async {
+      await notifier.logIn(email: 'a@example.test', password: 'pw');
+      await notifier.startLesson('a-lesson');
+      await notifier.checkAnswer('e1', selectedOptionId: 'yes');
+      await notifier.completeLesson(idempotencyKey: 'logout-key');
+      await notifier.logOut();
+      final state = container.read(gameStateProvider);
+      expect(state.isAuthenticated, isFalse);
+      expect(state.user.id, isNot('a'));
+      expect(state.user.xp, 0);
+      expect(state.user.streak, 0);
+      expect(state.user.lessonsCompleted, 0);
+      expect(state.exercises, isEmpty);
+      expect(state.answers, isEmpty);
+    expect(state.lessonComplete, isFalse);
+      expect(state.lastXpEarned, 0);
+    },
+  );
 
   test('submission timeout preserves answers for retry', () async {
     api.failFirstSubmission = true;
     await notifier.logIn(email: 'a@example.test', password: 'pw');
     await notifier.startLesson('a-lesson');
     await notifier.checkAnswer('e1', selectedOptionId: 'yes');
-    await expectLater(() => notifier.completeLesson(idempotencyKey: 'stable-key'), throwsA(isA<BackendException>()));
+    await expectLater(
+      () => notifier.completeLesson(idempotencyKey: 'stable-key'),
+      throwsA(isA<BackendException>()),
+    );
     expect(container.read(gameStateProvider).answers, contains('e1'));
+    expect(container.read(gameStateProvider).lessonComplete, isFalse);
     await notifier.completeLesson(idempotencyKey: 'stable-key');
-    expect(api.submittedAnswers, everyElement(contains(containsPair('exercise_id', 'e1'))));
+    expect(
+      api.submittedAnswers,
+      everyElement(contains(containsPair('exercise_id', 'e1'))),
+    );
   });
 
   test('submission retry reuses the original idempotency key', () async {
@@ -164,40 +203,63 @@ void main() {
     await notifier.logIn(email: 'a@example.test', password: 'pw');
     await notifier.startLesson('a-lesson');
     await notifier.checkAnswer('e1', selectedOptionId: 'yes');
-    await expectLater(() => notifier.completeLesson(idempotencyKey: 'stable-key'), throwsA(isA<BackendException>()));
+    await expectLater(
+      () => notifier.completeLesson(idempotencyKey: 'stable-key'),
+      throwsA(isA<BackendException>()),
+    );
     await notifier.completeLesson(idempotencyKey: 'stable-key');
     expect(api.submittedKeys, ['stable-key', 'stable-key']);
   });
 
-  test('failed checkpoint result remains retryable without discarding answers', () async {
-    api.submissionPassed = false;
-    api.accountALessons = [_lesson('checkpoint', LessonStatus.available, checkpoint: true)];
-    await notifier.logIn(email: 'a@example.test', password: 'pw');
-    await notifier.startLesson('checkpoint');
-    await notifier.checkAnswer('e1', selectedOptionId: 'yes');
-    await notifier.completeLesson(idempotencyKey: 'checkpoint-key');
-    expect(container.read(gameStateProvider).answers, isNotEmpty);
-    expect(container.read(gameStateProvider).lessonComplete, isTrue);
-    expect(container.read(gameStateProvider).lastPassed, isFalse);
-  });
+  test(
+    'failed checkpoint result remains retryable without discarding answers',
+    () async {
+      api.submissionPassed = false;
+      api.accountALessons = [
+        _lesson('checkpoint', LessonStatus.available, checkpoint: true),
+      ];
+      await notifier.logIn(email: 'a@example.test', password: 'pw');
+      await notifier.startLesson('checkpoint');
+      await notifier.checkAnswer('e1', selectedOptionId: 'yes');
+      await notifier.completeLesson(idempotencyKey: 'checkpoint-key');
+      expect(container.read(gameStateProvider).answers, isNotEmpty);
+      expect(container.read(gameStateProvider).lessonComplete, isTrue);
+      expect(container.read(gameStateProvider).lastPassed, isFalse);
+    },
+  );
 
-  testWidgets('failed checkpoint Retry lesson action restarts the checkpoint', (tester) async {
-    api.accountALessons = [_lesson('checkpoint', LessonStatus.available, checkpoint: true)];
+  testWidgets('failed checkpoint Retry lesson action restarts the checkpoint', (
+    tester,
+  ) async {
+    api.accountALessons = [
+      _lesson('checkpoint', LessonStatus.available, checkpoint: true),
+    ];
     api.submissionPassed = false;
     await notifier.logIn(email: 'a@example.test', password: 'pw');
     await notifier.startLesson('checkpoint');
     await notifier.checkAnswer('e1', selectedOptionId: 'yes');
     await notifier.completeLesson(idempotencyKey: 'checkpoint-fail');
-    final router = GoRouter(initialLocation: '/result', routes: [
-      GoRoute(path: '/result', builder: (_, _) => const LevelUpScreen()),
-      GoRoute(path: '/battle-loading', builder: (_, _) => const Scaffold(body: Text('Battle loading route'))),
-      GoRoute(path: '/town', builder: (_, _) => const Scaffold(body: Text('Town route'))),
-    ]);
+    final router = GoRouter(
+      initialLocation: '/result',
+      routes: [
+        GoRoute(path: '/result', builder: (_, _) => const LevelUpScreen()),
+        GoRoute(
+          path: '/battle-loading',
+          builder: (_, _) => const Scaffold(body: Text('Battle loading route')),
+        ),
+        GoRoute(
+          path: '/town',
+          builder: (_, _) => const Scaffold(body: Text('Town route')),
+        ),
+      ],
+    );
     addTearDown(router.dispose);
-    await tester.pumpWidget(UncontrolledProviderScope(
-      container: container,
-      child: MaterialApp.router(routerConfig: router),
-    ));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('TRY AGAIN'), findsOneWidget);
     await tester.ensureVisible(find.text('Retry lesson'));
@@ -209,53 +271,81 @@ void main() {
     expect(container.read(gameStateProvider).exercises, isNotEmpty);
   });
 
-  testWidgets('successful checkpoint Continue action returns to town and clears lesson state', (tester) async {
-    api.accountALessons = [_lesson('checkpoint', LessonStatus.available, checkpoint: true)];
-    await notifier.logIn(email: 'a@example.test', password: 'pw');
-    await notifier.startLesson('checkpoint');
-    await notifier.checkAnswer('e1', selectedOptionId: 'yes');
-    await notifier.completeLesson(idempotencyKey: 'checkpoint-pass');
-    final router = GoRouter(initialLocation: '/result', routes: [
-      GoRoute(path: '/result', builder: (_, _) => const LevelUpScreen()),
-      GoRoute(path: '/battle-loading', builder: (_, _) => const Scaffold(body: Text('Battle loading route'))),
-      GoRoute(path: '/town', builder: (_, _) => const Scaffold(body: Text('Town route'))),
-    ]);
-    addTearDown(router.dispose);
-    await tester.pumpWidget(UncontrolledProviderScope(
-      container: container,
-      child: MaterialApp.router(routerConfig: router),
-    ));
-    await tester.pumpAndSettle();
-    expect(find.text('LESSON PASSED'), findsOneWidget);
-    await tester.ensureVisible(find.text('Continue'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
-    expect(find.text('Town route'), findsOneWidget);
-    expect(container.read(gameStateProvider).activeLessonId, isNull);
-    expect(container.read(gameStateProvider).answers, isEmpty);
-  });
+  testWidgets(
+    'successful checkpoint Continue action returns to town and clears lesson state',
+    (tester) async {
+      api.accountALessons = [
+        _lesson('checkpoint', LessonStatus.available, checkpoint: true),
+      ];
+      await notifier.logIn(email: 'a@example.test', password: 'pw');
+      await notifier.startLesson('checkpoint');
+      await notifier.checkAnswer('e1', selectedOptionId: 'yes');
+      await notifier.completeLesson(idempotencyKey: 'checkpoint-pass');
+      final router = GoRouter(
+        initialLocation: '/result',
+        routes: [
+          GoRoute(path: '/result', builder: (_, _) => const LevelUpScreen()),
+          GoRoute(
+            path: '/battle-loading',
+            builder: (_, _) =>
+                const Scaffold(body: Text('Battle loading route')),
+          ),
+          GoRoute(
+            path: '/town',
+            builder: (_, _) => const Scaffold(body: Text('Town route')),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('LESSON PASSED'), findsOneWidget);
+      expect(find.text('Words learned'), findsNothing);
+      await tester.ensureVisible(find.text('Continue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Town route'), findsOneWidget);
+      expect(container.read(gameStateProvider).activeLessonId, isNull);
+      expect(container.read(gameStateProvider).answers, isEmpty);
+    },
+  );
 
   test('successful checkpoint completion refreshes lessons and exposes newly unlocked lesson', () async {
-    api.accountALessons = [_lesson('checkpoint', LessonStatus.available, checkpoint: true)];
+    api.accountALessons = [
+      _lesson('checkpoint', LessonStatus.available, checkpoint: true),
+    ];
     await notifier.logIn(email: 'a@example.test', password: 'pw');
     await notifier.startLesson('checkpoint');
     await notifier.checkAnswer('e1', selectedOptionId: 'yes');
     api.accountALessons = [_lesson('next', LessonStatus.available)];
     await notifier.completeLesson(idempotencyKey: 'checkpoint-success');
     expect(container.read(gameStateProvider).lastPassed, isTrue);
-    expect(container.read(gameStateProvider).lessons.map((l) => l.id), ['next']);
+    expect(container.read(gameStateProvider).lessons.map((l) => l.id), [
+      'next',
+    ]);
   });
 
-  test('town refresh fetches the updated map after successful completion', () async {
-    api.townRows = [_townRow('one', 'available'), _townRow('two', 'locked')];
-    await container.read(townMapProvider.future);
-    api.townRows = [_townRow('one', 'completed'), _townRow('two', 'available')];
-    container.invalidate(townMapProvider);
-    final refreshed = await container.read(townMapProvider.future);
-    expect(api.townCalls, 2);
-    expect(refreshed.last.availability, 'available');
-  });
+  test(
+    'town refresh fetches the updated map after successful completion',
+    () async {
+      api.townRows = [_townRow('one', 'available'), _townRow('two', 'locked')];
+      await container.read(townMapProvider.future);
+      api.townRows = [
+        _townRow('one', 'completed'),
+        _townRow('two', 'available'),
+      ];
+      container.invalidate(townMapProvider);
+      final refreshed = await container.read(townMapProvider.future);
+      expect(api.townCalls, 2);
+      expect(refreshed.last.availability, 'available');
+    },
+  );
 
   test('town map marks a newly unlocked lesson available', () async {
     api.townRows = [_townRow('newly-unlocked', 'available')];
@@ -264,10 +354,13 @@ void main() {
     expect(lessons.single.availability, 'available');
   });
 
-  test('zero published lessons returns empty data without mock fallback', () async {
-    api.townRows = [];
-    final lessons = await container.read(townMapProvider.future);
-    expect(lessons, isEmpty);
-    expect(api.townCalls, 1);
-  });
+  test(
+    'zero published lessons returns empty data without mock fallback',
+    () async {
+      api.townRows = [];
+      final lessons = await container.read(townMapProvider.future);
+      expect(lessons, isEmpty);
+      expect(api.townCalls, 1);
+    },
+  );
 }

@@ -83,7 +83,6 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                             ],
                           ),
                         ),
-                        // Course switcher removed - English->Newari is the only course
                       ],
                     ),
                     const SizedBox(height: Spacing.md),

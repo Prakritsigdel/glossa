@@ -430,12 +430,16 @@ def seed_blueprint(db: Session, course_id: str = "en_new") -> dict[str, int]:
             ))
             lessons_created += 1
         else:
-            # Sync non-content fields; never touch attempts/history.
+            # Sync active blueprint metadata; attempts/history remain untouched.
+            existing.title = gl.title
+            existing.subtitle = gl.subtitle
             existing.is_checkpoint = gl.is_checkpoint
             existing.passing_score = 80 if gl.is_checkpoint else 100
             existing.is_published = gl.is_published
             existing.exercise_type = gl.exercise_type
+            existing.xp_reward = gl.xp_reward
             existing.word_count = gl.word_count
+            existing.required_level = gl.required_level
             lessons_existed += 1
 
         # Create / sync exercises for this lesson.
@@ -493,4 +497,53 @@ def seed_blueprint(db: Session, course_id: str = "en_new") -> dict[str, int]:
         "total_lessons": len(generated),
         "total_planned_exercises": sum(len(EXERCISE_SEQUENCES[i]) for i in range(1, 16)),
         "total_created_exercises": exercises_created,
+    }
+
+
+def get_curriculum_coverage_report(db: Session) -> dict[str, dict[str, int]]:
+    """Report planned learner content separately from preserved legacy rows."""
+    from app.models import Course
+
+    blueprint_ids = {
+        _lesson_id("en_new", unit_sequence, lesson_sequence)
+        for unit_sequence in range(1, len(PLANNED_UNITS) + 1)
+        for lesson_sequence in range(1, 4)
+    }
+    expected_exercise_ids = set()
+    for course_plan_lesson, exercise_types in EXERCISE_SEQUENCES.items():
+        unit_sequence = UNIT_SEQUENCE[LESSON_TO_UNIT[course_plan_lesson]]
+        lesson_sequence = ((course_plan_lesson - 1) % 3) + 1
+        lesson_id = _lesson_id("en_new", unit_sequence, lesson_sequence)
+        for slot, exercise_type in enumerate(exercise_types, start=1):
+            if exercise_type in SUPPORTED_EXERCISE_TYPES:
+                expected_exercise_ids.add(_exercise_id(lesson_id, exercise_type, slot))
+    lessons = list(db.query(Lesson).filter(Lesson.id.in_(blueprint_ids)).all())
+    units = list(db.query(Unit).filter(
+        Unit.course_id == "en_new",
+        Unit.sequence.between(1, len(PLANNED_UNITS)),
+    ).all())
+    exercise_count = db.query(Exercise).filter(Exercise.id.in_(expected_exercise_ids)).count()
+    vocab_count = db.query(VocabularyEntry).count()
+    historical = {
+        "retired_courses": db.query(Course).filter(Course.id != "en_new").count(),
+        "units": db.query(Unit).filter(
+            (Unit.course_id != "en_new") | (Unit.sequence > len(PLANNED_UNITS))
+        ).count(),
+        "lessons": db.query(Lesson).filter(~Lesson.id.in_(blueprint_ids)).count(),
+        "exercises": db.query(Exercise).filter(~Exercise.id.in_(expected_exercise_ids)).count(),
+    }
+    return {
+        "active_blueprint": {
+            "planned_units": len(PLANNED_UNITS),
+            "unit_rows_present": len(units),
+            "planned_lessons": len(blueprint_ids),
+            "lesson_rows_present": len(lessons),
+            "checkpoints_including_capstone": len(CHECKPOINT_LESSONS),
+            "planned_exercise_slots": sum(len(v) for v in EXERCISE_SEQUENCES.values()),
+            "populated_exercise_slots": exercise_count,
+            "missing_exercise_slots": max(0, sum(len(v) for v in EXERCISE_SEQUENCES.values()) - exercise_count),
+            "published_lessons": sum(1 for lesson in lessons if lesson.is_published),
+            "imported_vocabulary_entries": vocab_count,
+        },
+        "historical_records": historical,
     }

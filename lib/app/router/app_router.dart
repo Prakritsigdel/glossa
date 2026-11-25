@@ -30,26 +30,19 @@ abstract final class AppRoutes {
   static const String town = '/town';
   static const String battleLoading = '/battle-loading';
   static const String lessonRunner = '/lesson/runner';
-  static const String matchWords = '/lesson/match-words';
-  static const String fillBlank = '/lesson/fill-blank';
-  static const String pictureToWord = '/lesson/picture-to-word';
-  static const String wordToPicture = '/lesson/word-to-picture';
   static const String levelUp = '/level-up';
   static const String leaderboard = '/leaderboard';
   static const String profile = '/profile';
-  // ─── Legacy route paths (redirects only) ─────────────────────
-  static const String languageSelect = '/language-select';
-  static const String courseSwitcher = '/course-switcher';
 }
 
-final GlobalKey<NavigatorState> rootNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'root');
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'root',
+);
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: AppRoutes.landing,
-  errorBuilder: (context, state) =>
-      NotFoundScreen(uri: state.uri.toString()),
+  errorBuilder: (context, state) => NotFoundScreen(uri: state.uri.toString()),
   routes: [
     // ─── Onboarding & Entry Flow ──────────────────────
     GoRoute(
@@ -102,15 +95,6 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
-    // ─── Legacy route redirects (language/course selection removed) ────
-    GoRoute(
-      path: AppRoutes.languageSelect,
-      redirect: (context, state) => AppRoutes.characterSelect,
-    ),
-    GoRoute(
-      path: AppRoutes.courseSwitcher,
-      redirect: (context, state) => AppRoutes.town,
-    ),
 
     // ─── Town Loading Transition ──────────────────────
     GoRoute(
@@ -175,27 +159,6 @@ final GoRouter appRouter = GoRouter(
         child: const LessonRunnerScreen(),
       ),
     ),
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: AppRoutes.matchWords,
-      redirect: (context, state) => AppRoutes.lessonRunner,
-    ),
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: AppRoutes.fillBlank,
-      redirect: (context, state) => AppRoutes.lessonRunner,
-    ),
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: AppRoutes.pictureToWord,
-      redirect: (context, state) => AppRoutes.lessonRunner,
-    ),
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: AppRoutes.wordToPicture,
-      redirect: (context, state) => AppRoutes.lessonRunner,
-    ),
-
     // ─── Level Up Celebration Screen ──────────────────
     GoRoute(
       parentNavigatorKey: rootNavigatorKey,

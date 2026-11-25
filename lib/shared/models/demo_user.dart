@@ -11,9 +11,6 @@ class DemoUser {
   final int streak;
   final int wordsFound;
   final int lessonsCompleted;
-  final String languageId;
-  final String languageName;
-  final String languageScript;
   final String? activeCourseId;
 
   const DemoUser({
@@ -28,9 +25,6 @@ class DemoUser {
     this.streak = 0,
     this.wordsFound = 0,
     this.lessonsCompleted = 0,
-    this.languageId = '',
-    this.languageName = '',
-    this.languageScript = '',
     this.activeCourseId,
   });
 
@@ -46,9 +40,6 @@ class DemoUser {
     int? streak,
     int? wordsFound,
     int? lessonsCompleted,
-    String? languageId,
-    String? languageName,
-    String? languageScript,
     String? activeCourseId,
     bool clearActiveCourse = false,
   }) {
@@ -64,10 +55,9 @@ class DemoUser {
       streak: streak ?? this.streak,
       wordsFound: wordsFound ?? this.wordsFound,
       lessonsCompleted: lessonsCompleted ?? this.lessonsCompleted,
-      languageId: languageId ?? this.languageId,
-      languageName: languageName ?? this.languageName,
-      languageScript: languageScript ?? this.languageScript,
-      activeCourseId: clearActiveCourse ? null : (activeCourseId ?? this.activeCourseId),
+      activeCourseId: clearActiveCourse
+          ? null
+          : (activeCourseId ?? this.activeCourseId),
     );
   }
 
@@ -78,3 +68,6 @@ class DemoUser {
     return 'Master';
   }
 }
+
+/// Empty unauthenticated state. Progress values stay at their model defaults.
+const DemoUser guestUser = DemoUser(id: '', name: 'Guest', email: '');

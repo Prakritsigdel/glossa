@@ -5,8 +5,6 @@ abstract final class AssetPaths {
 
   // Branding
   static const String logo = '$_branding/glossa_logo.png';
-  static const String logoFrame = '$_branding/logo_frame.png';
-  static const String appIcon = '$_branding/app_icon.png';
 
   // Characters
   static const String heroBoyLv1 = '$_characters/hero_boy_lv1.png';
