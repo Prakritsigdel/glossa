@@ -173,6 +173,9 @@ class LessonAttemptOut(BaseModel):
     correct_answers: int
     total_questions: int
     xp_earned: int
+    score: float = 0.0
+    passing_threshold: int = 100
+    passed: bool = False
     results: list[ExerciseResultOut]
     already_completed: bool = False
     model_config = ConfigDict(from_attributes=True)

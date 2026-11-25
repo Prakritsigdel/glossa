@@ -5,6 +5,7 @@ import '../models/leaderboard_entry.dart';
 
 // ─── Seed user ──────────────────────────────────────────────
 const DemoUser seedUser = DemoUser(
+  id: 'user1',
   name: 'LeBron',
   email: 'lebron@example.com',
   heroIndex: 0,
@@ -59,7 +60,7 @@ List<Lesson> get mockLessons => [
     title: 'Rice and Bread',
     subtitle: 'Match · 4 words',
     exerciseType: ExerciseType.matchWords,
-    status: LessonStatus.cleared,
+    status: LessonStatus.completed,
     xpReward: 20,
     wordCount: 4,
     requiredLevel: 1,
@@ -69,7 +70,7 @@ List<Lesson> get mockLessons => [
     title: 'Around the House',
     subtitle: 'Fill in the blank · +20 XP',
     exerciseType: ExerciseType.fillBlank,
-    status: LessonStatus.current,
+    status: LessonStatus.available,
     xpReward: 20,
     wordCount: 4,
     requiredLevel: 3,

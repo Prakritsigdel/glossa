@@ -289,6 +289,13 @@ class BackendApi {
     );
   }
 
+  /// Fetch the town map: all lessons for a course with availability status.
+  Future<List<Map<String, dynamic>>> townMap(String courseId) async {
+    final result = await _request('GET', '/courses/$courseId/town-map');
+    final rows = result['data'] as List;
+    return rows.cast<Map<String, dynamic>>();
+  }
+
   Future<List<LeaderboardEntry>> leaderboard(String filter) async {
     if (WidgetsBinding.instance.runtimeType.toString().contains('Test')) {
       switch (filter) {
@@ -316,6 +323,7 @@ class BackendApi {
   }
 
   DemoUser _user(Map<String, dynamic> row) => DemoUser(
+    id: row['id'].toString(),
     name: row['name'] as String,
     email: row['email'] as String,
     heroIndex: row['hero_index'] as int,
@@ -354,6 +362,11 @@ class BackendApi {
     wordCount: (row['word_count'] as num?)?.toInt() ?? 4,
     requiredLevel: (row['required_level'] as num?)?.toInt() ?? 1,
     isPublished: (row['is_published'] as bool?) ?? true,
+    isCheckpoint: (row['is_checkpoint'] as bool?) ?? false,
+    isCapstone: (row['is_capstone'] as bool?) ?? false,
+    availability: row['availability'] as String? ?? 'locked',
+    plannedExerciseCount: (row['planned_exercise_count'] as num?)?.toInt() ?? 0,
+    populatedExerciseCount: (row['populated_exercise_count'] as num?)?.toInt() ?? 0,
   );
 
   Exercise _exercise(Map<String, dynamic> row) {
@@ -424,9 +437,10 @@ class BackendApi {
   };
 
   LessonStatus _lessonStatus(String value) => switch (value) {
-    'cleared' => LessonStatus.cleared,
+    'cleared' || 'completed' => LessonStatus.completed,
     'locked' => LessonStatus.locked,
-    _ => LessonStatus.current,
+    'unavailable' => LessonStatus.unavailable,
+    _ => LessonStatus.available,
   };
 }
 

@@ -35,6 +35,7 @@ class LessonRunnerScreen extends ConsumerStatefulWidget {
 
 class _LessonRunnerScreenState extends ConsumerState<LessonRunnerScreen> {
   bool _completing = false;
+  String? _pendingSubmissionKey;
 
   @override
   void initState() {
@@ -83,8 +84,16 @@ class _LessonRunnerScreenState extends ConsumerState<LessonRunnerScreen> {
       if (_completing) return;
       setState(() => _completing = true);
       try {
-        await ref.read(gameStateProvider.notifier).completeLesson();
+        // Generate an idempotency key for this lesson submission attempt.
+        // Reusing the same key on retry prevents duplicate XP awards.
+        final idempotencyKey = _pendingSubmissionKey ??=
+            '${gs.activeLessonId}-${gs.user.id}-${DateTime.now().millisecondsSinceEpoch}';
+        await ref.read(gameStateProvider.notifier).completeLesson(
+              idempotencyKey: idempotencyKey,
+            );
         if (mounted) {
+          ref.invalidate(townMapProvider);
+          _pendingSubmissionKey = null;
           context.go(AppRoutes.levelUp);
         }
       } catch (error) {

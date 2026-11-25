@@ -105,7 +105,7 @@ class CourseUnit {
 }
 
 /// The status of a lesson on the town path.
-enum LessonStatus { cleared, current, locked }
+enum LessonStatus { completed, available, locked, unavailable }
 
 /// Type of exercise within a lesson.
 enum ExerciseType {
@@ -131,6 +131,11 @@ class Lesson {
   final int wordCount;
   final int requiredLevel;
   final bool isPublished;
+  final bool isCheckpoint;
+  final bool isCapstone;
+  final String availability; // "unavailable", "locked", "available", "completed"
+  final int plannedExerciseCount;
+  final int populatedExerciseCount;
 
   const Lesson({
     required this.id,
@@ -144,6 +149,11 @@ class Lesson {
     this.wordCount = 4,
     this.requiredLevel = 1,
     this.isPublished = true,
+    this.isCheckpoint = false,
+    this.isCapstone = false,
+    this.availability = "locked",
+    this.plannedExerciseCount = 0,
+    this.populatedExerciseCount = 0,
   });
 
   Lesson copyWith({LessonStatus? status}) {
@@ -159,6 +169,11 @@ class Lesson {
       wordCount: wordCount,
       requiredLevel: requiredLevel,
       isPublished: isPublished,
+      isCheckpoint: isCheckpoint,
+      isCapstone: isCapstone,
+      availability: availability,
+      plannedExerciseCount: plannedExerciseCount,
+      populatedExerciseCount: populatedExerciseCount,
     );
   }
 }
@@ -264,6 +279,7 @@ class LessonAttempt {
   final String lessonId;
   final int attemptNumber;
   final bool isCorrect;
+  final int passingThreshold;
   final int correctAnswers;
   final int totalQuestions;
   final int xpEarned;
@@ -274,6 +290,7 @@ class LessonAttempt {
     required this.lessonId,
     required this.attemptNumber,
     required this.isCorrect,
+    required this.passingThreshold,
     required this.correctAnswers,
     required this.totalQuestions,
     required this.xpEarned,
@@ -283,6 +300,34 @@ class LessonAttempt {
 
   double get accuracy =>
       totalQuestions > 0 ? correctAnswers / totalQuestions : 0.0;
+
+  /// Whether the attempt passed the lesson's passing threshold.
+  bool get passed => totalQuestions > 0
+      ? correctAnswers * 100 >= totalQuestions * passingThreshold
+      : false;
+}
+
+/// Tracks the result of a completed lesson (one per user per lesson).
+///
+/// This is the authoritative record of whether a lesson has been completed
+/// and whether XP was awarded. It is separate from [LessonAttempt], which
+/// records every individual submission (including failed retries).
+class LessonCompletion {
+  final String lessonId;
+  final bool passed;
+  final double score;
+  final int xpEarned;
+  final int correctAnswers;
+  final int totalQuestions;
+
+  const LessonCompletion({
+    required this.lessonId,
+    required this.passed,
+    required this.score,
+    required this.xpEarned,
+    required this.correctAnswers,
+    required this.totalQuestions,
+  });
 }
 
 /// Per-exercise result returned by the lesson attempt endpoint.

@@ -1,5 +1,6 @@
 /// Represents the demo user / player state.
 class DemoUser {
+  final String id;
   final String name;
   final String email;
   final int heroIndex; // 0 = boy, 1 = girl
@@ -16,6 +17,7 @@ class DemoUser {
   final String? activeCourseId;
 
   const DemoUser({
+    required this.id,
     required this.name,
     required this.email,
     this.heroIndex = 0,
@@ -33,6 +35,7 @@ class DemoUser {
   });
 
   DemoUser copyWith({
+    String? id,
     String? name,
     String? email,
     int? heroIndex,
@@ -50,6 +53,7 @@ class DemoUser {
     bool clearActiveCourse = false,
   }) {
     return DemoUser(
+      id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
       heroIndex: heroIndex ?? this.heroIndex,

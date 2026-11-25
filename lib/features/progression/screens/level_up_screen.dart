@@ -129,7 +129,7 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                       ScaleTransition(
                         scale: _titleScale,
                         child: Text(
-                          'LEVEL UP!',
+                          gs.lastPassed ? 'LESSON PASSED' : 'TRY AGAIN',
                           style: GlossaTypography.displayLarge.copyWith(
                             color: GlossaColors.yellowPrimary,
                             fontSize: 36,
@@ -143,6 +143,14 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                         'Lv ${user.level} ${user.levelTitle}',
                         style: GlossaTypography.headlineMedium
                             .copyWith(color: GlossaColors.white),
+                      ),
+                      const SizedBox(height: Spacing.sm),
+                      Text(
+                        'Score: ${(gs.lastScore * 100).toStringAsFixed(0)}% · Pass mark: ${gs.lastPassingThreshold}%${gs.lastAlreadyCompleted ? ' · Already completed' : ''}',
+                        textAlign: TextAlign.center,
+                        style: GlossaTypography.bodyMedium.copyWith(
+                          color: GlossaColors.white,
+                        ),
                       ),
                       const SizedBox(height: Spacing.xl),
 
@@ -251,17 +259,23 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: Spacing.pagePadding),
                         child: GlossaButton(
-                          label: 'Back to Town',
-                          loadingLabel: 'Returning to Town...',
+                          label: gs.lastPassed ? 'Continue' : 'Retry lesson',
+                          loadingLabel: gs.lastPassed ? 'Continuing...' : 'Retrying...',
                           style: GlossaButtonStyle.secondary,
                           onPressed: _navigating
                               ? null
-                              : () {
+                              : () async {
                                   setState(() => _navigating = true);
-                                  ref
-                                      .read(gameStateProvider.notifier)
-                                      .resetLesson();
-                                  context.go(AppRoutes.town);
+                                  final router = GoRouter.of(context);
+                                  final notifier = ref.read(gameStateProvider.notifier);
+                                  if (!gs.lastPassed && gs.activeLessonId != null) {
+                                    await notifier.startLesson(gs.activeLessonId!);
+                                    if (!mounted) return;
+                                    router.go(AppRoutes.battleLoading);
+                                  } else {
+                                    notifier.resetLesson();
+                                    if (mounted) router.go(AppRoutes.town);
+                                  }
                                 },
                         ),
                       ),

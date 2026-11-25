@@ -426,11 +426,13 @@ def seed_blueprint(db: Session, course_id: str = "en_new") -> dict[str, int]:
                 exercise_type=gl.exercise_type, xp_reward=gl.xp_reward,
                 word_count=gl.word_count, required_level=gl.required_level,
                 is_published=gl.is_published, is_checkpoint=gl.is_checkpoint,
+                passing_score=80 if gl.is_checkpoint else 100,
             ))
             lessons_created += 1
         else:
             # Sync non-content fields; never touch attempts/history.
             existing.is_checkpoint = gl.is_checkpoint
+            existing.passing_score = 80 if gl.is_checkpoint else 100
             existing.is_published = gl.is_published
             existing.exercise_type = gl.exercise_type
             existing.word_count = gl.word_count

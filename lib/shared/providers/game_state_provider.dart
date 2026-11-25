@@ -25,6 +25,13 @@ class GameState {
   final List<ExerciseResult> lastResults;
   final bool lastAlreadyCompleted;
   final String? lastIdempotencyKey;
+  final int lastAttemptNumber;
+  final bool lastIsCorrect;
+  final double lastScore;
+  final int lastPassingThreshold;
+  final bool lastPassed;
+  final List<LessonCompletion> lessonCompletions;
+
   // ─── Course architecture ───────────────────────────────────
   final List<Language> languages;
   final List<Course> courses;
@@ -50,6 +57,12 @@ class GameState {
     this.lastResults = const [],
     this.lastAlreadyCompleted = false,
     this.lastIdempotencyKey,
+    this.lastAttemptNumber = 1,
+    this.lastIsCorrect = false,
+    this.lastScore = 0,
+    this.lastPassingThreshold = 100,
+    this.lastPassed = false,
+    this.lessonCompletions = const [],
     this.languages = const [],
     this.courses = const [],
     this.units = const [],
@@ -77,6 +90,12 @@ class GameState {
     List<ExerciseResult>? lastResults,
     bool? lastAlreadyCompleted,
     String? lastIdempotencyKey,
+    int? lastAttemptNumber,
+    bool? lastIsCorrect,
+    double? lastScore,
+    int? lastPassingThreshold,
+    bool? lastPassed,
+    List<LessonCompletion>? lessonCompletions,
     List<Language>? languages,
     List<Course>? courses,
     List<CourseUnit>? units,
@@ -105,6 +124,12 @@ class GameState {
         lastAlreadyCompleted:
             lastAlreadyCompleted ?? this.lastAlreadyCompleted,
         lastIdempotencyKey: lastIdempotencyKey ?? this.lastIdempotencyKey,
+        lastAttemptNumber: lastAttemptNumber ?? this.lastAttemptNumber,
+        lastIsCorrect: lastIsCorrect ?? this.lastIsCorrect,
+        lastScore: lastScore ?? this.lastScore,
+        lastPassingThreshold: lastPassingThreshold ?? this.lastPassingThreshold,
+        lastPassed: lastPassed ?? this.lastPassed,
+        lessonCompletions: lessonCompletions ?? this.lessonCompletions,
         languages: languages ?? this.languages,
         courses: courses ?? this.courses,
         units: units ?? this.units,
@@ -174,6 +199,13 @@ class GameStateNotifier extends StateNotifier<GameState> {
       final courses = await api.getCourses(publishedOnly: true);
       List<CourseUnit> units = [];
       List<Lesson> lessons = [];
+      // Auto-assign en_new if user has no active course or a retired one.
+      if (user.activeCourseId == null || user.activeCourseId != 'en_new') {
+        await ensureActiveCourse();
+        // Re-read the user to get the updated activeCourseId
+        final updatedUser = await api.me();
+        user = updatedUser;
+      }
       if (user.activeCourseId != null) {
         try {
           units = await api.getUnitsForCourse(user.activeCourseId!);
@@ -190,10 +222,6 @@ class GameStateNotifier extends StateNotifier<GameState> {
           units: units,
           lessons: lessons,
         );
-        // Auto-assign en_new if user has no active course or a retired one.
-        if (user.activeCourseId == null || user.activeCourseId != 'en_new') {
-          await ensureActiveCourse();
-        }
       }
     } catch (error) {
       // Even if courses fail to load, still set authenticated state.
@@ -240,7 +268,7 @@ class GameStateNotifier extends StateNotifier<GameState> {
   }
 
   bool canStartLesson(String lessonId) => state.lessons.any(
-    (l) => l.id == lessonId && l.status != LessonStatus.locked,
+    (l) => l.id == lessonId && l.status != LessonStatus.locked && l.status != LessonStatus.unavailable,
   );
 
   Future<void> startLesson(String lessonId) async {
@@ -361,6 +389,13 @@ class GameStateNotifier extends StateNotifier<GameState> {
       final correctAnswers = (result['correct_answers'] as num?)?.toInt() ?? 0;
       final totalQuestions = (result['total_questions'] as num?)?.toInt() ?? 0;
       final alreadyCompleted = (result['already_completed'] as bool?) ?? false;
+      final attemptNumber = (result['attempt_number'] as num?)?.toInt() ?? 1;
+      final isCorrect = (result['is_correct'] as bool?) ?? false;
+      final score = (result['score'] as num?)?.toDouble() ??
+          (totalQuestions > 0 ? correctAnswers / totalQuestions : 0.0);
+      final passingThreshold = (result['passing_threshold'] as num?)?.toInt() ?? 100;
+      final passed = (result['passed'] as bool?) ??
+          (totalQuestions > 0 && correctAnswers * 100 >= totalQuestions * passingThreshold);
 
       final resultsRaw = result['results'] as List?;
       final results = resultsRaw != null
@@ -377,23 +412,13 @@ class GameStateNotifier extends StateNotifier<GameState> {
             }).toList()
           : <ExerciseResult>[];
 
-      final userRow = result['user'] as Map<String, dynamic>;
-      final user = DemoUser(
-        name: userRow['name'] as String,
-        email: userRow['email'] as String,
-        heroIndex: userRow['hero_index'] as int,
-        heroClassName: userRow['hero_class_name'] as String,
-        level: userRow['level'] as int,
-        xp: userRow['xp'] as int,
-        xpToNextLevel: userRow['xp_to_next_level'] as int,
-        streak: userRow['streak'] as int,
-        wordsFound: userRow['words_found'] as int,
-        lessonsCompleted: userRow['lessons_completed'] as int,
-        languageId: userRow['language_id'] as String,
-        activeCourseId: userRow['active_course_id'] as String?,
-        languageName: state.user.languageName,
-        languageScript: state.user.languageScript,
-      );
+      var user = state.user;
+      try {
+        user = await api.me();
+      } catch (_) {
+        // A successful attempt is already committed. A profile refresh
+        // failure must not turn that success into a retry or lose answers.
+      }
 
       final lessons = await api.lessons(courseId: user.activeCourseId);
       if (mounted) {
@@ -404,6 +429,11 @@ class GameStateNotifier extends StateNotifier<GameState> {
           lastXpEarned: xpEarned,
           lastCorrectAnswers: correctAnswers,
           lastTotalQuestions: totalQuestions,
+          lastAttemptNumber: attemptNumber,
+          lastIsCorrect: isCorrect,
+          lastScore: score,
+          lastPassingThreshold: passingThreshold,
+          lastPassed: passed,
           lastWordsLearned: wordsLearned,
           lastResults: results,
           lastAlreadyCompleted: alreadyCompleted,
@@ -457,3 +487,67 @@ final backendApiProvider = Provider<BackendApi>((ref) => BackendApi());
 final gameStateProvider = StateNotifierProvider<GameStateNotifier, GameState>(
   (ref) => GameStateNotifier(ref.watch(backendApiProvider)),
 );
+
+/// Provides the town map data (all lessons with availability status).
+final townMapProvider = FutureProvider<List<Lesson>>((ref) async {
+  final api = ref.watch(backendApiProvider);
+  final raw = await api.townMap('en_new');
+  return raw
+      .map((r) => Lesson(
+        id: r['id'] as String,
+        unitId: r['unit_sequence'] != null
+            ? (r['unit_sequence'] as num).toInt()
+            : null,
+        sequence: r['sequence'] != null ? (r['sequence'] as num).toInt() : null,
+        title: r['title'] as String,
+        subtitle: r['subtitle'] as String,
+        exerciseType: _parseExerciseType(r['exercise_type'] as String),
+        status: _lessonStatus(r['availability'] as String?),
+        xpReward: (r['xp_reward'] as num?)?.toInt() ?? 20,
+        wordCount: (r['word_count'] as num?)?.toInt() ?? 4,
+        requiredLevel: (r['required_level'] as num?)?.toInt() ?? 1,
+        isPublished: (r['is_published'] as bool?) ?? true,
+        isCheckpoint: (r['is_checkpoint'] as bool?) ?? false,
+        isCapstone: (r['is_capstone'] as bool?) ?? false,
+        availability: r['availability'] as String? ?? 'locked',
+        plannedExerciseCount: (r['planned_exercise_count'] as num?)?.toInt() ?? 0,
+        populatedExerciseCount: (r['populated_exercise_count'] as num?)?.toInt() ?? 0,
+      ))
+      .toList();
+});
+
+ExerciseType _parseExerciseType(String? value) {
+  switch (value) {
+    case 'matchWords':
+      return ExerciseType.matchWords;
+    case 'fillBlank':
+      return ExerciseType.fillBlank;
+    case 'pictureToWord':
+      return ExerciseType.pictureToWord;
+    case 'wordToPicture':
+      return ExerciseType.wordToPicture;
+    case 'translate':
+      return ExerciseType.translate;
+    case 'wordOrder':
+      return ExerciseType.wordOrder;
+    case 'dialogueComplete':
+      return ExerciseType.dialogueComplete;
+    default:
+      return ExerciseType.fillBlank;
+  }
+}
+
+LessonStatus _lessonStatus(String? value) {
+  switch (value) {
+    case 'cleared':
+    case 'completed':
+      return LessonStatus.completed;
+    case 'locked':
+      return LessonStatus.locked;
+    case 'unavailable':
+      return LessonStatus.unavailable;
+    case 'current':
+    default:
+      return LessonStatus.available;
+  }
+}

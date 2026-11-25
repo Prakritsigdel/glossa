@@ -5,6 +5,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Float,
     Index,
     Integer,
     JSON,
@@ -97,6 +98,9 @@ class User(Base):
     lessons_completed: Mapped[int] = mapped_column(Integer, default=0)
 
     attempts: Mapped[list["Attempt"]] = relationship(back_populates="user")
+    lesson_completions: Mapped[list["LessonCompletion"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
     active_course: Mapped["Course | None"] = relationship(back_populates="active_users")
 
 
@@ -120,6 +124,10 @@ class Lesson(Base):
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
     is_checkpoint: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # ── Passing threshold (Stage 6) ─────────────────────────────
+    # Ordinary lessons require 100 (fully correct). Checkpoints require 80.
+    passing_score: Mapped[int] = mapped_column(Integer, default=100, nullable=False)
+
     # ── Publication-readiness verification flags (Stage 3.1) ──────
     # All default to False; a lesson is not publication-ready until each
     # relevant domain is explicitly verified by a native speaker.
@@ -142,6 +150,9 @@ class Lesson(Base):
     )
     attempts: Mapped[list["Attempt"]] = relationship(back_populates="lesson")
     vocabulary: Mapped[list["LessonVocabulary"]] = relationship(
+        back_populates="lesson", cascade="all, delete-orphan"
+    )
+    completions: Mapped[list["LessonCompletion"]] = relationship(
         back_populates="lesson", cascade="all, delete-orphan"
     )
 
@@ -177,24 +188,66 @@ class Exercise(Base):
 class Attempt(Base):
     __tablename__ = "attempts"
     __table_args__ = (
-        # Unique constraint on user_id + lesson_id removed to allow retries.
-        # Duplicate submission protection is via idempotency_key.
-        UniqueConstraint("idempotency_key", name="uq_attempts_idempotency_key"),
+        # Keys are scoped to an account so unrelated users may reuse them.
+        UniqueConstraint("user_id", "idempotency_key", name="uq_attempts_user_idempotency_key"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     lesson_id: Mapped[str] = mapped_column(ForeignKey("lessons.id"))
     attempt_number: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-    idempotency_key: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    submission_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     is_correct: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     correct_answers: Mapped[int] = mapped_column(Integer)
     total_questions: Mapped[int] = mapped_column(Integer)
     xp_earned: Mapped[int] = mapped_column(Integer)
+    passing_threshold: Mapped[int | None] = mapped_column(Integer, nullable=True)
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="attempts")
     lesson: Mapped["Lesson"] = relationship(back_populates="attempts")
+
+
+class LessonCompletion(Base):
+    """A single completed lesson attempt for a user.
+
+    One record per (user_id, lesson_id) pair, enforced by a unique
+    constraint. This is the authoritative record of whether a lesson has
+    been completed and whether XP was awarded. It is separate from
+    Attempt, which records every individual submission (including failed
+    retries).
+
+    The `passed` flag distinguishes checkpoint completion (80%+) from
+    full correctness (100%). Only passed completions award XP, and only
+    once per user per lesson.
+    """
+
+    __tablename__ = "lesson_completions"
+    __table_args__ = (
+        UniqueConstraint("user_id", "lesson_id", name="uq_lesson_completion_user_lesson"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    lesson_id: Mapped[str] = mapped_column(
+        ForeignKey("lessons.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    score: Mapped[float] = mapped_column(Float, nullable=False)
+    passed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    xp_earned: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    correct_answers: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_questions: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    completed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    user: Mapped["User"] = relationship(back_populates="lesson_completions")
+    lesson: Mapped["Lesson"] = relationship(back_populates="completions")
+
+
 class VocabularyEntry(Base):
     """A single validated Newari vocabulary entry imported from a workbook.
 

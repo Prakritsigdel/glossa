@@ -5,12 +5,12 @@ import 'package:glossa_app/app/router/app_router.dart';
 import 'package:glossa_app/app/theme/glossa_colors.dart';
 import 'package:glossa_app/app/theme/glossa_typography.dart';
 import 'package:glossa_app/core/constants/spacing.dart';
-import 'package:glossa_app/core/widgets/glossa_card.dart';
 import 'package:glossa_app/core/widgets/glossa_button.dart';
+import 'package:glossa_app/core/widgets/glossa_card.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
-import 'package:glossa_app/shared/providers/game_state_provider.dart';
 import 'package:glossa_app/shared/models/course_models.dart';
+import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
 class TownScreen extends ConsumerStatefulWidget {
   const TownScreen({super.key});
@@ -20,53 +20,29 @@ class TownScreen extends ConsumerStatefulWidget {
 }
 
 class _TownScreenState extends ConsumerState<TownScreen> {
-  bool _isExpanded = false;
+  final bool _isExpanded = false;
   bool _isStartingLesson = false;
 
-  Future<void> _startLesson(Lesson lesson) async {
+  void _startLesson(Lesson lesson) {
     if (_isStartingLesson) return;
-    if (lesson.status == LessonStatus.locked) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Complete the previous lesson to unlock "${lesson.title}".',
-          ),
-        ),
-      );
-      return;
-    }
     setState(() => _isStartingLesson = true);
-    try {
-      await ref.read(gameStateProvider.notifier).startLesson(lesson.id);
+    ref.read(gameStateProvider.notifier).startLesson(lesson.id).then((_) {
       if (mounted) {
         context.go(AppRoutes.battleLoading);
       }
-    } catch (error) {
+    }).catchError((error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(error.toString())));
-      }
-    } finally {
-      if (mounted) {
         setState(() => _isStartingLesson = false);
       }
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final gs = ref.watch(gameStateProvider);
     final user = gs.user;
-    final lessons = gs.lessons;
-    final units = gs.units;
-
-    // Group lessons by unitId
-    final lessonsByUnit = <int, List<Lesson>>{};
-    for (final lesson in lessons) {
-      if (lesson.unitId != null) {
-        lessonsByUnit.putIfAbsent(lesson.unitId!, () => []).add(lesson);
-      }
-    }
 
     return Scaffold(
       body: SafeArea(
@@ -82,7 +58,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: Spacing.lg),
-                    // Player header with course switcher button
+                    // Player header
                     Row(
                       children: [
                         HeroAvatar(
@@ -116,13 +92,16 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                       fillColor: GlossaColors.redAction,
                     ),
                     const SizedBox(height: Spacing.xs),
-                    Row(
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: Spacing.sm,
+                      runSpacing: Spacing.xs,
                       children: [
                         Text(
                           '${user.xp} / ${user.xpToNextLevel} XP',
                           style: GlossaTypography.bodySmall,
                         ),
-                        const Spacer(),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -143,78 +122,83 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                       ],
                     ),
                     const SizedBox(height: Spacing.xl),
-                    // Dynamic unit sections
-                    if (units.isEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(Spacing.xl),
-                        decoration: BoxDecoration(
-                          color: GlossaColors.creamPale,
-                          borderRadius:
-                              BorderRadius.circular(Spacing.cardRadius),
-                        ),
-                        child: Column(
-                          children: [
-                            const Icon(Icons.school_rounded,
-                                size: 48, color: GlossaColors.textSubtle),
-                            const SizedBox(height: Spacing.md),
-                            Text(
-                              'No lessons available yet. Check back soon!',
-                              style: GlossaTypography.bodyMedium,
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: Spacing.md),
-                            GlossaButton(
-                              label: 'Back to Town',
-                              onPressed: () => context.go(AppRoutes.town),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      ...units.map((unit) {
-                        final unitLessons = lessonsByUnit[unit.id] ?? [];
-                        if (unitLessons.isEmpty) return const SizedBox.shrink();
-                        final displayLessons = _isExpanded
-                            ? unitLessons
-                            : unitLessons.take(3).toList();
-                        return _UnitSection(
-                          unit: unit,
-                          clearedInUnit: unitLessons
-                              .where((l) =>
-                                  l.status == LessonStatus.cleared)
-                              .length,
-                          totalInUnit: unitLessons.length,
-                          lessons: displayLessons,
-                          onStart: _startLesson,
-                        );
-                      }),
-                    // Expand/collapse button
-                    if (lessons.isNotEmpty)
-                      Center(
-                        child: GestureDetector(
-                          onTap: () =>
-                              setState(() => _isExpanded = !_isExpanded),
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: GlossaColors.yellowPrimary,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: GlossaColors.blueNavy,
-                                width: 2,
-                              ),
-                            ),
-                            child: Icon(
-                              _isExpanded
-                                  ? Icons.keyboard_arrow_up
-                                  : Icons.keyboard_arrow_down,
-                              color: GlossaColors.textDark,
-                            ),
+                    // Town map using townMap provider
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final lessonAsync = ref.watch(townMapProvider);
+                        return lessonAsync.when(
+                          data: (lessons) {
+                            if (lessons.isEmpty) {
+                              return Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(Spacing.xl),
+                                decoration: BoxDecoration(
+                                  color: GlossaColors.creamPale,
+                                  borderRadius:
+                                      BorderRadius.circular(Spacing.cardRadius),
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Icon(Icons.school_rounded,
+                                        size: 48,
+                                        color: GlossaColors.textSubtle),
+                                    const SizedBox(height: Spacing.md),
+                                    Text(
+                                      'No lessons available yet. Check back soon!',
+                                      style: GlossaTypography.bodyMedium,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: Spacing.md),
+                                    GlossaButton(
+                                      label: 'Back to Town',
+                                      onPressed: () =>
+                                          context.go(AppRoutes.town),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            // Group lessons by unitId
+                            final lessonsByUnit = <int, List<Lesson>>{};
+                            for (final lesson in lessons) {
+                              if (lesson.unitId != null) {
+                                lessonsByUnit.putIfAbsent(
+                                    lesson.unitId!, () => []).add(lesson);
+                              }
+                            }
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: lessonsByUnit.entries.map((entry) {
+                                final unitId = entry.key;
+                                final unitLessons = entry.value;
+                                if (unitLessons.isEmpty) return const SizedBox.shrink();
+                                final displayLessons = _isExpanded
+                                    ? unitLessons
+                                    : unitLessons.take(3).toList();
+                                return _UnitSection(
+                                  unitId: unitId,
+                                  clearedInUnit: unitLessons
+                                      .where((l) =>
+                                          l.status == LessonStatus.completed)
+                                      .length,
+                                  totalInUnit: unitLessons.length,
+                                  lessons: displayLessons,
+                                  onStart: _startLesson,
+                                );
+                              }).toList(),
+                            );
+                          },
+                          loading: () => const Center(
+                            child: CircularProgressIndicator(),
                           ),
-                        ),
-                      ),
+                          error: (error, _) => Center(
+                            child: Text('Error loading lessons: $error'),
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(height: Spacing.xxl),
                   ],
                 ),
@@ -230,7 +214,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
 class _LessonPathItem extends StatelessWidget {
   final Lesson lesson;
   final bool isLast;
-  final VoidCallback? onStart;
+  final void Function(Lesson)? onStart;
 
   const _LessonPathItem({
     required this.lesson,
@@ -256,7 +240,7 @@ class _LessonPathItem extends StatelessWidget {
                     color: _nodeColor,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: lesson.status == LessonStatus.current
+                      color: lesson.status == LessonStatus.available
                           ? GlossaColors.redAction
                           : GlossaColors.blueNavy,
                       width: 2,
@@ -280,7 +264,7 @@ class _LessonPathItem extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(bottom: Spacing.lg),
               child: GlossaCard(
-                backgroundColor: lesson.status == LessonStatus.locked
+                backgroundColor: lesson.status == LessonStatus.locked || lesson.status == LessonStatus.unavailable
                     ? GlossaColors.creamPale
                     : GlossaColors.white,
                 child: Row(
@@ -292,11 +276,19 @@ class _LessonPathItem extends StatelessWidget {
                           Text(
                             lesson.title,
                             style: GlossaTypography.headlineSmall.copyWith(
-                              color: lesson.status == LessonStatus.locked
+                              color: lesson.status == LessonStatus.locked || lesson.status == LessonStatus.unavailable
                                   ? GlossaColors.textSubtle
                                   : GlossaColors.textDark,
                             ),
                           ),
+                          if (lesson.isCheckpoint || lesson.isCapstone)
+                            Text(
+                              lesson.isCapstone ? 'CAPSTONE' : 'CHECKPOINT',
+                              style: GlossaTypography.labelSmall.copyWith(
+                                color: GlossaColors.redAction,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                           const SizedBox(height: 2),
                           Text(
                             lesson.subtitle,
@@ -318,20 +310,22 @@ class _LessonPathItem extends StatelessWidget {
 
   Color get _nodeColor {
     switch (lesson.status) {
-      case LessonStatus.cleared:
+      case LessonStatus.completed:
         return GlossaColors.successGreen;
-      case LessonStatus.current:
+      case LessonStatus.available:
         return GlossaColors.white;
       case LessonStatus.locked:
+        return GlossaColors.creamPale;
+      case LessonStatus.unavailable:
         return GlossaColors.creamPale;
     }
   }
 
   Widget get _nodeContent {
     switch (lesson.status) {
-      case LessonStatus.cleared:
+      case LessonStatus.completed:
         return const Icon(Icons.check, color: GlossaColors.white, size: 20);
-      case LessonStatus.current:
+      case LessonStatus.available:
         return Text(
           'GO',
           style: GlossaTypography.labelSmall.copyWith(
@@ -345,12 +339,14 @@ class _LessonPathItem extends StatelessWidget {
           'Lv ${lesson.requiredLevel}',
           style: GlossaTypography.labelSmall.copyWith(fontSize: 9),
         );
+      case LessonStatus.unavailable:
+        return const Icon(Icons.lock_outline, color: GlossaColors.textSubtle, size: 18);
     }
   }
 
   Widget get _statusBadge {
     switch (lesson.status) {
-      case LessonStatus.cleared:
+      case LessonStatus.completed:
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
@@ -364,9 +360,9 @@ class _LessonPathItem extends StatelessWidget {
             ),
           ),
         );
-      case LessonStatus.current:
+      case LessonStatus.available:
         return GestureDetector(
-          onTap: onStart,
+          onTap: onStart == null ? null : () => onStart!(lesson),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
@@ -377,7 +373,7 @@ class _LessonPathItem extends StatelessWidget {
               'Go!',
               style: GlossaTypography.labelSmall.copyWith(
                 color: GlossaColors.white,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ),
@@ -394,20 +390,28 @@ class _LessonPathItem extends StatelessWidget {
             style: GlossaTypography.labelSmall,
           ),
         );
+      case LessonStatus.unavailable:
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: GlossaColors.disabledGray, width: 1.5),
+          ),
+          child: Text('Coming soon', style: GlossaTypography.labelSmall),
+        );
     }
   }
 }
 
-/// A section for a unit, showing the unit header and its lessons.
 class _UnitSection extends StatelessWidget {
-  final CourseUnit unit;
+  final int unitId;
   final int clearedInUnit;
   final int totalInUnit;
   final List<Lesson> lessons;
-  final Future<void> Function(Lesson) onStart;
+  final void Function(Lesson) onStart;
 
   const _UnitSection({
-    required this.unit,
+    required this.unitId,
     required this.clearedInUnit,
     required this.totalInUnit,
     required this.lessons,
@@ -419,14 +423,15 @@ class _UnitSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Unit header with progress
-        Row(
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: Spacing.sm,
+          runSpacing: Spacing.xs,
           children: [
-            Expanded(
-              child: Text(
-                unit.title,
-                style: GlossaTypography.headlineMedium,
-              ),
+            Text(
+              _unitName(unitId),
+              style: GlossaTypography.headlineMedium,
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -451,20 +456,29 @@ class _UnitSection extends StatelessWidget {
               : GlossaColors.redAction,
         ),
         const SizedBox(height: Spacing.xl),
-        // Lesson path items
-        ...lessons.asMap().entries.map((entry) {
-          final i = entry.key;
-          final lesson = entry.value;
-          final isLast = i == lessons.length - 1;
-          return _LessonPathItem(
-            lesson: lesson,
-            isLast: isLast,
-            onStart: lesson.status == LessonStatus.current
-                ? () => onStart(lesson)
-                : null,
-          );
-        }),
+        ...lessons.map((lesson) => _LessonPathItem(
+          lesson: lesson,
+          isLast: lessons.last == lesson,
+          onStart: onStart,
+        )),
       ],
     );
+  }
+
+  String _unitName(int unitId) {
+    switch (unitId) {
+      case 1:
+        return 'Greetings';
+      case 2:
+        return 'Family';
+      case 3:
+        return 'Numbers & Colors';
+      case 4:
+        return 'Food & Drinks';
+      case 5:
+        return 'Home & Routines';
+      default:
+        return 'Unit $unitId';
+    }
   }
 }

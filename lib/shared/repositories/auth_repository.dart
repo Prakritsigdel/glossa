@@ -25,7 +25,7 @@ class MockAuthRepository implements AuthRepository {
     required String secretCode,
   }) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    _currentUser = DemoUser(name: name, email: email);
+    _currentUser = DemoUser(id: 'user1', name: name, email: email);
     return _currentUser;
   }
 
@@ -37,6 +37,7 @@ class MockAuthRepository implements AuthRepository {
     await Future.delayed(const Duration(milliseconds: 500));
     // Always succeed with seed user in demo
     _currentUser = const DemoUser(
+      id: 'user1',
       name: 'LeBron',
       email: 'lebron@example.com',
       heroIndex: 0,
