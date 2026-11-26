@@ -20,13 +20,32 @@ if TEST_URL:
     os.environ["JWT_SECRET"] = "stage6-isolated-postgres-test-secret"
 
 from fastapi.testclient import TestClient
-from sqlalchemy import event, select
+from sqlalchemy import create_engine, event, select
+from sqlalchemy.orm import sessionmaker
 
-from app.database import SessionLocal
+from app import database as database_module
 from app import main as main_module
+from app.config import settings
 from app.main import app
 from app.models import Attempt, Exercise, Lesson, LessonCompletion, Unit, User
 from app.security import create_token
+
+if TEST_URL and database_module.engine.url.get_backend_name() != "postgresql":
+    # Another test module may have imported the application before this
+    # module set DATABASE_URL, leaving the cached engine bound to the legacy
+    # SQLite file. Rebind settings, the engine and both session factories to
+    # the isolated PostgreSQL URL so these tests can never touch
+    # backend/glossa.db, whatever the collection order is.
+    settings.database_url = TEST_URL
+    settings.jwt_secret = "stage6-isolated-postgres-test-secret"
+    database_module.engine = create_engine(TEST_URL, pool_pre_ping=True)
+    _session_factory = sessionmaker(
+        bind=database_module.engine, autoflush=False, expire_on_commit=False
+    )
+    database_module.SessionLocal = _session_factory
+    main_module.SessionLocal = _session_factory
+
+SessionLocal = database_module.SessionLocal
 
 
 @unittest.skipUnless(TEST_URL, "Set GLOSSA_TEST_POSTGRES_URL to run isolated PostgreSQL HTTP concurrency tests")

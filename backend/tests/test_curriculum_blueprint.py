@@ -12,6 +12,7 @@ instance is required for unit tests.
 from __future__ import annotations
 
 import unittest
+from collections import Counter
 from pathlib import Path
 
 from sqlalchemy import create_engine, text
@@ -107,11 +108,18 @@ class TestCurriculumBlueprint(unittest.TestCase):
         self.assertEqual(UNIT_SEQUENCE["Home & Routines"], 5)
 
     def test_supported_exercise_types(self):
-        self.assertEqual(SUPPORTED_EXERCISE_TYPES, {"matchWords", "fillBlank", "translate"})
-        self.assertNotIn("pictureToWord", SUPPORTED_EXERCISE_TYPES)
-        self.assertNotIn("wordToPicture", SUPPORTED_EXERCISE_TYPES)
-        self.assertNotIn("wordOrder", SUPPORTED_EXERCISE_TYPES)
-        self.assertNotIn("dialogueComplete", SUPPORTED_EXERCISE_TYPES)
+        # Stage 8 extended support to all seven exercise types using
+        # illustration catalog, word-order phrases and dialogue content.
+        self.assertEqual(SUPPORTED_EXERCISE_TYPES, {
+            "matchWords", "fillBlank", "translate",
+            "pictureToWord", "wordToPicture",
+            "wordOrder", "dialogueComplete",
+        })
+        # All seven types are now supported.
+        for ex_type in ("matchWords", "fillBlank", "translate",
+                        "pictureToWord", "wordToPicture",
+                        "wordOrder", "dialogueComplete"):
+            self.assertIn(ex_type, SUPPORTED_EXERCISE_TYPES)
 
     def test_import_vocabulary_then_blueprint(self):
         session = make_session()
@@ -124,9 +132,12 @@ class TestCurriculumBlueprint(unittest.TestCase):
             generated = generate_blueprint_lessons(session, "en_new", units)
             self.assertEqual(len(generated), 15)
 
-            # All lessons unpublished
+            # All lessons unpublished — production safeguard
             for gl in generated:
-                self.assertFalse(gl.is_published)
+                self.assertFalse(
+                    gl.is_published,
+                    f"Lesson {gl.lesson_id} must be unpublished (provisional content requires verification)",
+                )
 
             # Checkpoint lessons flagged
             checkpoint_lessons = [gl for gl in generated if gl.is_checkpoint]
@@ -141,9 +152,30 @@ class TestCurriculumBlueprint(unittest.TestCase):
                 self.assertIn(pn, CHECKPOINT_LESSONS)
 
             # Only supported exercise types are generated
+            populated_by_type = Counter()
             for gl in generated:
                 for ex in gl.exercises:
                     self.assertIn(ex.exercise_type, SUPPORTED_EXERCISE_TYPES)
+                    populated_by_type[ex.exercise_type] += 1
+                    display_options = ex.options or ex.word_tiles or []
+                    devanagari = [o["text"] for o in display_options if o.get("is_devanagari")]
+                    self.assertEqual(len(devanagari), len(set(devanagari)))
+            # Stage 8: all 7 exercise types with counts from EXERCISE_SEQUENCES
+            self.assertEqual(populated_by_type["matchWords"], 19)
+            self.assertEqual(populated_by_type["fillBlank"], 35)
+            self.assertEqual(populated_by_type["translate"], 15)
+            self.assertEqual(populated_by_type["pictureToWord"], 15)
+            self.assertEqual(populated_by_type["wordToPicture"], 10)
+            self.assertEqual(populated_by_type["wordOrder"], 11)
+            self.assertEqual(populated_by_type["dialogueComplete"], 6)
+            total = sum(populated_by_type.values())
+            self.assertEqual(total, 111)
+            for gl in generated:
+                for ex in gl.exercises:
+                    if ex.exercise_type == "translate":
+                        self.assertEqual(len(ex.word_tiles), 4)
+                        self.assertEqual(len(ex.correct_answer_config["correct_sequence"]), 1)
+                        self.assertTrue(all(tile["romanization"] for tile in ex.word_tiles))
 
         finally:
             session.close()
@@ -159,7 +191,8 @@ class TestCurriculumBlueprint(unittest.TestCase):
             self.assertEqual(report1["total_lessons"], 15)
             self.assertEqual(report1["lessons_created"], 15)
             self.assertEqual(report1["lessons_existed"], 0)
-            self.assertGreater(report1["exercises_created"], 0)
+            # Stage 8: all 111 exercise slots populated across 7 exercise types
+            self.assertEqual(report1["total_created_exercises"], 111)
             self.assertEqual(session.query(Lesson).filter(Lesson.id.like("en_new_%")).count(), 15)
 
             # Re-run: no new lessons or exercises
@@ -170,6 +203,37 @@ class TestCurriculumBlueprint(unittest.TestCase):
             self.assertEqual(report2["exercises_existed"], report1["total_created_exercises"])
             self.assertEqual(session.query(Lesson).filter(Lesson.id.like("en_new_%")).count(), 15)
 
+        finally:
+            session.close()
+
+    def test_seed_preserves_published_and_verified_lesson_content(self):
+        session = make_session()
+        try:
+            seed_minimal_course(session)
+            import_vocabulary(session, XLSX_PATH)
+            units = session.query(Unit).filter(Unit.course_id == "en_new").all()
+            seed_blueprint(session, course_id="en_new")
+            lesson = session.get(Lesson, "en_new_u1_l1")
+            exercise = session.query(Exercise).filter_by(
+                lesson_id=lesson.id
+            ).first()
+            lesson.title = "Native-reviewed title"
+            lesson.is_published = True
+            lesson.vocabulary_verified = True
+            exercise.instruction = "Native-reviewed instruction"
+            session.commit()
+
+            report = seed_blueprint(session, course_id="en_new")
+
+            self.assertEqual(report["exercises_created"], 0)
+            # Lesson 1 has 5 planned exercises (EXERCISE_SEQUENCES[1])
+            self.assertEqual(session.query(Exercise).filter_by(
+                lesson_id=lesson.id
+            ).count(), 5)
+            self.assertEqual(lesson.title, "Native-reviewed title")
+            self.assertTrue(lesson.is_published)
+            self.assertTrue(lesson.vocabulary_verified)
+            self.assertEqual(exercise.instruction, "Native-reviewed instruction")
         finally:
             session.close()
 

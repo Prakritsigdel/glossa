@@ -501,9 +501,9 @@ def import_report(
 ) -> ImportReport:
     """Persist a parsed ImportReport idempotently.
 
-    Existing entries (matched by stable id) are updated in place; their
-    ``is_verified`` flag is never touched by import. New entries are
-    inserted ``is_verified = False``. Returns the report with
+    Existing unverified entries (matched by stable id) are refreshed in
+    place. Verified entries are immutable to workbook imports. New entries
+    are inserted ``is_verified = False``. Returns the report with
     ``imported_count`` / ``already_existed_count`` populated.
 
     Set ``dry_run=True`` to validate without writing.
@@ -531,8 +531,8 @@ def import_report(
                 )
             imported += 1
         else:
-            # Refresh source reference and content; preserve verification.
-            if not dry_run:
+            # A reviewed entry is authoritative; imports may not replace it.
+            if not dry_run and not existing.is_verified:
                 existing.source_worksheet = entry.worksheet
                 existing.source_row = entry.row
                 existing.unit = _map_unit(entry.lesson_numbers)

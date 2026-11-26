@@ -78,7 +78,162 @@ EXERCISE_SEQUENCES: dict[int, list[str]] = {
 }
 
 # Exercise types we can actually generate from imported vocabulary alone.
-SUPPORTED_EXERCISE_TYPES = {"matchWords", "fillBlank", "translate"}
+SUPPORTED_EXERCISE_TYPES = {
+    "matchWords", "fillBlank", "pictureToWord", "wordToPicture", "translate",
+    "wordOrder", "dialogueComplete",
+}
+ILLUSTRATION_KEY_BY_ENGLISH = {
+    "Hello": "hello", "Thank you": "thanks", "Yes": "yes", "No": "no",
+    "Good": "good", "Well / fine": "fine", "I": "self", "You": "you",
+    "Name": "name", "What": "what", "Who": "who",
+    "You (plural / formal)": "formal_people",
+    "Mother": "mother", "Father": "father", "Elder sister": "elder_sister",
+    "Elder brother": "elder_brother", "Younger brother": "younger_brother",
+    "Younger sister": "younger_sister", "Son": "son", "Daughter": "daughter",
+    "Child": "child", "Person": "person", "Woman": "woman", "Man": "man",
+    "One": "number_1", "Two": "number_2", "Three": "number_3",
+    "Four": "number_4", "Five": "number_5", "Six": "number_6",
+    "Seven": "number_7", "Eight": "number_8", "Nine": "number_9",
+    "Ten": "number_10", "How many": "how_many", "Red": "red",
+    "White": "white", "House / home": "house", "Water": "droplet",
+    "Bowl": "bowl", "Paper / book": "book", "Cooked rice": "cooked_rice",
+    "Tea": "tea", "Meat": "meat", "Fish": "fish", "Beaten rice": "beaten_rice",
+    "To eat": "to_eat", "To drink": "to_drink", "To give": "to_give",
+    "To take": "to_take", "Big": "big", "Small": "small", "Door": "door",
+    "Road": "road", "Place": "place", "Work": "work", "Fire": "fire",
+    "Where": "where", "To read / study": "to_read", "To go": "to_go",
+    "To come": "to_come", "To do": "to_do", "To sit / stay": "to_sit",
+    "To see": "to_see", "Today": "today", "To write": "to_write",
+}
+SUPPORTED_ILLUSTRATION_KEYS = set(ILLUSTRATION_KEY_BY_ENGLISH.values())
+PICTURE_TO_WORD_TARGETS = {
+    1: ["Hello"], 2: ["Name"], 4: ["Mother", "Father"],
+    5: ["Child"], 6: ["Person"], 7: ["One", "Two"],
+    8: ["House / home", "Bowl"], 10: ["Cooked rice", "Tea"],
+    13: ["Door", "Road"], 15: ["Water"],
+}
+WORD_TO_PICTURE_TARGETS = {
+    4: ["Elder sister", "Elder brother"], 5: ["Woman", "Man"],
+    6: ["Person"], 8: ["House / home", "Paper / book"],
+    10: ["Meat", "Fish"], 13: ["Place"],
+}
+
+# ── wordOrder phrase definitions ──────────────────────────────────
+# Each entry: (English prompt, [ordered Newari words], [ordered romanizations])
+# These are simple 2-3 word phrases built from imported vocabulary.
+# Content is provisional/developmental and must pass native-speaker verification.
+WORD_ORDER_PHRASES: dict[int, list[tuple[str, list[str], list[str]]]] = {
+    6: [  # Checkpoint: Family — "This is my..."
+        ("This is my mother", ["थ्व", "जिगु", "माँ"], ["thwa", "jigu", "māṃ"]),
+    ],
+    9: [  # Checkpoint: Counting Things — "two red bowls"
+        ("two red bowls", ["नि", "ह्यूँ", "कचा"], ["ni", "hyūṃ", "kachā"]),
+        ("one white house", ["छ", "तुयु", "छेँ"], ["chha", "tuyu", "chhẽ"]),
+    ],
+    11: [  # Eating and Drinking
+        ("eat cooked rice", ["जा", "नेगु"], ["jā", "negu"]),
+        ("drink tea", ["चा", "त्वनेगु"], ["chā", "twanegu"]),
+    ],
+    12: [  # Checkpoint: At the Table
+        ("give water", ["लः", "बियेगु"], ["laḥ", "biyegu"]),
+        ("take cooked rice", ["जा", "कायेगु"], ["jā", "kāyegu"]),
+    ],
+    14: [  # Daily Actions
+        ("go to work", ["ज्या", "वनेगु"], ["jyā", "wanegu"]),
+        ("come today", ["थौँ", "वयेगु"], ["thau", "wayegu"]),
+    ],
+    15: [  # Capstone: A Day in Newari
+        ("read a book", ["पौ", "ब्वनेगु"], ["pau", "bwanegu"]),
+        ("write today", ["थौँ", "च्वयेगु"], ["thau", "chwayegu"]),
+    ],
+}
+
+# ── dialogueComplete definitions ──────────────────────────────────
+# Each entry: (dialogue_lines, correct_option_index, option_texts)
+# dialogue_lines: list of {speaker, text, romanization?, missing?}
+# Content is provisional/developmental and must pass native-speaker verification.
+DIALOGUE_CONTENT: dict[int, list[dict[str, Any]]] = {
+    3: [{  # Checkpoint: Greetings
+        "dialogue": [
+            {"speaker": "A", "text": "ज्वजलपा", "romanization": "jwajalapa"},
+            {"speaker": "B", "text": "___", "missing": True},
+            {"speaker": "A", "text": "सुभाय्", "romanization": "subhāy"},
+        ],
+        "options": [
+            {"text": "ज्वजलपा", "romanization": "jwajalapa", "correct": True},
+            {"text": "मखु", "romanization": "makhu"},
+            {"text": "छु", "romanization": "chhu"},
+            {"text": "सु", "romanization": "su"},
+        ],
+    }],
+    12: [  # Checkpoint: At the Table
+        {
+            "dialogue": [
+                {"speaker": "A", "text": "चा त्वनेगु?", "romanization": "chā twanegu?"},
+                {"speaker": "B", "text": "___", "missing": True},
+                {"speaker": "A", "text": "सुभाय्", "romanization": "subhāy"},
+            ],
+            "options": [
+                {"text": "खः", "romanization": "khaḥ", "correct": True},
+                {"text": "मखु", "romanization": "makhu"},
+                {"text": "ला", "romanization": "lā"},
+                {"text": "लः", "romanization": "laḥ"},
+            ],
+        },
+        {
+            "dialogue": [
+                {"speaker": "A", "text": "छु नेगु?", "romanization": "chhu negu?"},
+                {"speaker": "B", "text": "___", "missing": True},
+            ],
+            "options": [
+                {"text": "जा", "romanization": "jā", "correct": True},
+                {"text": "चा", "romanization": "chā"},
+                {"text": "लः", "romanization": "laḥ"},
+                {"text": "पौ", "romanization": "pau"},
+            ],
+        },
+    ],
+    14: [{  # Daily Actions
+        "dialogue": [
+            {"speaker": "A", "text": "थौँ गन वनेगु?", "romanization": "thau gana wanegu?"},
+            {"speaker": "B", "text": "___", "missing": True},
+            {"speaker": "A", "text": "बांलाः", "romanization": "bāṅlāḥ"},
+        ],
+        "options": [
+            {"text": "ज्या वनेगु", "romanization": "jyā wanegu", "correct": True},
+            {"text": "चा त्वनेगु", "romanization": "chā twanegu"},
+            {"text": "थौँ", "romanization": "thau"},
+            {"text": "मखु", "romanization": "makhu"},
+        ],
+    }],
+    15: [  # Capstone: A Day in Newari
+        {
+            "dialogue": [
+                {"speaker": "A", "text": "ज्वजलपा! छि भिं?", "romanization": "jwajalapa! chhi bhiṃ?"},
+                {"speaker": "B", "text": "___", "missing": True},
+                {"speaker": "A", "text": "बांलाः! थौँ पौ ब्वनेगु।", "romanization": "bāṅlāḥ! thau pau bwanegu."},
+            ],
+            "options": [
+                {"text": "भिं", "romanization": "bhiṃ", "correct": True},
+                {"text": "मखु", "romanization": "makhu"},
+                {"text": "छु", "romanization": "chhu"},
+                {"text": "ला", "romanization": "lā"},
+            ],
+        },
+        {
+            "dialogue": [
+                {"speaker": "A", "text": "लः बियेगु?", "romanization": "laḥ biyegu?"},
+                {"speaker": "B", "text": "___", "missing": True},
+            ],
+            "options": [
+                {"text": "खः, सुभाय्", "romanization": "khaḥ, subhāy", "correct": True},
+                {"text": "मखु", "romanization": "makhu"},
+                {"text": "ज्या", "romanization": "jyā"},
+                {"text": "गन", "romanization": "gana"},
+            ],
+        },
+    ],
+}
 
 # Lesson titles (course plan Lesson Map).
 LESSON_TITLES: dict[int, str] = {
@@ -126,6 +281,7 @@ class WordPair:
     newari_script: str
     english_meaning: str
     romanization: str | None = None
+    vocabulary_id: str | None = None
 
 
 @dataclass
@@ -140,6 +296,7 @@ class GeneratedExercise:
     prompt: str | None = None
     prompt_hint: str | None = None
     image_key: str | None = None
+    illustration_id: str | None = None
     audio_key: str | None = None
     options: list[dict[str, Any]] | None = None
     answer_id: str | None = None
@@ -149,6 +306,7 @@ class GeneratedExercise:
     correct_answer_config: dict[str, Any] | None = None
     word_tiles: list[dict[str, Any]] | None = None
     dialogue_structure: list[dict[str, Any]] | None = None
+    vocabulary_reference: dict[str, Any] | None = None
 
 
 @dataclass
@@ -189,6 +347,10 @@ def _make_match_exercise(ex_id: str, lesson_id: str, sequence: int,
         instruction="Match the words", sequence=sequence,
         options=options, pairs=pair_map,
         correct_answer_config={"pairs": pair_map},
+        vocabulary_reference={
+            "entry_ids": [pair.vocabulary_id for pair in pairs if pair.vocabulary_id],
+            "source_worksheet": "Vocabulary",
+        },
     )
 
 
@@ -208,36 +370,217 @@ def _make_fillblank_exercise(ex_id: str, lesson_id: str, sequence: int,
         correct_answer_config={"correct_option_id": f"{ex_id}_a"},
         newari_script=answer.newari_script,
         romanization=answer.romanization,
+        vocabulary_reference={
+            "entry_ids": [pair.vocabulary_id for pair in [answer, *distractors]
+                          if pair.vocabulary_id],
+            "source_worksheet": "Vocabulary",
+        },
     )
 
 
 def _make_translate_exercise(ex_id: str, lesson_id: str, sequence: int,
-                             target: WordPair) -> GeneratedExercise | None:
-    """Create a translate exercise: build Newari from word tiles."""
-    # Each character is a tile; repeated characters get distinct tile IDs
-    tiles = []
-    tile_ids = []
-    for i, ch in enumerate(target.newari_script):
-        tile_id = f"{ex_id}_t{i + 1}"
+                             target: WordPair,
+                             distractors: list[WordPair]) -> GeneratedExercise | None:
+    """Build a sourced Newari word answer from stable whole-word tiles."""
+    choices = [target, *distractors]
+    unique_script: set[str] = set()
+    tiles: list[dict[str, Any]] = []
+    target_tile_id = ""
+    for i, pair in enumerate(choices, start=1):
+        if pair.newari_script in unique_script:
+            continue
+        unique_script.add(pair.newari_script)
+        tile_id = f"{ex_id}_t{i}"
+        if pair is target:
+            target_tile_id = tile_id
         tiles.append({
             "id": tile_id,
-            "text": ch,
+            "text": pair.newari_script,
             "is_devanagari": True,
-            "romanization": target.romanization,
+            "romanization": pair.romanization,
         })
-        tile_ids.append(tile_id)
+    if len(tiles) < 4 or not target_tile_id:
+        return None
 
     return GeneratedExercise(
         id=ex_id, lesson_id=lesson_id, exercise_type="translate",
-        instruction=f"Build the Newari word for '{target.english_meaning}'",
-        prompt=target.english_meaning, prompt_hint=target.romanization,
+        instruction="Choose the Newari word that matches the English meaning",
+        prompt=target.english_meaning,
         sequence=sequence,
         word_tiles=tiles,
         newari_script=target.newari_script,
         romanization=target.romanization,
         correct_answer_config={
-            "correct_sequence": tile_ids,
+            "correct_sequence": [target_tile_id],
             "alternative_sequences": [],
+        },
+        vocabulary_reference={
+            "entry_ids": [pair.vocabulary_id for pair in choices if pair.vocabulary_id],
+            "source_worksheet": "Vocabulary",
+        },
+    )
+
+
+def _vocabulary_reference(pairs: list[WordPair], **extra: Any) -> dict[str, Any]:
+    return {
+        "entry_ids": [pair.vocabulary_id for pair in pairs if pair.vocabulary_id],
+        "source_worksheet": "Vocabulary",
+        **extra,
+    }
+
+
+def _make_picture_to_word_exercise(
+    ex_id: str, lesson_id: str, sequence: int, target: WordPair,
+    choices: list[WordPair],
+) -> GeneratedExercise:
+    key = ILLUSTRATION_KEY_BY_ENGLISH[target.english_meaning]
+    option_rows = [
+        {
+            "id": f"{ex_id}_o{index}", "text": pair.newari_script,
+            "is_devanagari": True, "romanization": pair.romanization,
+        }
+        for index, pair in enumerate(choices, start=1)
+    ]
+    answer_id = next(
+        f"{ex_id}_o{index}"
+        for index, pair in enumerate(choices, start=1)
+        if pair.vocabulary_id == target.vocabulary_id
+    )
+    return GeneratedExercise(
+        id=ex_id, lesson_id=lesson_id, exercise_type="pictureToWord",
+        instruction="Choose the Newari word that matches the picture",
+        prompt=target.english_meaning, sequence=sequence,
+        image_key=key, illustration_id=key, options=option_rows,
+        answer_id=answer_id,
+        correct_answer_config={"correct_option_id": answer_id},
+        vocabulary_reference=_vocabulary_reference(choices),
+    )
+
+
+def _make_word_to_picture_exercise(
+    ex_id: str, lesson_id: str, sequence: int, target: WordPair,
+    choices: list[WordPair],
+) -> GeneratedExercise:
+    options = []
+    answer_id = ""
+    for index, pair in enumerate(choices, start=1):
+        key = ILLUSTRATION_KEY_BY_ENGLISH[pair.english_meaning]
+        option_id = f"{ex_id}_o{index}"
+        options.append({
+            "id": option_id, "text": pair.newari_script,
+            "is_devanagari": True, "romanization": pair.romanization,
+            "image_key": key,
+        })
+        if pair.vocabulary_id == target.vocabulary_id:
+            answer_id = option_id
+    return GeneratedExercise(
+        id=ex_id, lesson_id=lesson_id, exercise_type="wordToPicture",
+        instruction="Choose the picture that matches the Newari word",
+        prompt=target.newari_script, sequence=sequence,
+        romanization=target.romanization, options=options,
+        answer_id=answer_id,
+        correct_answer_config={"correct_option_id": answer_id},
+        vocabulary_reference=_vocabulary_reference(choices),
+    )
+
+
+def _make_word_order_exercise(
+    ex_id: str, lesson_id: str, sequence: int,
+    phrase: tuple[str, list[str], list[str]],
+    distractors: list[WordPair],
+) -> GeneratedExercise:
+    """Build a wordOrder exercise from a predefined phrase.
+
+    The learner arranges scrambled Newari word tiles into the correct order
+    to form a simple phrase.
+    """
+    english_prompt, correct_words, correct_romanizations = phrase
+    tiles: list[dict[str, Any]] = []
+    correct_tile_ids: list[str] = []
+
+    for i, (word, rom) in enumerate(zip(correct_words, correct_romanizations), start=1):
+        tile_id = f"{ex_id}_t{i}"
+        correct_tile_ids.append(tile_id)
+        tiles.append({
+            "id": tile_id,
+            "text": word,
+            "is_devanagari": True,
+            "romanization": rom,
+        })
+
+    # Add distractor tiles from vocabulary
+    for j, pair in enumerate(distractors[:2], start=len(tiles) + 1):
+        tile_id = f"{ex_id}_t{j}"
+        if pair.newari_script not in [t["text"] for t in tiles]:
+            tiles.append({
+                "id": tile_id,
+                "text": pair.newari_script,
+                "is_devanagari": True,
+                "romanization": pair.romanization,
+            })
+
+    if len(tiles) < 2:
+        return None
+
+    return GeneratedExercise(
+        id=ex_id, lesson_id=lesson_id, exercise_type="wordOrder",
+        instruction="Arrange the words in the correct order",
+        prompt=english_prompt, sequence=sequence,
+        word_tiles=tiles,
+        newari_script=" ".join(correct_words),
+        romanization=" ".join(correct_romanizations),
+        correct_answer_config={
+            "correct_sequence": correct_tile_ids,
+            "alternative_sequences": [],
+        },
+        vocabulary_reference={
+            "entry_ids": [],
+            "source_worksheet": "Vocabulary",
+            "provisional": True,
+        },
+    )
+
+
+def _make_dialogue_complete_exercise(
+    ex_id: str, lesson_id: str, sequence: int,
+    content: dict[str, Any],
+) -> GeneratedExercise:
+    """Build a dialogueComplete exercise from predefined dialogue content.
+
+    The learner reads a 2-3 line dialogue with one missing response and
+    selects the correct option to complete it.
+    """
+    dialogue = content["dialogue"]
+    raw_options = content["options"]
+
+    options: list[dict[str, Any]] = []
+    answer_id = ""
+    for i, opt in enumerate(raw_options, start=1):
+        opt_id = f"{ex_id}_o{i}"
+        options.append({
+            "id": opt_id,
+            "text": opt["text"],
+            "is_devanagari": True,
+            "romanization": opt.get("romanization", ""),
+        })
+        if opt.get("correct"):
+            answer_id = opt_id
+
+    if not answer_id:
+        return None
+
+    return GeneratedExercise(
+        id=ex_id, lesson_id=lesson_id, exercise_type="dialogueComplete",
+        instruction="Complete the dialogue",
+        sequence=sequence,
+        options=options,
+        answer_id=answer_id,
+        dialogue_structure=dialogue,
+        correct_answer_config={"correct_option_id": answer_id},
+        vocabulary_reference={
+            "entry_ids": [],
+            "source_worksheet": "Vocabulary",
+            "provisional": True,
         },
     )
 
@@ -286,6 +629,7 @@ def vocabulary_for_lesson(db: Session, lesson_number: int
             newari_script=row.newari_script,
             english_meaning=row.english_meaning,
             romanization=row.romanization,
+            vocabulary_id=row.id,
         )
         if nums[0] == lesson_number:
             introduced.append(pair)
@@ -332,35 +676,119 @@ def generate_blueprint_lessons(db: Session, course_id: str,
         exercise_types = EXERCISE_SEQUENCES[course_plan_lesson]
         exercises: list[GeneratedExercise] = []
 
-        # Allocate distinct words to each exercise slot where possible.
-        word_index = 0
+        # Exercise slots reuse only workbook entries assigned to this lesson.
+        # Repeated practice is intentional; Newari phrases are never synthesized.
+        distinct_words = []
+        seen_scripts: set[str] = set()
+        for pair in unique_available:
+            if pair.newari_script not in seen_scripts:
+                seen_scripts.add(pair.newari_script)
+                distinct_words.append(pair)
+        match_slot = 0
+        fill_slot = 0
+        translate_slot = 0
+        picture_slot = 0
+        image_choice_slot = 0
+        word_order_slot = 0
+        dialogue_slot = 0
+        by_english = {pair.english_meaning: pair for pair in unique_available}
+        illustrated_words = [
+            pair for pair in unique_available
+            if pair.english_meaning in ILLUSTRATION_KEY_BY_ENGLISH
+        ]
         for slot_idx, ex_type in enumerate(exercise_types, start=1):
+            if ex_type in ("pictureToWord", "wordToPicture"):
+                if ex_type == "pictureToWord":
+                    targets = PICTURE_TO_WORD_TARGETS.get(course_plan_lesson, [])
+                    target_index = picture_slot
+                    picture_slot += 1
+                else:
+                    targets = WORD_TO_PICTURE_TARGETS.get(course_plan_lesson, [])
+                    target_index = image_choice_slot
+                    image_choice_slot += 1
+                target_name = targets[target_index] if target_index < len(targets) else None
+                target = by_english.get(target_name) if target_name else None
+                if target is None or len(illustrated_words) < 4:
+                    raise ValueError(
+                        f"Illustration catalog lacks four workbook choices for lesson "
+                        f"{course_plan_lesson}, slot {slot_idx} ({target_name})"
+                    )
+                if ex_type == "pictureToWord":
+                    choices = [target, *[
+                        pair for pair in illustrated_words
+                        if pair.vocabulary_id != target.vocabulary_id
+                    ][:3]]
+                    exercise = _make_picture_to_word_exercise(
+                        _exercise_id(lesson_id, ex_type, slot_idx),
+                        lesson_id, slot_idx, target, choices,
+                    )
+                else:
+                    target_key = ILLUSTRATION_KEY_BY_ENGLISH[target.english_meaning]
+                    choices = [target, *[
+                        pair for pair in illustrated_words
+                        if pair.vocabulary_id != target.vocabulary_id
+                        and ILLUSTRATION_KEY_BY_ENGLISH[pair.english_meaning] != target_key
+                    ][:3]]
+                    exercise = _make_word_to_picture_exercise(
+                        _exercise_id(lesson_id, ex_type, slot_idx),
+                        lesson_id, slot_idx, target, choices,
+                    )
+                if len(choices) != 4:
+                    raise ValueError(f"Expected four distinct image choices in {exercise.id}")
+                exercises.append(exercise)
+                continue
+
             if ex_type not in SUPPORTED_EXERCISE_TYPES:
-                # Cannot fabricate picture/word-order/dialogue content.
                 continue
 
             ex_id = _exercise_id(lesson_id, ex_type, slot_idx)
 
             if ex_type == "matchWords":
-                pairs = unique_available[word_index:word_index + 4]
-                word_index += len(pairs)
+                if len(distinct_words) < 2:
+                    continue
+                start = (match_slot * 4) % len(distinct_words)
+                pairs = [
+                    distinct_words[(start + offset) % len(distinct_words)]
+                    for offset in range(min(4, len(distinct_words)))
+                ]
+                match_slot += 1
                 ex = _make_match_exercise(ex_id, lesson_id, slot_idx, pairs)
             elif ex_type == "fillBlank":
-                if word_index + 1 >= len(unique_available):
-                    break
-                answer = unique_available[word_index]
-                word_index += 1
-                distractors = unique_available[word_index:word_index + 3]
-                word_index += len(distractors)
-                if not distractors:
+                if len(distinct_words) < 4:
                     continue
+                answer = distinct_words[fill_slot % len(distinct_words)]
+                distractors = [pair for pair in distinct_words if pair is not answer][:3]
+                fill_slot += 1
                 ex = _make_fillblank_exercise(ex_id, lesson_id, slot_idx, answer, distractors)
             elif ex_type == "translate":
-                if word_index >= len(unique_available):
-                    break
-                target = unique_available[word_index]
-                word_index += 1
-                ex = _make_translate_exercise(ex_id, lesson_id, slot_idx, target)
+                if len(distinct_words) < 4:
+                    continue
+                target = distinct_words[translate_slot % len(distinct_words)]
+                distractors = [pair for pair in distinct_words if pair is not target][:3]
+                translate_slot += 1
+                ex = _make_translate_exercise(
+                    ex_id, lesson_id, slot_idx, target, distractors
+                )
+            elif ex_type == "wordOrder":
+                phrases = WORD_ORDER_PHRASES.get(course_plan_lesson, [])
+                if word_order_slot < len(phrases):
+                    phrase = phrases[word_order_slot]
+                    word_order_slot += 1
+                    ex = _make_word_order_exercise(
+                        ex_id, lesson_id, slot_idx, phrase, distinct_words[:2],
+                    )
+                else:
+                    continue
+            elif ex_type == "dialogueComplete":
+                dialogues = DIALOGUE_CONTENT.get(course_plan_lesson, [])
+                if dialogue_slot < len(dialogues):
+                    content = dialogues[dialogue_slot]
+                    dialogue_slot += 1
+                    ex = _make_dialogue_complete_exercise(
+                        ex_id, lesson_id, slot_idx, content,
+                    )
+                else:
+                    continue
             else:
                 continue
 
@@ -381,7 +809,7 @@ def generate_blueprint_lessons(db: Session, course_id: str,
             xp_reward=20,
             word_count=len(unique_available),
             required_level=1,
-            is_published=False,
+            is_published=False,  # Provisional content; requires native-speaker verification before publication
             is_checkpoint=is_checkpoint,
             exercises=exercises,
             introduced_vocab=introduced,
@@ -419,6 +847,7 @@ def seed_blueprint(db: Session, course_id: str = "en_new") -> dict[str, int]:
 
     for gl in generated:
         existing = db.get(Lesson, gl.lesson_id)
+        protect_existing_content = False
         if existing is None:
             db.add(Lesson(
                 id=gl.lesson_id, unit_id=gl.unit_id, sequence=gl.sequence,
@@ -430,16 +859,33 @@ def seed_blueprint(db: Session, course_id: str = "en_new") -> dict[str, int]:
             ))
             lessons_created += 1
         else:
-            # Sync active blueprint metadata; attempts/history remain untouched.
-            existing.title = gl.title
-            existing.subtitle = gl.subtitle
-            existing.is_checkpoint = gl.is_checkpoint
-            existing.passing_score = 80 if gl.is_checkpoint else 100
-            existing.is_published = gl.is_published
-            existing.exercise_type = gl.exercise_type
-            existing.xp_reward = gl.xp_reward
-            existing.word_count = gl.word_count
-            existing.required_level = gl.required_level
+            has_verified_vocabulary = db.query(LessonVocabulary).join(
+                VocabularyEntry,
+                LessonVocabulary.vocabulary_entry_id == VocabularyEntry.id,
+            ).filter(
+                LessonVocabulary.lesson_id == gl.lesson_id,
+                VocabularyEntry.is_verified.is_(True),
+            ).first() is not None
+            protect_existing_content = bool(
+                existing.is_published
+                or existing.vocabulary_verified
+                or existing.sentence_verified
+                or existing.dialogue_verified
+                or existing.illustration_verified
+                or has_verified_vocabulary
+            )
+            # Seed only synchronizes unverified blueprint shells. Published
+            # or reviewed lesson content is protected from startup changes.
+            if not protect_existing_content:
+                existing.title = gl.title
+                existing.subtitle = gl.subtitle
+                existing.is_checkpoint = gl.is_checkpoint
+                existing.passing_score = 80 if gl.is_checkpoint else 100
+                existing.is_published = gl.is_published
+                existing.exercise_type = gl.exercise_type
+                existing.xp_reward = gl.xp_reward
+                existing.word_count = gl.word_count
+                existing.required_level = gl.required_level
             lessons_existed += 1
 
         # Create / sync exercises for this lesson.
@@ -448,13 +894,36 @@ def seed_blueprint(db: Session, course_id: str = "en_new") -> dict[str, int]:
         }
         for ex in gl.exercises:
             if ex.id in existing_ex_ids:
+                current = db.get(Exercise, ex.id)
+                if (not protect_existing_content and current is not None
+                        and current.vocabulary_reference is None):
+                    # Older generated rows have no provenance reference.
+                    # Refresh only these unverified generated rows in place;
+                    # ids and learner progress records remain stable.
+                    current.instruction = ex.instruction
+                    current.prompt = ex.prompt
+                    current.prompt_hint = ex.prompt_hint
+                    current.image_key = ex.image_key
+                    current.illustration_id = ex.illustration_id
+                    current.audio_key = ex.audio_key
+                    current.sequence = ex.sequence
+                    current.options = ex.options
+                    current.answer_id = ex.answer_id
+                    current.pairs = ex.pairs
+                    current.newari_script = ex.newari_script
+                    current.romanization = ex.romanization
+                    current.correct_answer_config = ex.correct_answer_config
+                    current.word_tiles = ex.word_tiles
+                    current.dialogue_structure = ex.dialogue_structure
+                    current.vocabulary_reference = ex.vocabulary_reference
                 exercises_existed += 1
                 continue
             db.add(Exercise(
                 id=ex.id, lesson_id=ex.lesson_id,
                 exercise_type=ex.exercise_type, instruction=ex.instruction,
                 prompt=ex.prompt, prompt_hint=ex.prompt_hint,
-                image_key=ex.image_key, audio_key=ex.audio_key,
+                image_key=ex.image_key, illustration_id=ex.illustration_id,
+                audio_key=ex.audio_key,
                 sequence=ex.sequence, options=ex.options,
                 answer_id=ex.answer_id, pairs=ex.pairs,
                 newari_script=ex.newari_script,
@@ -462,6 +931,7 @@ def seed_blueprint(db: Session, course_id: str = "en_new") -> dict[str, int]:
                 correct_answer_config=ex.correct_answer_config,
                 word_tiles=ex.word_tiles,
                 dialogue_structure=ex.dialogue_structure,
+                vocabulary_reference=ex.vocabulary_reference,
             ))
             exercises_created += 1
 

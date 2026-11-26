@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+import logging
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,22 +12,56 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 import jwt
 
-from app.config import settings
+from app.config import (
+    content_environment,
+    development_content_enabled,
+    settings,
+)
 from app.database import SessionLocal
 from app.exercise_engine import validate_exercise, ALL_EXERCISE_TYPES
-from app.curriculum_blueprint import EXERCISE_SEQUENCES, LESSON_TO_UNIT, PLANNED_UNITS, UNIT_SEQUENCE
+from app.curriculum_blueprint import (
+    EXERCISE_SEQUENCES,
+    LESSON_TO_UNIT,
+    PLANNED_UNITS,
+    UNIT_SEQUENCE,
+    SUPPORTED_ILLUSTRATION_KEYS,
+)
 from app.models import (
     Attempt, Course, Exercise, Language, Lesson, LessonCompletion, Unit, User, VocabularyEntry
 )
 from app.schemas import (
     AnswerIn, AttemptIn, AuthOut, CourseOut, CourseUpdate, Credentials,
-    ExerciseAnswerIn, ExerciseOut, ExerciseResultOut, LessonAttemptIn,
+    ExerciseAnswerIn, ExerciseOptionOut, ExerciseOut, ExerciseResultOut, LessonAttemptIn,
     LessonAttemptOut, LanguageOut, LeaderboardEntryOut, LessonOut,
     ProfileUpdate, Registration, UnitOut, UserOut,
 )
 from app.security import create_token, hash_password, verify_password
 
-app = FastAPI(title="Glossa API", version="2.0.0")
+logger = logging.getLogger("glossa.api")
+
+# Shown by /health while GLOSSA_CONTENT_ENVIRONMENT=development so nobody
+# mistakes the provisional pilot curriculum for verified production content.
+DEVELOPMENT_CONTENT_NOTICE = (
+    "Development content environment: the English->Newari curriculum is "
+    "structurally complete but provisional and NOT verified by native "
+    "speakers. Vocabulary, sentences, dialogues and illustrations are "
+    "unverified; production publication safeguards stay active."
+)
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    if development_content_enabled():
+        logger.warning(
+            "GLOSSA_CONTENT_ENVIRONMENT=development: serving the provisional "
+            "unverified curriculum from an isolated development database."
+        )
+    else:
+        logger.info("Content environment: production (publication safeguards active)")
+    yield
+
+
+app = FastAPI(title="Glossa API", version="2.0.0", lifespan=_lifespan)
 origins = [item.strip() for item in settings.cors_origins.split(",") if item.strip()]
 app.add_middleware(
     CORSMiddleware,
@@ -150,26 +186,149 @@ def is_exercise_payload_valid(exercise: Exercise) -> bool:
         return False
     if exercise.exercise_type not in ALL_EXERCISE_TYPES:
         return False
-    if not exercise.options or not isinstance(exercise.options, list):
-        return False
-    # Every option must have an id and text
-    for opt in exercise.options:
-        if not isinstance(opt, dict):
-            return False
-        if not opt.get("id") or not opt.get("text"):
-            return False
-    # Type-specific structural checks
+    options = exercise.options or []
+    tiles = exercise.word_tiles or []
+
+    def valid_items(items: list, *, require_romanization: bool = False) -> bool:
+        ids: set[str] = set()
+        for item in items:
+            if not isinstance(item, dict):
+                return False
+            item_id = item.get("id")
+            text = item.get("text")
+            if not isinstance(item_id, str) or not item_id or item_id in ids:
+                return False
+            if not isinstance(text, str) or not text.strip():
+                return False
+            ids.add(item_id)
+            if item.get("is_devanagari") and require_romanization:
+                if not isinstance(item.get("romanization"), str) or not item["romanization"].strip():
+                    return False
+        return True
+
     if exercise.exercise_type == "matchWords":
-        if not exercise.pairs or not isinstance(exercise.pairs, dict):
+        if len(options) < 4 or not valid_items(options, require_romanization=True):
             return False
-    if exercise.exercise_type in ("fillBlank", "pictureToWord", "wordToPicture", "dialogueComplete"):
-        if not exercise.answer_id:
+        if len({item["text"] for item in options}) != len(options):
             return False
-    if exercise.exercise_type in ("translate", "wordOrder"):
-        if not exercise.word_tiles or not isinstance(exercise.word_tiles, list):
+        pairs = (exercise.correct_answer_config or {}).get("pairs") or exercise.pairs
+        if not isinstance(pairs, dict) or len(pairs) < 2:
             return False
-        if len(exercise.word_tiles) < 2:
+        option_ids = {item["id"] for item in options}
+        by_id = {item["id"]: item for item in options}
+        if any(
+            not isinstance(dev, str)
+            or not isinstance(eng, str)
+            or dev not in option_ids
+            or eng not in option_ids
+            or not by_id[dev].get("is_devanagari")
+            or by_id[eng].get("is_devanagari")
+            for dev, eng in pairs.items()
+        ):
             return False
+        if len(set(pairs.values())) != len(pairs):
+            return False
+    elif exercise.exercise_type in ("fillBlank", "pictureToWord", "wordToPicture", "dialogueComplete"):
+        if len(options) < 2 or not valid_items(options, require_romanization=True):
+            return False
+        if len({item["text"] for item in options}) != len(options):
+            return False
+        option_ids = {item["id"] for item in options}
+        correct_id = (exercise.correct_answer_config or {}).get(
+            "correct_option_id", exercise.answer_id
+        )
+        if not isinstance(correct_id, str) or correct_id not in option_ids:
+            return False
+        if exercise.exercise_type == "pictureToWord":
+            if exercise.image_key not in SUPPORTED_ILLUSTRATION_KEYS:
+                return False
+        if exercise.exercise_type == "wordToPicture":
+            image_keys = [item.get("image_key") for item in options]
+            if (
+                len(image_keys) != 4
+                or not all(isinstance(key, str) for key in image_keys)
+                or any(key not in SUPPORTED_ILLUSTRATION_KEYS for key in image_keys)
+                or len(set(image_keys)) != len(image_keys)
+            ):
+                return False
+        if exercise.exercise_type == "dialogueComplete":
+            dialogue = exercise.dialogue_structure or []
+            if (
+                len(dialogue) < 2
+                or not all(isinstance(line, dict) for line in dialogue)
+                or sum(line.get("missing") is True for line in dialogue) != 1
+            ):
+                return False
+    elif exercise.exercise_type in ("translate", "wordOrder"):
+        if len(tiles) < 2 or not valid_items(tiles, require_romanization=True):
+            return False
+        if exercise.exercise_type == "translate":
+            tile_texts = [tile["text"] for tile in tiles]
+            if len(tile_texts) != len(set(tile_texts)):
+                return False
+        config = exercise.correct_answer_config or {}
+        correct_sequence = config.get("correct_sequence")
+        tile_ids = {tile["id"] for tile in tiles}
+        if (
+            not isinstance(correct_sequence, list)
+            or not correct_sequence
+            or not all(isinstance(tile_id, str) for tile_id in correct_sequence)
+        ):
+            return False
+        if len(correct_sequence) != len(set(correct_sequence)):
+            return False
+        if not set(correct_sequence).issubset(tile_ids):
+            return False
+    return True
+
+
+def is_lesson_structurally_ready(db: Session, lesson: Lesson) -> bool:
+    """Check that a lesson's curriculum payload is structurally complete.
+
+    Structural checks only -- this never looks at publication or
+    verification flags, so it can be shared by:
+      * the strict production publication gate, and
+      * the isolated development environment, which plays structurally
+        complete content that is still awaiting native-speaker verification.
+    """
+    if not lesson.exercises:
+        return False
+
+    # All planned slots populated
+    planned = _planned_exercise_slots_for_lesson(lesson)
+    if len(lesson.exercises) < planned:
+        return False
+
+    plan_lesson = _plan_lesson_number(lesson.id)
+    if plan_lesson in EXERCISE_SEQUENCES:
+        expected = {
+            f"{lesson.id}_{exercise_type}{slot}": exercise_type
+            for slot, exercise_type in enumerate(EXERCISE_SEQUENCES[plan_lesson], start=1)
+        }
+        actual = {exercise.id: exercise.exercise_type for exercise in lesson.exercises}
+        if actual != expected:
+            return False
+
+    # All exercise payloads structurally valid
+    for exercise in lesson.exercises:
+        if not is_exercise_payload_valid(exercise):
+            return False
+
+    # Referenced vocabulary entries must exist on the lesson. Exercises
+    # without a provenance reference (provisional wordOrder/dialogue content)
+    # are allowed here; publication additionally requires references below.
+    vocab_ids = {lv.vocabulary_entry_id for lv in lesson.vocabulary or []}
+    if plan_lesson in EXERCISE_SEQUENCES:
+        for exercise in lesson.exercises:
+            references = (exercise.vocabulary_reference or {}).get("entry_ids")
+            if references and not set(references).issubset(vocab_ids):
+                return False
+
+    # Newari spelling + romanization present for exercises that have script
+    for exercise in lesson.exercises:
+        if exercise.newari_script and not exercise.romanization:
+            return False
+
     return True
 
 
@@ -187,23 +346,12 @@ def is_lesson_publication_ready(db: Session, lesson: Lesson) -> bool:
     # Explicit publication authorization required
     if not lesson.is_published:
         return False
-    if not lesson.exercises:
-        return False
 
-    # All planned slots populated
-    planned = _planned_exercise_slots_for_lesson(lesson)
-    if len(lesson.exercises) < planned:
+    if not is_lesson_structurally_ready(db, lesson):
         return False
-
-    # All exercise payloads structurally valid
-    for exercise in lesson.exercises:
-        if not is_exercise_payload_valid(exercise):
-            return False
 
     # All referenced vocabulary entries must be verified
-    vocab_ids = set()
-    for lv in lesson.vocabulary or []:
-        vocab_ids.add(lv.vocabulary_entry_id)
+    vocab_ids = {lv.vocabulary_entry_id for lv in lesson.vocabulary or []}
     if vocab_ids:
         verified_rows = db.scalars(
             select(VocabularyEntry.id).where(
@@ -213,10 +361,13 @@ def is_lesson_publication_ready(db: Session, lesson: Lesson) -> bool:
         if set(verified_rows) != vocab_ids:
             return False
 
-    # Newari spelling + romanization present for exercises that have script
-    for exercise in lesson.exercises:
-        if exercise.newari_script and not exercise.romanization:
-            return False
+    # Blueprint exercises must declare their vocabulary provenance
+    plan_lesson = _plan_lesson_number(lesson.id)
+    if plan_lesson in EXERCISE_SEQUENCES:
+        for exercise in lesson.exercises:
+            references = (exercise.vocabulary_reference or {}).get("entry_ids")
+            if not references or not set(references).issubset(vocab_ids):
+                return False
 
     # Domain-specific verification flags
     if not lesson.vocabulary_verified:
@@ -232,6 +383,35 @@ def is_lesson_publication_ready(db: Session, lesson: Lesson) -> bool:
         return False
 
     return True
+
+
+def lesson_is_playable(db: Session, lesson: Lesson) -> bool:
+    """Whether this lesson may be served to a learner in this environment.
+
+    Production (the default content environment) is unchanged: only
+    explicitly published lessons are playable, so unverified content is
+    rejected even if a lesson row is flagged published by mistake.
+
+    Development additionally serves structurally complete lessons from the
+    active blueprint, and only while GLOSSA_CONTENT_ENVIRONMENT=development.
+    Under a normal production configuration the provisional development
+    curriculum stays inaccessible because it is never published.
+    """
+    if lesson.is_published:
+        return True
+    if not development_content_enabled():
+        return False
+    if not _is_current_blueprint_lesson(lesson.id):
+        return False
+    # Development gameplay still requires the full planned exercise payload.
+    return is_lesson_structurally_ready(db, lesson)
+
+
+def _lesson_not_playable_detail() -> str:
+    """403 detail for a lesson that is not playable in this environment."""
+    if development_content_enabled():
+        return "Lesson is not available in this development environment."
+    return "Lesson is not published and awaiting verification."
 
 
 def lesson_publication_status(db: Session, lesson: Lesson) -> dict:
@@ -266,6 +446,7 @@ def lesson_publication_status(db: Session, lesson: Lesson) -> dict:
         "lesson_id": lesson.id,
         "is_published": lesson.is_published,
         "publication_ready": ready,
+        "content_environment": content_environment(),
         "blockers": reasons,
     }
 
@@ -302,16 +483,20 @@ def lesson_statuses(db: Session, user: User, course_id: str | None = None) -> di
     """Calculate cleared/current/locked status for lessons in a course."""
     cid = _resolve_course_id(course_id, user)
 
-    # Query published lessons in this course, ordered by unit.sequence then lesson.sequence
+    # Query playable lessons in this course, ordered by unit.sequence then lesson.sequence
     lessons = list(
         db.scalars(
             select(Lesson)
             .join(Unit, Lesson.unit_id == Unit.id)
-            .where(Unit.course_id == cid, Lesson.is_published == True)
+            .where(Unit.course_id == cid)
             .order_by(Unit.sequence, Lesson.sequence)
         ).all()
     )
-    lessons = [lesson for lesson in lessons if _is_current_blueprint_lesson(lesson.id)]
+    lessons = [
+        lesson
+        for lesson in lessons
+        if _is_current_blueprint_lesson(lesson.id) and lesson_is_playable(db, lesson)
+    ]
     if not lessons:
         return {}
 
@@ -329,7 +514,15 @@ def lesson_statuses(db: Session, user: User, course_id: str | None = None) -> di
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    environment = content_environment()
+    payload = {
+        "status": "ok",
+        "content_environment": environment,
+        "provisional_content": environment == "development",
+    }
+    if environment == "development":
+        payload["notice"] = DEVELOPMENT_CONTENT_NOTICE
+    return payload
 
 
 # ─── Auth ──────────────────────────────────────────────────────
@@ -518,11 +711,15 @@ def get_lessons(
         db.scalars(
             select(Lesson)
             .join(Unit, Lesson.unit_id == Unit.id)
-            .where(Unit.course_id == cid, Lesson.is_published == True)
+            .where(Unit.course_id == cid)
             .order_by(Unit.sequence, Lesson.sequence)
         ).all()
     )
-    lessons = [lesson for lesson in lessons if _is_current_blueprint_lesson(lesson.id)]
+    lessons = [
+        lesson
+        for lesson in lessons
+        if _is_current_blueprint_lesson(lesson.id) and lesson_is_playable(db, lesson)
+    ]
 
     return [
         {
@@ -543,6 +740,8 @@ def get_lessons(
             "availability": _lesson_availability(db, user, l),
             "planned_exercise_count": _planned_exercise_count_for_lesson(l),
             "populated_exercise_count": len(l.exercises) if l.exercises else 0,
+            "content_environment": content_environment(),
+            "provisional": not is_lesson_publication_ready(db, l),
         }
         for l in lessons
     ]
@@ -613,11 +812,13 @@ def get_exercises(
     if lesson_statuses(db, user).get(lesson_id) == "locked":
         raise HTTPException(status_code=403, detail="Lesson is locked")
     # Publication-readiness: unreviewed lessons remain unpublished and
-    # their exercises are not served to learners.
-    if not lesson.is_published:
+    # their exercises are not served to learners. The development content
+    # environment additionally serves structurally complete provisional
+    # lessons from an isolated database.
+    if not lesson_is_playable(db, lesson):
         raise HTTPException(
             status_code=403,
-            detail="Lesson is not published and awaiting verification.",
+            detail=_lesson_not_playable_detail(),
         )
     exercises = []
     for e in sorted(lesson.exercises, key=lambda x: (x.sequence or 0, x.id)):
@@ -659,8 +860,12 @@ def get_exercises(
                 prompt_hint=e.prompt_hint,
                 image_key=e.image_key,
                 audio_key=e.audio_key,
-                newari_script=e.newari_script,
-                romanization=e.romanization,
+                newari_script=None,
+                romanization=(
+                    e.romanization
+                    if e.exercise_type == "wordToPicture"
+                    else None
+                ),
                 illustration_id=e.illustration_id,
                 vocabulary_reference=e.vocabulary_reference,
                 options=public_options,
@@ -708,10 +913,10 @@ def submit_attempt(
         raise HTTPException(status_code=403, detail="Lesson is not part of the active curriculum")
 
     # Publication check: unreviewed lessons cannot be played.
-    if not lesson.is_published:
+    if not lesson_is_playable(db, lesson):
         raise HTTPException(
             status_code=403,
-            detail="Lesson is not published and awaiting verification.",
+            detail=_lesson_not_playable_detail(),
         )
 
     # Lock check: prerequisites must be completed.
@@ -996,10 +1201,10 @@ def check_answer(
     if not _is_current_blueprint_lesson(lesson.id):
         raise HTTPException(status_code=403, detail="Lesson is not part of the active curriculum")
     # Publication check: unreviewed lessons cannot be played or probed.
-    if not lesson.is_published:
+    if not lesson_is_playable(db, lesson):
         raise HTTPException(
             status_code=403,
-            detail="Lesson is not published and awaiting verification.",
+            detail=_lesson_not_playable_detail(),
         )
     if lesson_statuses(db, user).get(lesson_id) == "locked":
         raise HTTPException(status_code=403, detail="Lesson is locked")
@@ -1024,7 +1229,7 @@ def check_answer(
         submitted_payload = answer.selected_option_id
 
     validation = validate_exercise(
-        exercise.exercise_type, submitted_payload, ex_config
+        exercise.exercise_type, submitted_payload, ex_config, feedback=True
     )
     if not validation.valid:
         raise HTTPException(
@@ -1131,7 +1336,7 @@ def _lesson_prerequisite_met(db: Session, user: User, lesson: Lesson) -> bool:
     prev_lesson_id = f"en_new_u{prev_unit_seq}_l{prev_lesson_in_unit}"
 
     previous_lesson = db.get(Lesson, prev_lesson_id)
-    if previous_lesson is None or not previous_lesson.is_published:
+    if previous_lesson is None or not lesson_is_playable(db, previous_lesson):
         return False
     return _lesson_is_passed(db, user.id, prev_lesson_id)
 
@@ -1141,7 +1346,7 @@ def _lesson_availability(db: Session, user: User, lesson: Lesson) -> str:
 
     Returns one of: "unavailable", "locked", "available", "completed".
     """
-    if not lesson.is_published:
+    if not lesson_is_playable(db, lesson):
         return "unavailable"
     if _lesson_is_passed(db, user.id, lesson.id):
         return "completed"
@@ -1201,5 +1406,7 @@ def _get_town_map(db: Session, user: User, course_id: str) -> list[dict]:
             "availability": availability,
             "planned_exercise_count": _planned_exercise_count_for_lesson(lesson),
             "populated_exercise_count": len(lesson.exercises) if lesson.exercises else 0,
+            "content_environment": content_environment(),
+            "provisional": not is_lesson_publication_ready(db, lesson),
         })
     return result

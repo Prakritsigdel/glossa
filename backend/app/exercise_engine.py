@@ -90,6 +90,100 @@ def validate_matchwords(
     return ValidationResult(valid=True, correct=correct)
 
 
+def validate_matchwords_feedback(
+    submitted: dict[str, str],
+    correct_pairs: dict[str, str],
+) -> ValidationResult:
+    """Validate an incremental matchWords submission for answer feedback.
+
+    The lesson runner matches one pair at a time and merges every matched
+    pair for the final attempt, so ``/lessons/{id}/answer`` accepts a
+    subset of the pairs. Correctness means "every pair submitted so far is
+    right"; the attempt endpoint keeps the strict all-pairs requirement, so
+    scoring and XP are unaffected.
+    """
+    if not isinstance(submitted, dict) or not submitted:
+        return ValidationResult(
+            valid=False, correct=False,
+            error="Submission must be a non-empty object of pairs.",
+        )
+
+    valid_dev_ids = set(correct_pairs.keys())
+    valid_eng_ids = set(correct_pairs.values())
+
+    for dev_id, eng_id in submitted.items():
+        if dev_id not in valid_dev_ids:
+            return ValidationResult(
+                valid=False, correct=False,
+                error=f"Unknown devanagari option id: {dev_id}",
+            )
+        if eng_id not in valid_eng_ids:
+            return ValidationResult(
+                valid=False, correct=False,
+                error=f"Unknown english option id: {eng_id}",
+            )
+
+    if len(set(submitted)) != len(submitted):
+        return ValidationResult(
+            valid=False, correct=False,
+            error="Duplicate devanagari option in pairs.",
+        )
+    if len(set(submitted.values())) != len(submitted.values()):
+        return ValidationResult(
+            valid=False, correct=False,
+            error="Duplicate english option in pairs.",
+        )
+
+    correct = all(
+        correct_pairs.get(dev_id) == eng_id
+        for dev_id, eng_id in submitted.items()
+    )
+    return ValidationResult(valid=True, correct=correct)
+
+
+def validate_tile_sequence_feedback(
+    submitted_tile_ids: list[str] | None,
+    correct_sequence: list[str],
+    valid_tile_ids: set[str],
+    alternative_sequences: list[list[str]] | None = None,
+) -> ValidationResult:
+    """Validate a translate/wordOrder submission for answer feedback.
+
+    The runner allows checking a partially built answer. Feedback mode only
+    rejects unknown or repeated tile instances -- it never echoes the
+    missing correct tile ids back to the client. Correctness still requires
+    the complete sequence, so a partial answer is simply incorrect and the
+    learner can try again.
+    """
+    if submitted_tile_ids is None:
+        return ValidationResult(valid=False, correct=False, error="No tiles submitted.")
+    if not isinstance(submitted_tile_ids, list):
+        return ValidationResult(
+            valid=False, correct=False,
+            error="Submission must be a list of tile ids.",
+        )
+    if not submitted_tile_ids:
+        return ValidationResult(valid=False, correct=False, error="No tiles submitted.")
+
+    for tile_id in submitted_tile_ids:
+        if tile_id not in valid_tile_ids:
+            return ValidationResult(
+                valid=False, correct=False,
+                error="Unknown tile id.",
+            )
+    if len(submitted_tile_ids) != len(set(submitted_tile_ids)):
+        return ValidationResult(
+            valid=False, correct=False,
+            error="Duplicate tile instance used.",
+        )
+
+    all_correct_sequences = [correct_sequence] + (alternative_sequences or [])
+    correct = any(
+        submitted_tile_ids == sequence for sequence in all_correct_sequences
+    )
+    return ValidationResult(valid=True, correct=correct)
+
+
 # ═════════════════════════════════════════════════════════════════════
 # 2. fillBlank
 # ═════════════════════════════════════════════════════════════════════
@@ -288,11 +382,19 @@ def validate_exercise(
     exercise_type: str,
     submitted: Any,
     exercise: dict[str, Any],
+    *,
+    feedback: bool = False,
 ) -> ValidationResult:
     """Unified dispatcher for exercise answer validation.
 
     exercise: dict with exercise configuration fields including
     correct_answer_config, options, pairs, word_tiles, etc.
+
+    feedback: use the per-answer feedback rules of ``/lessons/{id}/answer``,
+    which accepts the incremental submissions the lesson runner sends
+    (one matched pair at a time, a partially built tile sequence) without
+    echoing the correct answer. Attempt scoring always uses the strict
+    default rules.
     """
     if exercise_type not in EXERCISE_VALIDATORS:
         return ValidationResult(
@@ -306,6 +408,8 @@ def validate_exercise(
 
     if exercise_type == "matchWords":
         correct_pairs = config.get("pairs") or exercise.get("pairs") or {}
+        if feedback:
+            return validate_matchwords_feedback(submitted, correct_pairs)
         return validate_matchwords(submitted, correct_pairs)
 
     if exercise_type in ("fillBlank", "pictureToWord", "wordToPicture"):
@@ -327,6 +431,11 @@ def validate_exercise(
             t["id"] for t in (exercise.get("word_tiles") or []) if isinstance(t, dict) and "id" in t
         }
         alternative_sequences = config.get("alternative_sequences") or []
+        if feedback:
+            return validate_tile_sequence_feedback(
+                submitted, correct_sequence, valid_tile_ids,
+                alternative_sequences,
+            )
         return EXERCISE_VALIDATORS[exercise_type](
             submitted, correct_sequence, valid_tile_ids, alternative_sequences
         )

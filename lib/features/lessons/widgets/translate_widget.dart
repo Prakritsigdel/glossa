@@ -137,16 +137,6 @@ class _TranslateContentState extends ConsumerState<TranslateContent> {
                   exercise.prompt ?? '',
                   style: GlossaTypography.headlineMedium,
                 ),
-                if (exercise.romanization != null) ...[
-                  const SizedBox(height: Spacing.sm),
-                  Text(
-                    '(${exercise.romanization})',
-                    style: GlossaTypography.bodySmall.copyWith(
-                      color: GlossaColors.textSubtle,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),

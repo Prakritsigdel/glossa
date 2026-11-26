@@ -795,14 +795,17 @@ class _PictureToWordContentState extends ConsumerState<_PictureToWordContent> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SimpleIllustration(
-                    imageKey: exercise.imageKey ?? 'bowl',
+                    imageKey: exercise.imageKey ?? '',
                     size: 100,
                   ),
                   const SizedBox(height: Spacing.sm),
-                  Text(
-                    exercise.prompt ?? 'What is this called?',
-                    style: GlossaTypography.bodySmall,
-                  ),
+                  if (SimpleIllustration.supports(exercise.imageKey))
+                    Text(
+                      exercise.prompt ?? 'What is this called?',
+                      style: GlossaTypography.bodySmall,
+                    )
+                  else
+                    const Text('Illustration unavailable'),
                 ],
               ),
             ),
@@ -1051,10 +1054,10 @@ class _WordToPictureContentState extends ConsumerState<_WordToPictureContent> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SimpleIllustration(
-                          imageKey: opt.imageKey ?? 'house',
-                          size: 60,
-                        ),
+                        if (SimpleIllustration.supports(opt.imageKey))
+                          SimpleIllustration(imageKey: opt.imageKey!, size: 60)
+                        else
+                          const Text('Illustration unavailable'),
                         const SizedBox(height: Spacing.sm),
                         Text(opt.text, style: GlossaTypography.labelMedium),
                       ],

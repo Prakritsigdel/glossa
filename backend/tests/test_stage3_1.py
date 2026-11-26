@@ -10,7 +10,11 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from app.database import Base
-from app.main import is_lesson_publication_ready, lesson_publication_status
+from app.main import (
+    is_exercise_payload_valid,
+    is_lesson_publication_ready,
+    lesson_publication_status,
+)
 from app.models import (
     Attempt, Course, Exercise, Language, Lesson, LessonVocabulary,
     Unit, User, VocabularyEntry,
@@ -74,10 +78,14 @@ def make_lesson_with_exercises(session, lesson_id, unit, published=False,
             id=f"{lesson_id}_ex{i}", lesson_id=lesson.id,
             exercise_type="matchWords", instruction="Match",
             sequence=i + 1,
-            options=[{"id": "d1", "text": "नमस्ते", "is_devanagari": True},
-                     {"id": "e1", "text": "Hello"}],
-            pairs={"d1": "e1"},
-            correct_answer_config={"pairs": {"d1": "e1"}},
+            options=[{"id": "d1", "text": "नमस्ते", "is_devanagari": True,
+                      "romanization": "namaste"},
+                     {"id": "e1", "text": "Hello"},
+                     {"id": "d2", "text": "धन्यवाद", "is_devanagari": True,
+                      "romanization": "dhanyabad"},
+                     {"id": "e2", "text": "Thank you"}],
+            pairs={"d1": "e1", "d2": "e2"},
+            correct_answer_config={"pairs": {"d1": "e1", "d2": "e2"}},
             newari_script="नमस्ते", romanization="namaste",
         )
         session.add(ex)
@@ -89,6 +97,52 @@ def make_lesson_with_exercises(session, lesson_id, unit, published=False,
     ))
     session.commit()
     return lesson
+
+
+class TestExercisePayloadStructure(unittest.TestCase):
+    def test_translate_and_word_order_accept_tile_only_payloads(self):
+        translate = Exercise(
+            id="tile_translate", lesson_id="test_lesson",
+            exercise_type="translate", instruction="Translate the word",
+            sequence=1, options=[],
+            word_tiles=[
+                {"id": "t1", "text": "TEST-ONE", "is_devanagari": True,
+                 "romanization": "test-one"},
+                {"id": "t2", "text": "TEST-TWO", "is_devanagari": True,
+                 "romanization": "test-two"},
+            ],
+            correct_answer_config={"correct_sequence": ["t1"]},
+        )
+        word_order = Exercise(
+            id="tile_order", lesson_id="test_lesson",
+            exercise_type="wordOrder", instruction="Arrange the words",
+            sequence=2, options=[],
+            word_tiles=[
+                {"id": "o1", "text": "TEST-SUBJECT", "is_devanagari": True,
+                 "romanization": "test-subject"},
+                {"id": "o2", "text": "TEST-VERB", "is_devanagari": True,
+                 "romanization": "test-verb"},
+            ],
+            correct_answer_config={"correct_sequence": ["o1", "o2"]},
+        )
+
+        self.assertTrue(is_exercise_payload_valid(translate))
+        self.assertTrue(is_exercise_payload_valid(word_order))
+
+    def test_picture_to_word_rejects_unknown_illustration_key(self):
+        exercise = Exercise(
+            id="bad_picture", lesson_id="test_lesson",
+            exercise_type="pictureToWord", instruction="Name the picture",
+            sequence=1, image_key="fabricated", options=[
+                {"id": "a", "text": "TEST-A", "is_devanagari": True,
+                 "romanization": "test-a"},
+                {"id": "b", "text": "TEST-B", "is_devanagari": True,
+                 "romanization": "test-b"},
+            ], answer_id="a",
+            correct_answer_config={"correct_option_id": "a"},
+        )
+
+        self.assertFalse(is_exercise_payload_valid(exercise))
 
 
 class TestPublicationEnforcementIntegration(unittest.TestCase):

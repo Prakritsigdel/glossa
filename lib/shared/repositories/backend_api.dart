@@ -321,7 +321,11 @@ class BackendApi {
   );
 
   Exercise _exercise(Map<String, dynamic> row) {
-    final type = _exerciseType(row['type'] as String);
+    // The backend serializes ExerciseOut.exercise_type; keep "type" as a
+    // fallback so payloads from older responses still parse.
+    final type = _exerciseType(
+      (row['exercise_type'] ?? row['type']) as String,
+    );
     final optionsRaw = row['options'] as List? ?? [];
     final options = optionsRaw.map((raw) {
       final option = raw as Map<String, dynamic>;

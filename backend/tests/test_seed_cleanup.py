@@ -79,8 +79,9 @@ class TestStartupSeedCleanup(unittest.TestCase):
             self.assertEqual(active["lesson_rows_present"], 15)
             self.assertEqual(active["checkpoints_including_capstone"], 5)
             self.assertEqual(active["planned_exercise_slots"], 111)
-            self.assertEqual(active["populated_exercise_slots"], 41)
-            self.assertEqual(active["missing_exercise_slots"], 70)
+            # Stage 8: all 7 exercise types implemented; all 111 slots populated
+            self.assertEqual(active["populated_exercise_slots"], 111)
+            self.assertEqual(active["missing_exercise_slots"], 0)
             self.assertEqual(active["published_lessons"], 0)
             self.assertEqual(active["imported_vocabulary_entries"], 70)
             self.assertEqual(history["retired_courses"], 1)

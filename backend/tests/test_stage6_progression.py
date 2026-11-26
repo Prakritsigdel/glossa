@@ -169,6 +169,143 @@ class TestStage6Progression(unittest.TestCase):
         self.assertEqual(len(units.json()), 5)
         self.assertEqual([unit["total_lessons"] for unit in units.json()], [3] * 5)
 
+    def test_all_seven_exercise_types_complete_through_isolated_http_api(self):
+        """Synthetic, test-only tokens exercise the full API contract in SQLite."""
+        lesson_id = self.lesson_ids[0]
+        fixtures = [
+            Exercise(
+                id="stage8_test_match", lesson_id=lesson_id,
+                exercise_type="matchWords", instruction="TEST ONLY: match tokens",
+                sequence=1, options=[
+                    {"id": "m_d1", "text": "TEST-A", "is_devanagari": True,
+                     "romanization": "fixture-a"},
+                    {"id": "m_e1", "text": "TEST-EN-A"},
+                    {"id": "m_d2", "text": "TEST-B", "is_devanagari": True,
+                     "romanization": "fixture-b"},
+                    {"id": "m_e2", "text": "TEST-EN-B"},
+                ], pairs={"m_d1": "m_e1", "m_d2": "m_e2"},
+                correct_answer_config={"pairs": {"m_d1": "m_e1", "m_d2": "m_e2"}},
+            ),
+            Exercise(
+                id="stage8_test_fill", lesson_id=lesson_id,
+                exercise_type="fillBlank", instruction="TEST ONLY: select token",
+                sequence=2, options=[
+                    {"id": "f_yes", "text": "TEST-CORRECT", "is_devanagari": True,
+                     "romanization": "fixture-correct"},
+                    {"id": "f_no", "text": "TEST-DISTRACTOR", "is_devanagari": True,
+                     "romanization": "fixture-distractor"},
+                ], answer_id="f_yes",
+                correct_answer_config={"correct_option_id": "f_yes"},
+            ),
+            Exercise(
+                id="stage8_test_picture_word", lesson_id=lesson_id,
+                exercise_type="pictureToWord", instruction="TEST ONLY: identify image",
+                sequence=3, image_key="droplet", options=[
+                    {"id": "p_yes", "text": "TEST-WATER", "is_devanagari": True,
+                     "romanization": "fixture-water"},
+                    {"id": "p_no", "text": "TEST-OTHER", "is_devanagari": True,
+                     "romanization": "fixture-other"},
+                ], answer_id="p_yes",
+                correct_answer_config={"correct_option_id": "p_yes"},
+            ),
+            Exercise(
+                id="stage8_test_word_picture", lesson_id=lesson_id,
+                exercise_type="wordToPicture", instruction="TEST ONLY: match image",
+                sequence=4, prompt="TEST-WORD", newari_script="TEST-WORD",
+                romanization="fixture-word", options=[
+                    {"id": f"w_{key}", "text": f"TEST-{key}", "image_key": key}
+                    for key in ("house", "droplet", "bowl", "person")
+                ], answer_id="w_droplet",
+                correct_answer_config={"correct_option_id": "w_droplet"},
+            ),
+            Exercise(
+                id="stage8_test_translate", lesson_id=lesson_id,
+                exercise_type="translate", instruction="TEST ONLY: choose word tile",
+                sequence=5, prompt="TEST-ENGLISH", options=[],
+                word_tiles=[
+                    {"id": f"t_{index}", "text": f"TEST-TOKEN-{index}",
+                     "is_devanagari": True, "romanization": f"fixture-{index}"}
+                    for index in range(1, 5)
+                ],
+                correct_answer_config={"correct_sequence": ["t_2"],
+                                       "alternative_sequences": []},
+            ),
+            Exercise(
+                id="stage8_test_word_order", lesson_id=lesson_id,
+                exercise_type="wordOrder", instruction="TEST ONLY: arrange tokens",
+                sequence=6, options=[],
+                word_tiles=[
+                    {"id": "o_1", "text": "TEST-SUBJECT", "is_devanagari": True,
+                     "romanization": "fixture-subject"},
+                    {"id": "o_2", "text": "TEST-VERB", "is_devanagari": True,
+                     "romanization": "fixture-verb"},
+                ],
+                correct_answer_config={"correct_sequence": ["o_1", "o_2"],
+                                       "alternative_sequences": []},
+            ),
+            Exercise(
+                id="stage8_test_dialogue", lesson_id=lesson_id,
+                exercise_type="dialogueComplete", instruction="TEST ONLY: choose response",
+                sequence=7, options=[
+                    {"id": "d_yes", "text": "TEST-RESPONSE", "is_devanagari": True,
+                     "romanization": "fixture-response"},
+                    {"id": "d_no", "text": "TEST-DISTRACTOR", "is_devanagari": True,
+                     "romanization": "fixture-distractor"},
+                ], answer_id="d_yes",
+                correct_answer_config={"correct_option_id": "d_yes"},
+                dialogue_structure=[
+                    {"speaker": "A", "text": "TEST PROMPT", "missing": False},
+                    {"speaker": "B", "text": "", "missing": True},
+                ],
+            ),
+        ]
+        with self.Session() as db:
+            db.add_all(fixtures)
+            db.get(Lesson, lesson_id).is_published = True
+            db.commit()
+
+        response = self.client.get(f"/api/v1/lessons/{lesson_id}/exercises")
+        self.assertEqual(response.status_code, 200)
+        payloads = response.json()
+        self.assertEqual({row["exercise_type"] for row in payloads}, {
+            "matchWords", "fillBlank", "pictureToWord", "wordToPicture",
+            "translate", "wordOrder", "dialogueComplete",
+        })
+        public_by_type = {row["exercise_type"]: row for row in payloads}
+        self.assertIsNone(public_by_type["translate"]["newari_script"])
+        self.assertIsNone(public_by_type["translate"]["romanization"])
+        self.assertIsNone(public_by_type["wordOrder"]["romanization"])
+        self.assertIsNone(public_by_type["wordToPicture"]["newari_script"])
+        self.assertEqual(public_by_type["wordToPicture"]["romanization"], "fixture-word")
+
+        answers = [
+            {"exercise_id": "stage8_test_match", "selected_pairs": {"m_d1": "m_e1", "m_d2": "m_e2"}},
+            {"exercise_id": "stage8_test_fill", "selected_option_id": "f_yes"},
+            {"exercise_id": "stage8_test_picture_word", "selected_option_id": "p_yes"},
+            {"exercise_id": "stage8_test_word_picture", "selected_option_id": "w_droplet"},
+            {"exercise_id": "stage8_test_translate", "selected_tile_ids": ["t_2"]},
+            {"exercise_id": "stage8_test_word_order", "selected_tile_ids": ["o_1", "o_2"]},
+            {"exercise_id": "stage8_test_dialogue", "selected_option_id": "d_yes"},
+        ]
+        for answer in answers:
+            checked = self.client.post(
+                f"/api/v1/lessons/{lesson_id}/answer",
+                json={"exercise_id": answer["exercise_id"], **{
+                    key: value for key, value in answer.items()
+                    if key != "exercise_id"
+                }},
+            )
+            self.assertEqual(checked.status_code, 200, checked.text)
+            self.assertTrue(checked.json()["correct"])
+
+        completed = self.client.post(
+            f"/api/v1/lessons/{lesson_id}/attempts",
+            json={"answers": answers, "idempotency_key": "stage8-seven-type-fixture"},
+        )
+        self.assertEqual(completed.status_code, 200, completed.text)
+        self.assertTrue(completed.json()["passed"])
+        self.assertEqual(completed.json()["total_questions"], 7)
+
     def test_sequential_unlocks_require_published_completed_prerequisites(self):
         l1, l2, l3, l4 = self.lesson_ids[:4]
         self._set_published(l1, l2, l3, l4)

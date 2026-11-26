@@ -166,6 +166,30 @@ class TestVocabularyImporter(unittest.TestCase):
         finally:
             session.close()
 
+    def test_reimport_does_not_overwrite_verified_vocabulary(self):
+        session = make_in_memory_session()
+        try:
+            import_vocabulary(session, XLSX_PATH)
+            row = session.query(VocabularyEntry).filter_by(
+                english_meaning="Mother"
+            ).one()
+            row.newari_script = "reviewed script"
+            row.romanization = "reviewed pronunciation"
+            row.source_row = 999
+            row.is_verified = True
+            session.commit()
+
+            report = import_vocabulary(session, XLSX_PATH)
+
+            self.assertEqual(report.imported_count, 0)
+            self.assertEqual(report.already_existed_count, 70)
+            self.assertEqual(row.newari_script, "reviewed script")
+            self.assertEqual(row.romanization, "reviewed pronunciation")
+            self.assertEqual(row.source_row, 999)
+            self.assertTrue(row.is_verified)
+        finally:
+            session.close()
+
     def test_dry_run_writes_nothing(self):
         session = make_in_memory_session()
         try:
