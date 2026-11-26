@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lottie/lottie.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
 import 'package:glossa_app/app/theme/glossa_colors.dart';
@@ -116,81 +117,93 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                               color: GlossaColors.white,
                               fontWeight: FontWeight.w700,
                             ),
-                          ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${user.streak}',
+                              style: GlossaTypography.labelMedium.copyWith(
+                                color: const Color(0xFFF95F2D),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                     const SizedBox(height: Spacing.xl),
-                    // Town map using townMap provider
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final lessonAsync = ref.watch(townMapProvider);
-                        return lessonAsync.when(
-                          data: (lessons) {
-                            if (lessons.isEmpty) {
-                              return Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(Spacing.xl),
-                                decoration: BoxDecoration(
-                                  color: GlossaColors.creamPale,
-                                  borderRadius:
-                                      BorderRadius.circular(Spacing.cardRadius),
-                                ),
-                                child: Column(
-                                  children: [
-                                    const Icon(Icons.school_rounded,
-                                        size: 48,
-                                        color: GlossaColors.textSubtle),
-                                    const SizedBox(height: Spacing.md),
-                                    Text(
-                                      'No lessons available yet. Check back soon!',
-                                      style: GlossaTypography.bodyMedium,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: Spacing.md),
-                                    GlossaButton(
-                                      label: 'Back to Town',
-                                      onPressed: () =>
-                                          context.go(AppRoutes.town),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-
-                            // Group lessons by unitId
-                            final lessonsByUnit = <int, List<Lesson>>{};
-                            for (final lesson in lessons) {
-                              if (lesson.unitId != null) {
-                                lessonsByUnit.putIfAbsent(
-                                    lesson.unitId!, () => []).add(lesson);
-                              }
-                            }
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: lessonsByUnit.entries.map((entry) {
-                                final unitId = entry.key;
-                                final unitLessons = entry.value;
-                                if (unitLessons.isEmpty) return const SizedBox.shrink();
-                                final displayLessons = _isExpanded
-                                    ? unitLessons
-                                    : unitLessons.take(3).toList();
-                                return _UnitSection(
-                                  unitId: unitId,
-                                  clearedInUnit: unitLessons
-                                      .where((l) =>
-                                          l.status == LessonStatus.completed)
-                                      .length,
-                                  totalInUnit: unitLessons.length,
-                                  lessons: displayLessons,
-                                  onStart: _startLesson,
-                                );
-                              }).toList(),
-                            );
-                          },
-                          loading: () => const Center(
-                            child: CircularProgressIndicator(),
+                    // Dynamic unit sections
+                    if (units.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(Spacing.xl),
+                        decoration: BoxDecoration(
+                          color: GlossaColors.creamPale,
+                          borderRadius: BorderRadius.circular(
+                            Spacing.cardRadius,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.school_rounded,
+                              size: 48,
+                              color: GlossaColors.textSubtle,
+                            ),
+                            const SizedBox(height: Spacing.md),
+                            Text(
+                              'No lessons available yet.\nSwitch to a course or check back soon!',
+                              style: GlossaTypography.bodyMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: Spacing.md),
+                            GlossaButton(
+                              label: 'Browse Courses',
+                              onPressed: () =>
+                                  context.push(AppRoutes.courseSwitcher),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      ...units.map((unit) {
+                        final unitLessons = lessonsByUnit[unit.id] ?? [];
+                        if (unitLessons.isEmpty) return const SizedBox.shrink();
+                        final displayLessons = _isExpanded
+                            ? unitLessons
+                            : unitLessons.take(3).toList();
+                        return _UnitSection(
+                          unit: unit,
+                          clearedInUnit: unitLessons
+                              .where((l) => l.status == LessonStatus.cleared)
+                              .length,
+                          totalInUnit: unitLessons.length,
+                          lessons: displayLessons,
+                          onStart: _startLesson,
+                        );
+                      }),
+                    // Expand/collapse button
+                    if (lessons.isNotEmpty)
+                      Center(
+                        child: GestureDetector(
+                          onTap: () =>
+                              setState(() => _isExpanded = !_isExpanded),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: GlossaColors.yellowPrimary,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: GlossaColors.blueNavy,
+                                width: 2,
+                              ),
+                            ),
+                            child: Icon(
+                              _isExpanded
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: GlossaColors.textDark,
+                            ),
                           ),
                           error: (error, _) => Center(
                             child: Text('Error loading lessons: $error'),
@@ -428,9 +441,8 @@ class _UnitSection extends StatelessWidget {
           spacing: Spacing.sm,
           runSpacing: Spacing.xs,
           children: [
-            Text(
-              _unitName(unitId),
-              style: GlossaTypography.headlineMedium,
+            Expanded(
+              child: Text(unit.title, style: GlossaTypography.headlineMedium),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lottie/lottie.dart';
 import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/router/app_router.dart';
 import 'package:glossa_app/app/theme/glossa_colors.dart';
@@ -155,17 +156,133 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         _buildStatBox(
                           'Words Found',
                           '${user.wordsFound}',
-                          '📚',
+                          Lottie.asset(
+                            'assets/animations/Words_Found.json',
+                            width: 42,
+                            height: 42,
+                            repeat: true,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(
+                                  Icons.menu_book_rounded,
+                                  size: 36,
+                                  color: GlossaColors.blueNavy,
+                                ),
+                          ),
                         ),
                         const SizedBox(width: Spacing.sm),
-                        _buildStatBox('Day Streak', '${user.streak}d', '🔥'),
+                        _buildStatBox(
+                          'Day Streak',
+                          '${user.streak}d',
+                          Lottie.asset(
+                            'assets/animations/Fire.json',
+                            width: 42,
+                            height: 42,
+                            repeat: true,
+                          ),
+                        ),
                         const SizedBox(width: Spacing.sm),
                         _buildStatBox(
                           'Lessons',
                           '${user.lessonsCompleted}',
-                          '⚔️',
+                          Lottie.asset(
+                            'assets/animations/Lessons.json',
+                            width: 42,
+                            height: 42,
+                            repeat: true,
+                          ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: Spacing.xl),
+
+                    // ─── Full-body hero preview ────────────────
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(Spacing.lg),
+                      decoration: BoxDecoration(
+                        color: GlossaColors.white,
+                        borderRadius: BorderRadius.circular(Spacing.cardRadius),
+                        border: Border.all(
+                          color: GlossaColors.blueNavy,
+                          width: 2.5,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: GlossaColors.blueNavy,
+                            offset: Offset(0, 4),
+                            blurRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Your Hero',
+                            style: GlossaTypography.headlineMedium,
+                          ),
+                          const SizedBox(height: Spacing.md),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              HeroAvatarLarge(
+                                heroIndex: user.heroIndex,
+                                level: user.level,
+                                size: 118,
+                                animateIdle: true,
+                              ),
+                              const SizedBox(width: Spacing.md),
+                              Expanded(
+                                child: Column(
+                                  children: [
+                                    _buildHeroStat(
+                                      'HP',
+                                      120,
+                                      const Icon(
+                                        Icons.favorite_rounded,
+                                        size: 16,
+                                        color: GlossaColors.redAction,
+                                      ),
+                                    ),
+                                    _buildHeroStat(
+                                      'Attack',
+                                      24,
+                                      const _SwordStatIcon(),
+                                    ),
+                                    _buildHeroStat(
+                                      'Defense',
+                                      18,
+                                      const Icon(
+                                        Icons.shield_rounded,
+                                        size: 16,
+                                        color: GlossaColors.redAction,
+                                      ),
+                                    ),
+                                    _buildHeroStat(
+                                      'Speed',
+                                      16,
+                                      const Icon(
+                                        Icons.directions_run_rounded,
+                                        size: 16,
+                                        color: GlossaColors.redAction,
+                                      ),
+                                    ),
+                                    _buildHeroStat(
+                                      'Magic',
+                                      32,
+                                      const Icon(
+                                        Icons.local_fire_department_rounded,
+                                        size: 16,
+                                        color: GlossaColors.redAction,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: Spacing.xl),
 
@@ -200,21 +317,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 size: 20,
                               ),
                               onTap: null,
-                            ),
-                            const Divider(height: 1, thickness: 1),
-                            ListTile(
-                              leading: const Icon(
-                                Icons.switch_account_rounded,
-                                color: GlossaColors.blueNavy,
-                              ),
-                              title: Text(
-                                'Switch Hero Appearance',
-                                style: GlossaTypography.labelMedium,
-                              ),
-                              trailing: const Icon(Icons.chevron_right_rounded),
-                              onTap: () => context.push(
-                                '${AppRoutes.characterSelect}?mode=edit',
-                              ),
                             ),
                             const Divider(height: 1, thickness: 1),
                             ListTile(
@@ -271,7 +373,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildStatBox(String label, String value, String icon) {
+  Widget _buildStatBox(String label, String value, Widget icon) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(
@@ -285,7 +387,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         child: Column(
           children: [
-            Text(icon, style: const TextStyle(fontSize: 20)),
+            SizedBox(height: 42, child: Center(child: icon)),
             const SizedBox(height: 4),
             Text(
               value,
@@ -304,4 +406,87 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
   }
+
+  Widget _buildHeroStat(String label, int value, Widget icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(width: 18, height: 18, child: Center(child: icon)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label,
+              style: GlossaTypography.bodySmall.copyWith(
+                color: GlossaColors.blueNavy,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Text(
+            '$value',
+            style: GlossaTypography.labelMedium.copyWith(
+              color: GlossaColors.blueNavy,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SwordStatIcon extends StatelessWidget {
+  const _SwordStatIcon();
+
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+    width: 16,
+    height: 16,
+    child: CustomPaint(painter: _SwordStatPainter()),
+  );
+}
+
+class _SwordStatPainter extends CustomPainter {
+  const _SwordStatPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fillPaint = Paint()
+      ..color = GlossaColors.redAction
+      ..style = PaintingStyle.fill;
+    final linePaint = Paint()
+      ..color = GlossaColors.redAction
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final blade = Path()
+      ..moveTo(size.width * 0.88, size.height * 0.08)
+      ..lineTo(size.width * 0.58, size.height * 0.67)
+      ..lineTo(size.width * 0.34, size.height * 0.43)
+      ..close();
+    canvas.drawPath(blade, fillPaint);
+    canvas.drawLine(
+      Offset(size.width * 0.3, size.height * 0.45),
+      Offset(size.width * 0.65, size.height * 0.8),
+      linePaint..strokeWidth = 2.2,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.16, size.height * 0.62),
+      Offset(size.width * 0.48, size.height * 0.3),
+      linePaint..strokeWidth = 2.4,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.31, size.height * 0.77),
+      Offset(size.width * 0.2, size.height * 0.88),
+      linePaint..strokeWidth = 2.4,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.13, size.height * 0.9),
+      size.width * 0.08,
+      fillPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _SwordStatPainter oldDelegate) => false;
 }
