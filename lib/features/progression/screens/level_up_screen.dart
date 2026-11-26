@@ -36,10 +36,7 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
     )..forward();
 
     _titleScale = Tween<double>(begin: 0.7, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _celebrationController,
-        curve: Curves.elasticOut,
-      ),
+      CurvedAnimation(parent: _celebrationController, curve: Curves.elasticOut),
     );
   }
 
@@ -77,7 +74,9 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                   child: Column(
                     children: [
                       SizedBox(
-                          height: MediaQuery.of(context).padding.top + Spacing.xxl),
+                        height:
+                            MediaQuery.of(context).padding.top + Spacing.xxl,
+                      ),
 
                       // ─── Yellow arch with hero + particle bursts ──
                       SizedBox(
@@ -99,7 +98,9 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                                   bottomRight: Radius.circular(20),
                                 ),
                                 border: Border.all(
-                                    color: GlossaColors.blueNavy, width: 3),
+                                  color: GlossaColors.blueNavy,
+                                  width: 3,
+                                ),
                                 boxShadow: const [
                                   BoxShadow(
                                     color: Color(0x33000000),
@@ -129,7 +130,7 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                       ScaleTransition(
                         scale: _titleScale,
                         child: Text(
-                          'LEVEL UP!',
+                          gs.lastPassed ? 'LESSON PASSED' : 'TRY AGAIN',
                           style: GlossaTypography.displayLarge.copyWith(
                             color: GlossaColors.yellowPrimary,
                             fontSize: 36,
@@ -141,78 +142,44 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                       const SizedBox(height: Spacing.sm),
                       Text(
                         'Lv ${user.level} ${user.levelTitle}',
-                        style: GlossaTypography.headlineMedium
-                            .copyWith(color: GlossaColors.white),
+                        style: GlossaTypography.headlineMedium.copyWith(
+                          color: GlossaColors.white,
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.sm),
+                      Text(
+                        'Score: ${(gs.lastScore * 100).toStringAsFixed(0)}% · Pass mark: ${gs.lastPassingThreshold}%${gs.lastAlreadyCompleted ? ' · Already completed' : ''}',
+                        textAlign: TextAlign.center,
+                        style: GlossaTypography.bodyMedium.copyWith(
+                          color: GlossaColors.white,
+                        ),
                       ),
                       const SizedBox(height: Spacing.xl),
 
                       // ─── XP progress ───────────────────
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.pagePadding * 2),
+                          horizontal: Spacing.pagePadding * 2,
+                        ),
                         child: Column(
                           children: [
                             GlossaProgressBar(
                               progress: xpProgress,
                               fillColor: GlossaColors.yellowPrimary,
-                              trackColor: GlossaColors.white.withValues(alpha: 0.2),
+                              trackColor: GlossaColors.white.withValues(
+                                alpha: 0.2,
+                              ),
                               height: 14,
                             ),
                             const SizedBox(height: Spacing.sm),
                             Text(
                               '${user.xp} / ${user.xpToNextLevel} XP',
-                              style: GlossaTypography.bodySmall
-                                  .copyWith(color: GlossaColors.white.withValues(alpha: 0.8)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: Spacing.xxl),
-
-                      // ─── Learned words ─────────────────
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.pagePadding),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Words learned',
-                                style: GlossaTypography.headlineSmall
-                                  .copyWith(color: GlossaColors.white)),
-                            const SizedBox(height: Spacing.md),
-                            // FIX 5: use real words from the completed lesson
-                            gs.lastWordsLearned.isNotEmpty
-                              ? Wrap(
-                                  spacing: Spacing.sm,
-                                  runSpacing: Spacing.sm,
-                                  children: gs.lastWordsLearned
-                                      .map((w) => Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 16, vertical: 8),
-                                            decoration: BoxDecoration(
-                                              color: GlossaColors.yellowPrimary
-                                                  .withValues(alpha: 0.25),
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                              border: Border.all(
-                                                  color: GlossaColors.yellowPrimary,
-                                                  width: 1.5),
-                                            ),
-                                            child: Text(
-                                              w,
-                                              style: GlossaTypography.devanagariSmall
-                                                  .copyWith(
-                                                      color: GlossaColors
-                                                          .yellowPrimary),
-                                            ),
-                                          ))
-                                      .toList(),
-                                )
-                              : Text(
-                                  'Keep learning!',
-                                  style: GlossaTypography.bodySmall
-                                      .copyWith(color: GlossaColors.white),
+                              style: GlossaTypography.bodySmall.copyWith(
+                                color: GlossaColors.white.withValues(
+                                  alpha: 0.8,
                                 ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -221,7 +188,8 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                       // ─── Stat cards ────────────────────
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.pagePadding),
+                          horizontal: Spacing.pagePadding,
+                        ),
                         child: Row(
                           children: [
                             _StatCard(
@@ -231,7 +199,8 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                             ),
                             const SizedBox(width: Spacing.md),
                             _StatCard(
-                              value: '${gs.lastCorrectAnswers}/${gs.lastTotalQuestions}',
+                              value:
+                                  '${gs.lastCorrectAnswers}/${gs.lastTotalQuestions}',
                               label: 'Hits',
                               color: GlossaColors.successGreen,
                             ),
@@ -249,19 +218,33 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                       // ─── Back to Town button ───────────
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.pagePadding),
+                          horizontal: Spacing.pagePadding,
+                        ),
                         child: GlossaButton(
-                          label: 'Back to Town',
-                          loadingLabel: 'Returning to Town...',
+                          label: gs.lastPassed ? 'Continue' : 'Retry lesson',
+                          loadingLabel: gs.lastPassed
+                              ? 'Continuing...'
+                              : 'Retrying...',
                           style: GlossaButtonStyle.secondary,
                           onPressed: _navigating
                               ? null
-                              : () {
+                              : () async {
                                   setState(() => _navigating = true);
-                                  ref
-                                      .read(gameStateProvider.notifier)
-                                      .resetLesson();
-                                  context.go(AppRoutes.town);
+                                  final router = GoRouter.of(context);
+                                  final notifier = ref.read(
+                                    gameStateProvider.notifier,
+                                  );
+                                  if (!gs.lastPassed &&
+                                      gs.activeLessonId != null) {
+                                    await notifier.startLesson(
+                                      gs.activeLessonId!,
+                                    );
+                                    if (!mounted) return;
+                                    router.go(AppRoutes.battleLoading);
+                                  } else {
+                                    notifier.resetLesson();
+                                    if (mounted) router.go(AppRoutes.town);
+                                  }
                                 },
                         ),
                       ),
@@ -299,7 +282,9 @@ class _StatCard extends StatelessWidget {
           color: GlossaColors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(Spacing.cardRadius),
           border: Border.all(
-              color: GlossaColors.white.withValues(alpha: 0.2), width: 1.5),
+            color: GlossaColors.white.withValues(alpha: 0.2),
+            width: 1.5,
+          ),
         ),
         child: Column(
           children: [
@@ -310,8 +295,9 @@ class _StatCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label,
-              style: GlossaTypography.labelSmall
-                  .copyWith(color: GlossaColors.white.withValues(alpha: 0.7)),
+              style: GlossaTypography.labelSmall.copyWith(
+                color: GlossaColors.white.withValues(alpha: 0.7),
+              ),
             ),
           ],
         ),

@@ -135,10 +135,16 @@ def upgrade():
     for course_id, src, tgt, name, desc in courses_data:
         existing = bind.execute(sa.text("SELECT id FROM courses WHERE id = :id"), {"id": course_id}).scalar()
         if existing is None:
-            bind.execute(sa.text(
-                "INSERT INTO courses (id, source_language_id, target_language_id, name, description, is_published) "
-                "VALUES (:id, :src, :tgt, :name, :desc, false)"
-            ), {"id": course_id, "src": src, "tgt": tgt, "name": name, "desc": desc})
+            if _column_exists(bind, "courses", "is_active"):
+                bind.execute(sa.text(
+                    "INSERT INTO courses (id, source_language_id, target_language_id, name, description, is_published, is_active) "
+                    "VALUES (:id, :src, :tgt, :name, :desc, false, false)"
+                ), {"id": course_id, "src": src, "tgt": tgt, "name": name, "desc": desc})
+            else:
+                bind.execute(sa.text(
+                    "INSERT INTO courses (id, source_language_id, target_language_id, name, description, is_published) "
+                    "VALUES (:id, :src, :tgt, :name, :desc, false)"
+                ), {"id": course_id, "src": src, "tgt": tgt, "name": name, "desc": desc})
 
     # ─── Create legacy unit for existing lessons ──────────────
     legacy_unit = bind.execute(

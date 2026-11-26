@@ -1,0 +1,438 @@
+{
+  "title": "Stage 8 English-Newari content gaps",
+  "source_boundary": {
+    "curriculum": "newari_course_plan.md and backend/app/curriculum_blueprint.py",
+    "vocabulary": "newari_vocabulary.xlsx, Vocabulary worksheet",
+    "workbook_entries_before": 70,
+    "workbook_entries_after": 70,
+    "workbook_modified": false,
+    "all_imported_entries_native_verified": false
+  },
+  "content_counts": {
+    "units": 5,
+    "lessons": 15,
+    "planned_exercise_slots": 111,
+    "populated_exercise_slots": 111,
+    "structurally_missing_slots": 0,
+    "workbook_backed_populated_slots": 69,
+    "illustration_dependent_populated_slots": 25,
+    "provisional_word_order_dialogue_populated_slots": 17,
+    "published_lessons": 0
+  },
+  "exercise_type_counts": {
+    "matchWords": 19,
+    "fillBlank": 35,
+    "pictureToWord": 15,
+    "wordToPicture": 10,
+    "translate": 15,
+    "wordOrder": 11,
+    "dialogueComplete": 6,
+    "all_seven_exercise_types_present": true
+  },
+  "verification_status": {
+    "vocabulary_verified_lessons": 0,
+    "sentence_verified_lessons": 0,
+    "dialogue_verified_lessons": 0,
+    "illustration_verified_lessons": 0,
+    "verified_vocabulary_entries": 0,
+    "total_vocabulary_entries": 70,
+    "native_speaker_verification_complete": false,
+    "note": "Structural completeness only. No lesson, vocabulary, sentence, dialogue or illustration row is marked verified, and every lesson stays unpublished. The provisional curriculum is playable only in the isolated development environment (GLOSSA_CONTENT_ENVIRONMENT=development)."
+  },
+  "missing_english_content": [
+    {
+      "english_content": "Goodbye",
+      "unit": "Greetings",
+      "lessons": [
+        1,
+        3
+      ],
+      "required_input": "Newari script, romanization, register/context, and verification."
+    },
+    {
+      "english_content": "How are you?",
+      "unit": "Greetings",
+      "lessons": [
+        2,
+        3
+      ],
+      "required_input": "Natural Newari phrase, romanization, response context, and verification."
+    },
+    {
+      "english_content": "I am fine.",
+      "unit": "Greetings",
+      "lessons": [
+        2,
+        3
+      ],
+      "required_input": "Natural Newari sentence and romanization; workbook only has the isolated meaning Well / fine."
+    },
+    {
+      "english_content": "Friend",
+      "unit": "Greetings",
+      "lessons": [
+        2,
+        3
+      ],
+      "required_input": "Newari term and romanization."
+    },
+    {
+      "english_content": "Family (generic)",
+      "unit": "Family",
+      "lessons": [
+        5,
+        6
+      ],
+      "required_input": "Newari collective term and romanization; individual family members do not supply this phrase."
+    },
+    {
+      "english_content": "Blue",
+      "unit": "Numbers & Colors",
+      "lessons": [
+        8,
+        9
+      ],
+      "required_input": "Newari color term and romanization."
+    },
+    {
+      "english_content": "Milk",
+      "unit": "Food & Drinks",
+      "lessons": [
+        10,
+        12
+      ],
+      "required_input": "Newari food term and romanization."
+    },
+    {
+      "english_content": "Want / to want",
+      "unit": "Food & Drinks",
+      "lessons": [
+        11,
+        12
+      ],
+      "required_input": "Newari verb lemma, inflections, usage examples, and romanization."
+    },
+    {
+      "english_content": "Rest",
+      "unit": "Home & Routines",
+      "lessons": [
+        13,
+        14,
+        15
+      ],
+      "required_input": "Newari verb/term, grammatical forms, and romanization."
+    },
+    {
+      "english_content": "Clean (verb)",
+      "unit": "Home & Routines",
+      "lessons": [
+        13,
+        14,
+        15
+      ],
+      "required_input": "Newari verb lemma and inflections with romanization; do not substitute the unrelated meanings good or to do."
+    },
+    {
+      "english_content": "Sleep",
+      "unit": "Home & Routines",
+      "lessons": [
+        14,
+        15
+      ],
+      "required_input": "Newari verb lemma, inflections, and romanization."
+    },
+    {
+      "english_content": "Polite expressions",
+      "unit": "Food & Drinks",
+      "lessons": [
+        12
+      ],
+      "required_input": "Native-speaker-selected expressions, usage/register notes, and romanization."
+    },
+    {
+      "english_content": "This is my …",
+      "unit": "Family",
+      "lessons": [
+        6
+      ],
+      "required_input": "Grammatical Newari phrase pattern and verified family-word examples with romanization."
+    },
+    {
+      "english_content": "Two red bowls",
+      "unit": "Numbers & Colors",
+      "lessons": [
+        9
+      ],
+      "required_input": "Verified numeral, adjective, noun order, morphology, and complete phrase romanization."
+    },
+    {
+      "english_content": "Daily routine sentences",
+      "unit": "Home & Routines",
+      "lessons": [
+        14,
+        15
+      ],
+      "required_input": "Native-speaker-approved sentences and verb forms using workbook concepts; each Newari phrase needs romanization."
+    },
+    {
+      "english_content": "Contextual dialogue responses",
+      "unit": "Greetings / Food & Drinks / Home & Routines",
+      "lessons": [
+        3,
+        12,
+        14,
+        15
+      ],
+      "required_input": "Complete reviewed dialogues, context/register, response choices, answer key, and line-by-line romanization."
+    }
+  ],
+  "gloss_probe_results": {
+    "_method": "Case-insensitive substring probe across the prompts, options and dialogue lines of all 111 populated exercises in the isolated development database.",
+    "Goodbye": false,
+    "How are you": false,
+    "I am fine": false,
+    "Friend": false,
+    "Family": false,
+    "Blue": false,
+    "Milk": false,
+    "Want": false,
+    "Rest": false,
+    "Clean": false,
+    "Sleep": false,
+    "Two red bowls": true,
+    "note": "Two red bowls now appears in populated content but is still unverified; every other probed phrase remains absent from the curriculum content. The linguistic gaps above are not erased by structural population."
+  },
+  "structurally_missing_slots": [],
+  "provisional_word_order_and_dialogue_slots": [
+    {
+      "course_lesson_number": 3,
+      "lesson_id": "en_new_u1_l3",
+      "exercise_id": "en_new_u1_l3_dialogueComplete7",
+      "exercise_type": "dialogueComplete",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved contextual dialogue, missing response, distractor responses, and romanization for every Newari line."
+    },
+    {
+      "course_lesson_number": 6,
+      "lesson_id": "en_new_u2_l3",
+      "exercise_id": "en_new_u2_l3_wordOrder8",
+      "exercise_type": "wordOrder",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved Newari sentence, word segmentation, romanization, and accepted word-order configuration."
+    },
+    {
+      "course_lesson_number": 9,
+      "lesson_id": "en_new_u3_l3",
+      "exercise_id": "en_new_u3_l3_wordOrder7",
+      "exercise_type": "wordOrder",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved Newari sentence, word segmentation, romanization, and accepted word-order configuration."
+    },
+    {
+      "course_lesson_number": 9,
+      "lesson_id": "en_new_u3_l3",
+      "exercise_id": "en_new_u3_l3_wordOrder8",
+      "exercise_type": "wordOrder",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved Newari sentence, word segmentation, romanization, and accepted word-order configuration."
+    },
+    {
+      "course_lesson_number": 11,
+      "lesson_id": "en_new_u4_l2",
+      "exercise_id": "en_new_u4_l2_wordOrder5",
+      "exercise_type": "wordOrder",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved Newari sentence, word segmentation, romanization, and accepted word-order configuration."
+    },
+    {
+      "course_lesson_number": 11,
+      "lesson_id": "en_new_u4_l2",
+      "exercise_id": "en_new_u4_l2_wordOrder6",
+      "exercise_type": "wordOrder",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved Newari sentence, word segmentation, romanization, and accepted word-order configuration."
+    },
+    {
+      "course_lesson_number": 12,
+      "lesson_id": "en_new_u4_l3",
+      "exercise_id": "en_new_u4_l3_wordOrder6",
+      "exercise_type": "wordOrder",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved Newari sentence, word segmentation, romanization, and accepted word-order configuration."
+    },
+    {
+      "course_lesson_number": 12,
+      "lesson_id": "en_new_u4_l3",
+      "exercise_id": "en_new_u4_l3_wordOrder7",
+      "exercise_type": "wordOrder",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved Newari sentence, word segmentation, romanization, and accepted word-order configuration."
+    },
+    {
+      "course_lesson_number": 12,
+      "lesson_id": "en_new_u4_l3",
+      "exercise_id": "en_new_u4_l3_dialogueComplete8",
+      "exercise_type": "dialogueComplete",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved contextual dialogue, missing response, distractor responses, and romanization for every Newari line."
+    },
+    {
+      "course_lesson_number": 12,
+      "lesson_id": "en_new_u4_l3",
+      "exercise_id": "en_new_u4_l3_dialogueComplete9",
+      "exercise_type": "dialogueComplete",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved contextual dialogue, missing response, distractor responses, and romanization for every Newari line."
+    },
+    {
+      "course_lesson_number": 14,
+      "lesson_id": "en_new_u5_l2",
+      "exercise_id": "en_new_u5_l2_wordOrder5",
+      "exercise_type": "wordOrder",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved Newari sentence, word segmentation, romanization, and accepted word-order configuration."
+    },
+    {
+      "course_lesson_number": 14,
+      "lesson_id": "en_new_u5_l2",
+      "exercise_id": "en_new_u5_l2_wordOrder6",
+      "exercise_type": "wordOrder",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved Newari sentence, word segmentation, romanization, and accepted word-order configuration."
+    },
+    {
+      "course_lesson_number": 14,
+      "lesson_id": "en_new_u5_l2",
+      "exercise_id": "en_new_u5_l2_dialogueComplete9",
+      "exercise_type": "dialogueComplete",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved contextual dialogue, missing response, distractor responses, and romanization for every Newari line."
+    },
+    {
+      "course_lesson_number": 15,
+      "lesson_id": "en_new_u5_l3",
+      "exercise_id": "en_new_u5_l3_wordOrder7",
+      "exercise_type": "wordOrder",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved Newari sentence, word segmentation, romanization, and accepted word-order configuration."
+    },
+    {
+      "course_lesson_number": 15,
+      "lesson_id": "en_new_u5_l3",
+      "exercise_id": "en_new_u5_l3_wordOrder8",
+      "exercise_type": "wordOrder",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved Newari sentence, word segmentation, romanization, and accepted word-order configuration."
+    },
+    {
+      "course_lesson_number": 15,
+      "lesson_id": "en_new_u5_l3",
+      "exercise_id": "en_new_u5_l3_dialogueComplete9",
+      "exercise_type": "dialogueComplete",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved contextual dialogue, missing response, distractor responses, and romanization for every Newari line."
+    },
+    {
+      "course_lesson_number": 15,
+      "lesson_id": "en_new_u5_l3",
+      "exercise_id": "en_new_u5_l3_dialogueComplete10",
+      "exercise_type": "dialogueComplete",
+      "status": "populated_provisional_pending_linguistic_verification",
+      "required_native_or_asset_input": "Provide a native-speaker-approved contextual dialogue, missing response, distractor responses, and romanization for every Newari line."
+    }
+  ],
+  "illustration_verification": {
+    "illustrated_exercises_populated": 25,
+    "picture_to_word": 15,
+    "word_to_picture": 10,
+    "distinct_illustration_keys_in_use": 28,
+    "keys_in_use": [
+      "book",
+      "bowl",
+      "child",
+      "cooked_rice",
+      "daughter",
+      "door",
+      "droplet",
+      "elder_brother",
+      "elder_sister",
+      "father",
+      "fish",
+      "hello",
+      "house",
+      "man",
+      "meat",
+      "mother",
+      "name",
+      "number_1",
+      "number_2",
+      "person",
+      "place",
+      "red",
+      "road",
+      "son",
+      "tea",
+      "white",
+      "woman",
+      "work"
+    ],
+    "illustration_verified_lessons": 0,
+    "status": "populated_pending_illustration_verification",
+    "required_input": "A native-speaker must confirm that each painter key depicts the intended concept for its option and that each picture-to-word / word-to-picture mapping is semantically correct. Raster assets are still unregistered for every key.",
+    "pending_slots": [
+      { "lesson_id": "en_new_u1_l1", "exercise_id": "en_new_u1_l1_pictureToWord5", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u1_l2", "exercise_id": "en_new_u1_l2_pictureToWord4", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u2_l1", "exercise_id": "en_new_u2_l1_pictureToWord2", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u2_l1", "exercise_id": "en_new_u2_l1_pictureToWord3", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u2_l1", "exercise_id": "en_new_u2_l1_wordToPicture4", "exercise_type": "wordToPicture" },
+      { "lesson_id": "en_new_u2_l1", "exercise_id": "en_new_u2_l1_wordToPicture5", "exercise_type": "wordToPicture" },
+      { "lesson_id": "en_new_u2_l2", "exercise_id": "en_new_u2_l2_wordToPicture2", "exercise_type": "wordToPicture" },
+      { "lesson_id": "en_new_u2_l2", "exercise_id": "en_new_u2_l2_wordToPicture3", "exercise_type": "wordToPicture" },
+      { "lesson_id": "en_new_u2_l2", "exercise_id": "en_new_u2_l2_pictureToWord4", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u2_l3", "exercise_id": "en_new_u2_l3_pictureToWord2", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u2_l3", "exercise_id": "en_new_u2_l3_wordToPicture3", "exercise_type": "wordToPicture" },
+      { "lesson_id": "en_new_u3_l1", "exercise_id": "en_new_u3_l1_pictureToWord3", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u3_l1", "exercise_id": "en_new_u3_l1_pictureToWord4", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u3_l2", "exercise_id": "en_new_u3_l2_pictureToWord2", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u3_l2", "exercise_id": "en_new_u3_l2_pictureToWord3", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u3_l2", "exercise_id": "en_new_u3_l2_wordToPicture4", "exercise_type": "wordToPicture" },
+      { "lesson_id": "en_new_u3_l2", "exercise_id": "en_new_u3_l2_wordToPicture5", "exercise_type": "wordToPicture" },
+      { "lesson_id": "en_new_u4_l1", "exercise_id": "en_new_u4_l1_pictureToWord2", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u4_l1", "exercise_id": "en_new_u4_l1_pictureToWord3", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u4_l1", "exercise_id": "en_new_u4_l1_wordToPicture4", "exercise_type": "wordToPicture" },
+      { "lesson_id": "en_new_u4_l1", "exercise_id": "en_new_u4_l1_wordToPicture5", "exercise_type": "wordToPicture" },
+      { "lesson_id": "en_new_u5_l1", "exercise_id": "en_new_u5_l1_pictureToWord2", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u5_l1", "exercise_id": "en_new_u5_l1_pictureToWord3", "exercise_type": "pictureToWord" },
+      { "lesson_id": "en_new_u5_l1", "exercise_id": "en_new_u5_l1_wordToPicture4", "exercise_type": "wordToPicture" },
+      { "lesson_id": "en_new_u5_l3", "exercise_id": "en_new_u5_l3_pictureToWord4", "exercise_type": "pictureToWord" }
+    ]
+  },
+  "existing_illustrations": [
+    {
+      "key": "house",
+      "implementation": "SimpleIllustration CustomPainter",
+      "verified_concept": "generic house/home drawing",
+      "asset_file": null
+    },
+    {
+      "key": "droplet",
+      "implementation": "SimpleIllustration CustomPainter",
+      "verified_concept": "water droplet",
+      "asset_file": null
+    },
+    {
+      "key": "bowl",
+      "implementation": "SimpleIllustration CustomPainter",
+      "verified_concept": "bowl containing a white food shape",
+      "asset_file": null
+    },
+    {
+      "key": "person",
+      "implementation": "SimpleIllustration CustomPainter",
+      "verified_concept": "generic person",
+      "asset_file": null
+    }
+  ],
+  "illustration_gap_policy": "Existing painter keys have no registered raster asset files. Reuse only when the concept is exact and the target lesson vocabulary supports it; each required illustration and mapping still needs verification. Do not substitute a house or unrelated image.",
+  "publication_gate": "Every lesson remains unpublished until all 111 planned slots are present in the specified order/type, payloads and stable IDs validate, referenced vocabulary is verified, Newari script and romanization are complete, required sentence/dialogue/illustration domains are verified, and publication is explicitly authorized."
+}

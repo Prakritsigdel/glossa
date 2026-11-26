@@ -6,17 +6,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 import 'package:glossa_app/shared/models/course_models.dart';
 import 'package:glossa_app/shared/repositories/backend_api.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
+import 'package:glossa_app/shared/models/demo_user.dart';
+import 'support/mock_data.dart';
 
 // ─── Test double ───────────────────────────────────────────────────────────
 /// A BackendApi that makes submitAttempt succeed with mock data.
 // Used in Fix 4 tests where TestWidgetsFlutterBinding blocks real HTTP.
 class _NoOpBackendApi extends BackendApi {
   @override
+  Future<String?> get token async => null;
+
+  @override
+  Future<DemoUser> login({required String email, required String password}) async =>
+      seedUser.copyWith(activeCourseId: 'en_new');
+
+  @override
   Future<Map<String, dynamic>> submitAttempt(
-    String lessonId,
-    List<Map<String, dynamic>> answers,
-  ) async {
+    String lessonId, {
+    required List<Map<String, dynamic>> answers,
+    String? idempotencyKey,
+  }) async {
     return {
       'completed': true,
       'already_completed': false,
@@ -40,7 +49,7 @@ class _NoOpBackendApi extends BackendApi {
   }
 
   @override
-  Future<List<Lesson>> lessons({String? courseId}) async => [];
+  Future<List<Lesson>> lessons({String? courseId}) async => mockLessons;
 }
 
 // A BackendApi subclass that makes submitAttempt always throw, simulating
@@ -48,9 +57,10 @@ class _NoOpBackendApi extends BackendApi {
 class _FailingBackendApi extends BackendApi {
   @override
   Future<Map<String, dynamic>> submitAttempt(
-    String lessonId,
-    List<Map<String, dynamic>> answers,
-  ) async {
+    String lessonId, {
+    required List<Map<String, dynamic>> answers,
+    String? idempotencyKey,
+  }) async {
     throw const BackendException('Simulated network failure');
   }
 }
@@ -69,7 +79,6 @@ void main() {
         instruction: 'Pick the picture',
         prompt: 'ल',
         options: [],
-        correctAnswerId: '',
       );
       expect(exercise.prompt, equals('ल'));
     });
@@ -80,7 +89,6 @@ void main() {
         type: ExerciseType.wordToPicture,
         instruction: 'Pick the picture',
         options: [],
-        correctAnswerId: '',
       );
       final display = exercise.prompt ?? '?';
       expect(display, equals('?'));
@@ -93,7 +101,6 @@ void main() {
         instruction: 'Pick',
         prompt: 'माँ',
         options: [],
-        correctAnswerId: '',
       );
       const e2 = Exercise(
         id: 'e2',
@@ -101,7 +108,6 @@ void main() {
         instruction: 'Pick',
         prompt: 'ल',
         options: [],
-        correctAnswerId: '',
       );
       expect(e1.prompt, isNot(equals(e2.prompt)));
     });
@@ -158,29 +164,68 @@ void main() {
           return '/lesson/picture-to-word';
         case ExerciseType.wordToPicture:
           return '/lesson/word-to-picture';
+        case ExerciseType.translate:
+          return '/lesson/translate';
+        case ExerciseType.wordOrder:
+          return '/lesson/word-order';
+        case ExerciseType.dialogueComplete:
+          return '/lesson/dialogue-complete';
       }
     }
 
     test('matchWords routes to /lesson/match-words', () {
-      expect(routeForType(ExerciseType.matchWords), equals('/lesson/match-words'));
+      expect(
+        routeForType(ExerciseType.matchWords),
+        equals('/lesson/match-words'),
+      );
     });
 
     test('fillBlank routes to /lesson/fill-blank', () {
-      expect(routeForType(ExerciseType.fillBlank), equals('/lesson/fill-blank'));
+      expect(
+        routeForType(ExerciseType.fillBlank),
+        equals('/lesson/fill-blank'),
+      );
     });
 
     test('pictureToWord routes to /lesson/picture-to-word', () {
-      expect(routeForType(ExerciseType.pictureToWord), equals('/lesson/picture-to-word'));
+      expect(
+        routeForType(ExerciseType.pictureToWord),
+        equals('/lesson/picture-to-word'),
+      );
     });
 
     test('wordToPicture routes to /lesson/word-to-picture', () {
-      expect(routeForType(ExerciseType.wordToPicture), equals('/lesson/word-to-picture'));
+      expect(
+        routeForType(ExerciseType.wordToPicture),
+        equals('/lesson/word-to-picture'),
+      );
+    });
+
+    test('translate routes to /lesson/translate', () {
+      expect(routeForType(ExerciseType.translate), equals('/lesson/translate'));
+    });
+
+    test('wordOrder routes to /lesson/word-order', () {
+      expect(
+        routeForType(ExerciseType.wordOrder),
+        equals('/lesson/word-order'),
+      );
+    });
+
+    test('dialogueComplete routes to /lesson/dialogue-complete', () {
+      expect(
+        routeForType(ExerciseType.dialogueComplete),
+        equals('/lesson/dialogue-complete'),
+      );
     });
 
     test('Every ExerciseType value has a /lesson/ route', () {
       for (final type in ExerciseType.values) {
-        expect(routeForType(type), startsWith('/lesson/'),
-            reason: 'ExerciseType.\$type must map to a /lesson/ route');
+        expect(
+          routeForType(type),
+          startsWith('/lesson/'),
+          reason: 'ExerciseType.$type must map to a /lesson/ route',
+        );
       }
     });
 
@@ -192,26 +237,33 @@ void main() {
 
   // ─────────────────────────────────────────────────────────────────────────
   group('Fix 4 — Single completion submission', () {
-    test('Second completeLesson call is a no-op when lessonComplete is true', () async {
-      final container = ProviderContainer(
-        overrides: [backendApiProvider.overrideWithValue(_NoOpBackendApi())],
-      );
-      addTearDown(container.dispose);
+    test(
+      'Second completeLesson call is a no-op when lessonComplete is true',
+      () async {
+        final container = ProviderContainer(
+          overrides: [backendApiProvider.overrideWithValue(_NoOpBackendApi())],
+        );
+        addTearDown(container.dispose);
 
-      final notifier = container.read(gameStateProvider.notifier);
-      notifier.startLesson('lesson_1');
-      // First completion sets lessonComplete = true
-      await notifier.completeLesson();
-      expect(container.read(gameStateProvider).lessonComplete, isTrue);
-      final xpAfterFirst = container.read(gameStateProvider).user.xp;
+        final notifier = container.read(gameStateProvider.notifier);
+        await notifier.logIn(email: 'test@test.com', password: 'pw');
+        notifier.startLesson('lesson_1');
+        // First completion sets lessonComplete = true
+        await notifier.completeLesson();
+        expect(container.read(gameStateProvider).lessonComplete, isTrue);
+        final xpAfterFirst = container.read(gameStateProvider).user.xp;
 
-      // Second call must be blocked by the guard
-      await notifier.completeLesson();
-      final xpAfterSecond = container.read(gameStateProvider).user.xp;
+        // Second call must be blocked by the guard
+        await notifier.completeLesson();
+        final xpAfterSecond = container.read(gameStateProvider).user.xp;
 
-      expect(xpAfterSecond, equals(xpAfterFirst),
-          reason: 'XP must not change on a duplicate completeLesson call');
-    });
+        expect(
+          xpAfterSecond,
+          equals(xpAfterFirst),
+          reason: 'XP must not change on a duplicate completeLesson call',
+        );
+      },
+    );
 
     test('lessonComplete flag is set before the async API call', () async {
       final container = ProviderContainer(
@@ -220,6 +272,7 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(gameStateProvider.notifier);
+      await notifier.logIn(email: 'test@test.com', password: 'pw');
       notifier.startLesson('lesson_1');
       expect(container.read(gameStateProvider).lessonComplete, isFalse);
 
@@ -250,25 +303,17 @@ void main() {
       expect(container.read(gameStateProvider).lastTotalQuestions, equals(0));
     });
 
-    test('lastWordsLearned initialises to empty list', () {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-      expect(container.read(gameStateProvider).lastWordsLearned, isEmpty);
-    });
-
     test('copyWith preserves lastXpEarned when not overridden', () {
       final state = GameState(
         user: seedUser,
         lastXpEarned: 42,
         lastCorrectAnswers: 4,
         lastTotalQuestions: 4,
-        lastWordsLearned: const ['माँ', 'ल'],
       );
       final copy = state.copyWith();
       expect(copy.lastXpEarned, equals(42));
       expect(copy.lastCorrectAnswers, equals(4));
       expect(copy.lastTotalQuestions, equals(4));
-      expect(copy.lastWordsLearned, equals(['माँ', 'ल']));
     });
   });
 
@@ -276,9 +321,7 @@ void main() {
   group('Fix 6 — XP consistency on network failure', () {
     test('XP is unchanged when submitAttempt throws', () async {
       final container = ProviderContainer(
-        overrides: [
-          backendApiProvider.overrideWithValue(_FailingBackendApi()),
-        ],
+        overrides: [backendApiProvider.overrideWithValue(_FailingBackendApi())],
       );
       addTearDown(container.dispose);
 
@@ -292,27 +335,37 @@ void main() {
       } catch (_) {}
 
       final state = container.read(gameStateProvider);
-      expect(state.user.xp, equals(xpBefore),
-          reason: 'XP must not be permanently changed when server call fails');
-    });
-
-    test('lessonComplete resets to false after a failed submitAttempt', () async {
-      final container = ProviderContainer(
-        overrides: [
-          backendApiProvider.overrideWithValue(_FailingBackendApi()),
-        ],
+      expect(
+        state.user.xp,
+        equals(xpBefore),
+        reason: 'XP must not be permanently changed when server call fails',
       );
-      addTearDown(container.dispose);
-
-      final notifier = container.read(gameStateProvider.notifier);
-      notifier.startLesson('lesson_1');
-      try {
-        await notifier.completeLesson();
-      } catch (_) {}
-
-      expect(container.read(gameStateProvider).lessonComplete, isFalse,
-          reason: 'lessonComplete must be false after failure so user can retry');
     });
+
+    test(
+      'lessonComplete resets to false after a failed submitAttempt',
+      () async {
+        final container = ProviderContainer(
+          overrides: [
+            backendApiProvider.overrideWithValue(_FailingBackendApi()),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final notifier = container.read(gameStateProvider.notifier);
+        notifier.startLesson('lesson_1');
+        try {
+          await notifier.completeLesson();
+        } catch (_) {}
+
+        expect(
+          container.read(gameStateProvider).lessonComplete,
+          isFalse,
+          reason:
+              'lessonComplete must be false after failure so user can retry',
+        );
+      },
+    );
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -349,5 +402,3 @@ void main() {
     });
   });
 }
-
-

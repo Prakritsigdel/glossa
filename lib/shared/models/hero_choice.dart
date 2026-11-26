@@ -11,21 +11,7 @@ class HeroChoice {
   });
 }
 
-/// A selectable language.
-class LanguageChoice {
-  final String id;
-  final String nameNative;
-  final String nameEnglish;
-  final String letterSymbol;
-  final String subtitle;
-  final bool isStarter;
-
-  const LanguageChoice({
-    required this.id,
-    required this.nameNative,
-    required this.nameEnglish,
-    required this.letterSymbol,
-    this.subtitle = '',
-    this.isStarter = false,
-  });
-}
+const List<HeroChoice> heroChoices = [
+  HeroChoice(index: 0, label: 'Boy', description: 'A brave young traveler.'),
+  HeroChoice(index: 1, label: 'Girl', description: 'A courageous explorer.'),
+];

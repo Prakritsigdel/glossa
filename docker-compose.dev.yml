@@ -1,0 +1,65 @@
+# Isolated DEVELOPMENT environment for the provisional English->Newari curriculum.
+#
+# Separate compose project ("glossa-dev"), separate PostgreSQL container,
+# separate volume (glossa_dev_pgdata) and separate API port (18002) so it
+# never touches the production stack (project "glossa_app", volume
+# glossa_app_glossa_pgdata, port 8000).
+#
+# Start:   docker compose -f docker-compose.dev.yml up --build -d
+# Health:  http://localhost:18002/health
+# Stop:    docker compose -f docker-compose.dev.yml stop
+# NEVER use `docker compose -f docker-compose.dev.yml down -v`: it would
+# delete the development volume glossa_dev_pgdata.
+
+name: glossa-dev
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: glossa_dev
+      POSTGRES_PASSWORD: glossa_dev
+      POSTGRES_DB: glossa_dev
+    ports:
+      - "15432:5432"
+    volumes:
+      - glossa_dev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glossa_dev -d glossa_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://glossa_dev:glossa_dev@db:5432/glossa_dev
+      # Development-only content configuration: unlocks the structurally
+      # complete but linguistically UNVERIFIED curriculum for local play.
+      GLOSSA_CONTENT_ENVIRONMENT: development
+      JWT_SECRET: local-dev-only-secret-not-used-in-production
+      ACCESS_TOKEN_MINUTES: 10080
+      CORS_ORIGINS: "*"
+    ports:
+      - "18002:18002"
+    volumes:
+      - ./newari_vocabulary.xlsx:/newari_vocabulary.xlsx:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:18002/health', timeout=5)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    command: sh -c "alembic upgrade head && python seed.py && uvicorn app.main:app --host 0.0.0.0 --port 18002"
+
+volumes:
+  glossa_dev_pgdata:

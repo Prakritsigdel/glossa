@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:glossa_app/app/theme/glossa_colors.dart';
 import 'package:glossa_app/app/theme/glossa_typography.dart';
 import 'package:glossa_app/core/constants/spacing.dart';
-import 'package:glossa_app/core/widgets/greek_key_border.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/shared/models/leaderboard_entry.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
@@ -28,21 +26,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     _loadEntries();
   }
 
-  List<LeaderboardEntry> _mockForFilter(String filter) {
-    switch (filter) {
-      case 'alltime':
-        return mockLeaderboardAllTime;
-      case 'weekly':
-      default:
-        return mockLeaderboardWeekly;
-    }
-  }
-
   void _loadEntries() {
     _entries = ref
         .read(backendApiProvider)
-        .leaderboard(_filters[_selectedTabIndex])
-        .catchError((_) => _mockForFilter(_filters[_selectedTabIndex]));
+        .leaderboard(_filters[_selectedTabIndex]);
   }
 
   @override

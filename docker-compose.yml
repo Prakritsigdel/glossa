@@ -1,3 +1,4 @@
+
 services:
   db:
     image: postgres:16-alpine
@@ -14,6 +15,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
   api:
     build: ./backend
     environment:
@@ -22,9 +24,12 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
     ports:
       - "8000:8000"
+    volumes:
+      - ./newari_vocabulary.xlsx:/newari_vocabulary.xlsx:ro
     depends_on:
       db:
         condition: service_healthy
     command: sh -c "alembic upgrade head && python seed.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
 volumes:
   glossa_pgdata:

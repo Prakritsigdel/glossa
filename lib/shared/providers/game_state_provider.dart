@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/demo_user.dart';
 import '../models/course_models.dart';
-import '../mock_data/mock_data.dart';
 import '../repositories/backend_api.dart';
 
 class GameState {
@@ -21,11 +20,10 @@ class GameState {
   final int lastXpEarned;
   final int lastCorrectAnswers;
   final int lastTotalQuestions;
-  final List<String> lastWordsLearned;
-  // ─── Course architecture ───────────────────────────────────
-  final List<Language> languages;
-  final List<Course> courses;
-  final List<CourseUnit> units;
+  final bool lastAlreadyCompleted;
+  final double lastScore;
+  final int lastPassingThreshold;
+  final bool lastPassed;
 
   const GameState({
     required this.user,
@@ -43,10 +41,10 @@ class GameState {
     this.lastXpEarned = 0,
     this.lastCorrectAnswers = 0,
     this.lastTotalQuestions = 0,
-    this.lastWordsLearned = const [],
-    this.languages = const [],
-    this.courses = const [],
-    this.units = const [],
+    this.lastAlreadyCompleted = false,
+    this.lastScore = 0,
+    this.lastPassingThreshold = 100,
+    this.lastPassed = false,
   });
 
   GameState copyWith({
@@ -67,40 +65,38 @@ class GameState {
     int? lastXpEarned,
     int? lastCorrectAnswers,
     int? lastTotalQuestions,
-    List<String>? lastWordsLearned,
-    List<Language>? languages,
-    List<Course>? courses,
-    List<CourseUnit>? units,
-  }) =>
-      GameState(
-        user: user ?? this.user,
-        isAuthenticated: isAuthenticated ?? this.isAuthenticated,
-        isLoading: isLoading ?? this.isLoading,
-        errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-        lessons: lessons ?? this.lessons,
-        exercises: exercises ?? this.exercises,
-        activeLessonId: clearActiveLesson
-            ? null
-            : (activeLessonId ?? this.activeLessonId),
-        currentExerciseIndex: currentExerciseIndex ?? this.currentExerciseIndex,
-        correctAnswersInLesson:
-            correctAnswersInLesson ?? this.correctAnswersInLesson,
-        lessonComplete: lessonComplete ?? this.lessonComplete,
-        matchedPairIds: matchedPairIds ?? this.matchedPairIds,
-        answers: answers ?? this.answers,
-        lastXpEarned: lastXpEarned ?? this.lastXpEarned,
-        lastCorrectAnswers: lastCorrectAnswers ?? this.lastCorrectAnswers,
-        lastTotalQuestions: lastTotalQuestions ?? this.lastTotalQuestions,
-        lastWordsLearned: lastWordsLearned ?? this.lastWordsLearned,
-        languages: languages ?? this.languages,
-        courses: courses ?? this.courses,
-        units: units ?? this.units,
-      );
+    bool? lastAlreadyCompleted,
+    double? lastScore,
+    int? lastPassingThreshold,
+    bool? lastPassed,
+  }) => GameState(
+    user: user ?? this.user,
+    isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+    isLoading: isLoading ?? this.isLoading,
+    errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    lessons: lessons ?? this.lessons,
+    exercises: exercises ?? this.exercises,
+    activeLessonId: clearActiveLesson
+        ? null
+        : (activeLessonId ?? this.activeLessonId),
+    currentExerciseIndex: currentExerciseIndex ?? this.currentExerciseIndex,
+    correctAnswersInLesson:
+        correctAnswersInLesson ?? this.correctAnswersInLesson,
+    lessonComplete: lessonComplete ?? this.lessonComplete,
+    matchedPairIds: matchedPairIds ?? this.matchedPairIds,
+    answers: answers ?? this.answers,
+    lastXpEarned: lastXpEarned ?? this.lastXpEarned,
+    lastCorrectAnswers: lastCorrectAnswers ?? this.lastCorrectAnswers,
+    lastTotalQuestions: lastTotalQuestions ?? this.lastTotalQuestions,
+    lastAlreadyCompleted: lastAlreadyCompleted ?? this.lastAlreadyCompleted,
+    lastScore: lastScore ?? this.lastScore,
+    lastPassingThreshold: lastPassingThreshold ?? this.lastPassingThreshold,
+    lastPassed: lastPassed ?? this.lastPassed,
+  );
 }
 
 class GameStateNotifier extends StateNotifier<GameState> {
-  GameStateNotifier(this.api)
-      : super(GameState(user: seedUser, lessons: mockLessons)) {
+  GameStateNotifier(this.api) : super(const GameState(user: guestUser)) {
     restoreSession();
   }
 
@@ -112,17 +108,13 @@ class GameStateNotifier extends StateNotifier<GameState> {
       if (token == null) return;
       if (mounted) state = state.copyWith(isLoading: true, clearError: true);
       final user = await api.me();
-      await _loadCoursesAndLanguages(user);
+      await _loadAuthenticatedState(user);
     } catch (_) {
       try {
         await api.logout();
       } catch (_) {}
       if (mounted) {
-        state = state.copyWith(
-          isLoading: false,
-          isAuthenticated: false,
-          clearError: true,
-        );
+        state = const GameState(user: guestUser);
       }
     }
   }
@@ -142,39 +134,36 @@ class GameStateNotifier extends StateNotifier<GameState> {
   }
 
   Future<void> _authenticate(Future<DemoUser> Function() action) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = const GameState(user: guestUser, isLoading: true);
     try {
       final user = await action();
-      await _loadCoursesAndLanguages(user);
+      await _loadAuthenticatedState(user);
     } catch (error) {
       if (mounted) {
-        state = state.copyWith(isLoading: false, errorMessage: error.toString());
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: error.toString(),
+        );
       }
       rethrow;
     }
   }
 
   /// Load courses, languages, units, and lessons after authentication.
-  Future<void> _loadCoursesAndLanguages(DemoUser user) async {
+  Future<void> _loadAuthenticatedState(DemoUser user) async {
     try {
-      final languages = await api.getLanguages();
-      final courses = await api.getCourses(publishedOnly: true);
-      List<CourseUnit> units = [];
-      List<Lesson> lessons = [];
-      if (user.activeCourseId != null) {
-        try {
-          units = await api.getUnitsForCourse(user.activeCourseId!);
-          lessons = await api.lessons(courseId: user.activeCourseId);
-        } catch (_) {}
+      if (user.activeCourseId != 'en_new') {
+        await api.updateActiveCourse('en_new');
+        user = await api.me();
       }
+      final lessons = user.activeCourseId == 'en_new'
+          ? await api.lessons(courseId: 'en_new')
+          : <Lesson>[];
       if (mounted) {
         state = GameState(
           user: user,
           isAuthenticated: true,
           isLoading: false,
-          languages: languages,
-          courses: courses,
-          units: units,
           lessons: lessons,
         );
       }
@@ -196,7 +185,7 @@ class GameStateNotifier extends StateNotifier<GameState> {
       await api.logout();
     } catch (_) {}
     if (mounted) {
-      state = GameState(user: seedUser, lessons: mockLessons);
+      state = const GameState(user: guestUser);
     }
   }
 
@@ -210,85 +199,14 @@ class GameStateNotifier extends StateNotifier<GameState> {
     } catch (_) {}
   }
 
-  Future<void> selectLanguage(String id, String name, String script) async {
-    final targetCourseId = id == 'english' ? 'ne_en' : 'en_ne';
-    state = state.copyWith(
-      user: state.user.copyWith(
-        languageId: id,
-        languageName: name,
-        languageScript: script,
-        activeCourseId: targetCourseId,
-      ),
-    );
-    try {
-      final user = await api.updateProfile(languageId: id);
-      DemoUser updatedUser = user;
-      try {
-        updatedUser = await api.updateActiveCourse(targetCourseId);
-      } catch (_) {}
-      List<CourseUnit> units = [];
-      List<Lesson> lessons = [];
-      try {
-        units = await api.getUnitsForCourse(targetCourseId);
-      } catch (_) {}
-      try {
-        lessons = await api.lessons(courseId: targetCourseId);
-      } catch (_) {}
-      if (mounted) {
-        state = state.copyWith(
-          user: updatedUser.copyWith(languageName: name, languageScript: script),
-          units: units.isNotEmpty ? units : state.units,
-          lessons: lessons.isNotEmpty ? lessons : state.lessons,
-        );
-      }
-    } catch (_) {}
-  }
-
-  // ─── Course switching ────────────────────────────────────────
-
-  Future<void> switchCourse(String courseId) async {
-    final previousCourseId = state.user.activeCourseId;
-    state = state.copyWith(isLoading: true, clearError: true);
-    try {
-      final user = await api.updateActiveCourse(courseId);
-      // Reload units and lessons for the new course
-      List<CourseUnit> units = [];
-      List<Lesson> lessons = [];
-      try {
-        units = await api.getUnitsForCourse(courseId);
-      } catch (_) {}
-      try {
-        lessons = await api.lessons(courseId: courseId);
-      } catch (_) {}
-      if (mounted) {
-        state = state.copyWith(
-          user: user,
-          isLoading: false,
-          units: units,
-          lessons: lessons,
-          clearActiveLesson: true,
-          exercises: [],
-          currentExerciseIndex: 0,
-          correctAnswersInLesson: 0,
-          lessonComplete: false,
-          matchedPairIds: {},
-          answers: {},
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: error.toString(),
-          user: state.user.copyWith(activeCourseId: previousCourseId),
-        );
-      }
-      rethrow;
-    }
-  }
-
+  // ─── Single course (English -> Newari) ─────────────────────────
+  /// Glossa is English->Newari only. en_new is assigned automatically;
+  /// there is no language or course selection for the user.
   bool canStartLesson(String lessonId) => state.lessons.any(
-    (l) => l.id == lessonId && l.status != LessonStatus.locked,
+    (l) =>
+        l.id == lessonId &&
+        l.status != LessonStatus.locked &&
+        l.status != LessonStatus.unavailable,
   );
 
   Future<void> startLesson(String lessonId) async {
@@ -311,10 +229,19 @@ class GameStateNotifier extends StateNotifier<GameState> {
     } catch (_) {}
   }
 
+  /// Check a single exercise answer via the per-exercise endpoint.
+  ///
+  /// Supports [selectedOptionId] (fillBlank, pictureToWord, wordToPicture,
+  /// dialogueComplete), [selectedPairs] (matchWords), and
+  /// [selectedTileIds] (translate, wordOrder).
+  ///
+  /// Returns true if correct. Network errors are rethrown so the UI can
+  /// display them and offer retry — never silently treated as incorrect.
   Future<bool> checkAnswer(
     String exerciseId, {
     String? selectedOptionId,
     Map<String, String>? selectedPairs,
+    List<String>? selectedTileIds,
   }) async {
     final lessonId = state.activeLessonId;
     if (lessonId == null) return false;
@@ -324,6 +251,9 @@ class GameStateNotifier extends StateNotifier<GameState> {
     }
     if (selectedPairs != null) {
       answer['selected_pairs'] = selectedPairs;
+    }
+    if (selectedTileIds != null) {
+      answer['selected_tile_ids'] = selectedTileIds;
     }
     bool correct = false;
     try {
@@ -336,11 +266,11 @@ class GameStateNotifier extends StateNotifier<GameState> {
     if (correct && mounted) {
       final answers = Map<String, Map<String, dynamic>>.from(state.answers);
       final existing = answers[exerciseId];
-      if (selectedPairs != null) {
+      if (selectedPairs != null && existing != null) {
         final previousPairs =
-            existing?['selected_pairs'] as Map<String, dynamic>? ?? {};
+            existing['selected_pairs'] as Map<String, dynamic>? ?? {};
         answers[exerciseId] = {
-          ...?existing,
+          ...existing,
           'exercise_id': exerciseId,
           'selected_pairs': {...previousPairs, ...selectedPairs},
         };
@@ -365,7 +295,13 @@ class GameStateNotifier extends StateNotifier<GameState> {
     currentExerciseIndex: state.currentExerciseIndex + 1,
   );
 
-  Future<void> completeLesson() async {
+  /// Submit the complete lesson attempt to the backend.
+  ///
+  /// [idempotencyKey] scopes the submission to this user+lesson+request
+  /// so duplicate network retries do not award double XP. Reuse the same
+  /// key when retrying the same submission after a timeout or uncertain
+  /// network failure; generate a new key only for a genuinely new attempt.
+  Future<void> completeLesson({String? idempotencyKey}) async {
     final lessonId = state.activeLessonId;
     if (lessonId == null || state.lessonComplete) return;
     if (state.exercises.isNotEmpty &&
@@ -375,38 +311,34 @@ class GameStateNotifier extends StateNotifier<GameState> {
     }
     state = state.copyWith(lessonComplete: true);
 
-    final wordsLearned = state.exercises
-        .expand((e) => e.options.where((o) => o.isDevanagari).map((o) => o.text))
-        .toSet()
-        .toList();
-
     try {
       final result = await api.submitAttempt(
         lessonId,
-        state.answers.values.toList(),
+        answers: state.answers.values.toList(),
+        idempotencyKey: idempotencyKey,
       );
 
       final xpEarned = (result['xp_earned'] as num?)?.toInt() ?? 0;
       final correctAnswers = (result['correct_answers'] as num?)?.toInt() ?? 0;
       final totalQuestions = (result['total_questions'] as num?)?.toInt() ?? 0;
+      final alreadyCompleted = (result['already_completed'] as bool?) ?? false;
+      final score =
+          (result['score'] as num?)?.toDouble() ??
+          (totalQuestions > 0 ? correctAnswers / totalQuestions : 0.0);
+      final passingThreshold =
+          (result['passing_threshold'] as num?)?.toInt() ?? 100;
+      final passed =
+          (result['passed'] as bool?) ??
+          (totalQuestions > 0 &&
+              correctAnswers * 100 >= totalQuestions * passingThreshold);
 
-      final userRow = result['user'] as Map<String, dynamic>;
-      final user = DemoUser(
-        name: userRow['name'] as String,
-        email: userRow['email'] as String,
-        heroIndex: userRow['hero_index'] as int,
-        heroClassName: userRow['hero_class_name'] as String,
-        level: userRow['level'] as int,
-        xp: userRow['xp'] as int,
-        xpToNextLevel: userRow['xp_to_next_level'] as int,
-        streak: userRow['streak'] as int,
-        wordsFound: userRow['words_found'] as int,
-        lessonsCompleted: userRow['lessons_completed'] as int,
-        languageId: userRow['language_id'] as String,
-        activeCourseId: userRow['active_course_id'] as String?,
-        languageName: state.user.languageName,
-        languageScript: state.user.languageScript,
-      );
+      var user = state.user;
+      try {
+        user = await api.me();
+      } catch (_) {
+        // A successful attempt is already committed. A profile refresh
+        // failure must not turn that success into a retry or lose answers.
+      }
 
       final lessons = await api.lessons(courseId: user.activeCourseId);
       if (mounted) {
@@ -417,7 +349,10 @@ class GameStateNotifier extends StateNotifier<GameState> {
           lastXpEarned: xpEarned,
           lastCorrectAnswers: correctAnswers,
           lastTotalQuestions: totalQuestions,
-          lastWordsLearned: wordsLearned,
+          lastScore: score,
+          lastPassingThreshold: passingThreshold,
+          lastPassed: passed,
+          lastAlreadyCompleted: alreadyCompleted,
         );
       }
     } catch (error) {
@@ -439,10 +374,80 @@ class GameStateNotifier extends StateNotifier<GameState> {
     lessonComplete: false,
     matchedPairIds: {},
     answers: {},
-      );
+  );
 }
 
 final backendApiProvider = Provider<BackendApi>((ref) => BackendApi());
 final gameStateProvider = StateNotifierProvider<GameStateNotifier, GameState>(
   (ref) => GameStateNotifier(ref.watch(backendApiProvider)),
 );
+
+/// Provides the town map data (all lessons with availability status).
+final townMapProvider = FutureProvider<List<Lesson>>((ref) async {
+  final api = ref.watch(backendApiProvider);
+  final raw = await api.townMap('en_new');
+  return raw
+      .map(
+        (r) => Lesson(
+          id: r['id'] as String,
+          unitId: r['unit_sequence'] != null
+              ? (r['unit_sequence'] as num).toInt()
+              : null,
+          sequence: r['sequence'] != null
+              ? (r['sequence'] as num).toInt()
+              : null,
+          title: r['title'] as String,
+          subtitle: r['subtitle'] as String,
+          exerciseType: _parseExerciseType(r['exercise_type'] as String),
+          status: _lessonStatus(r['availability'] as String?),
+          xpReward: (r['xp_reward'] as num?)?.toInt() ?? 20,
+          wordCount: (r['word_count'] as num?)?.toInt() ?? 4,
+          requiredLevel: (r['required_level'] as num?)?.toInt() ?? 1,
+          isPublished: (r['is_published'] as bool?) ?? true,
+          isCheckpoint: (r['is_checkpoint'] as bool?) ?? false,
+          isCapstone: (r['is_capstone'] as bool?) ?? false,
+          availability: r['availability'] as String? ?? 'locked',
+          plannedExerciseCount:
+              (r['planned_exercise_count'] as num?)?.toInt() ?? 0,
+          populatedExerciseCount:
+              (r['populated_exercise_count'] as num?)?.toInt() ?? 0,
+        ),
+      )
+      .toList();
+});
+
+ExerciseType _parseExerciseType(String? value) {
+  switch (value) {
+    case 'matchWords':
+      return ExerciseType.matchWords;
+    case 'fillBlank':
+      return ExerciseType.fillBlank;
+    case 'pictureToWord':
+      return ExerciseType.pictureToWord;
+    case 'wordToPicture':
+      return ExerciseType.wordToPicture;
+    case 'translate':
+      return ExerciseType.translate;
+    case 'wordOrder':
+      return ExerciseType.wordOrder;
+    case 'dialogueComplete':
+      return ExerciseType.dialogueComplete;
+    default:
+      return ExerciseType.fillBlank;
+  }
+}
+
+LessonStatus _lessonStatus(String? value) {
+  switch (value) {
+    case 'cleared':
+    case 'completed':
+      return LessonStatus.completed;
+    case 'locked':
+      return LessonStatus.locked;
+    case 'unavailable':
+      return LessonStatus.unavailable;
+    case 'current':
+    default:
+      return LessonStatus.available;
+  }
+}

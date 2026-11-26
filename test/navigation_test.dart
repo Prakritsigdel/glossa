@@ -7,11 +7,26 @@ import 'package:glossa_app/core/widgets/bottom_nav_bar.dart';
 import 'package:glossa_app/core/widgets/not_found_screen.dart';
 import 'package:glossa_app/features/authentication/screens/signup_screen.dart';
 import 'package:glossa_app/features/character/screens/character_selection_screen.dart';
-import 'package:glossa_app/features/languages/screens/language_selection_screen.dart';
 import 'package:glossa_app/features/town/screens/town_screen.dart';
 import 'package:glossa_app/features/leaderboard/screens/leaderboard_screen.dart';
 import 'package:glossa_app/features/profile/screens/profile_screen.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
+import 'package:glossa_app/shared/models/demo_user.dart';
+import 'package:glossa_app/shared/models/course_models.dart';
+import 'package:glossa_app/shared/repositories/backend_api.dart';
+import 'support/mock_data.dart';
+
+class _NavigationApi extends BackendApi {
+  @override
+  Future<String?> get token async => null;
+
+  @override
+  Future<DemoUser> login({required String email, required String password}) async =>
+      seedUser.copyWith(activeCourseId: 'en_new');
+
+  @override
+  Future<List<Lesson>> lessons({String? courseId}) async => mockLessons;
+}
 
 void main() {
   group('Step 3: Main Application Persistent Shell & Tabs', () {
@@ -87,7 +102,9 @@ void main() {
 
   group('Step 5: Lesson Navigation & Progression Guards', () {
     test('Cannot start a locked lesson', () {
-      final container = ProviderContainer();
+      final container = ProviderContainer(
+        overrides: [backendApiProvider.overrideWithValue(_NavigationApi())],
+      );
       addTearDown(container.dispose);
 
       final notifier = container.read(gameStateProvider.notifier);
@@ -99,11 +116,14 @@ void main() {
       expect(container.read(gameStateProvider).activeLessonId, isNull);
     });
 
-    test('Can start an unlocked lesson and reset safely', () {
-      final container = ProviderContainer();
+    test('Can start an unlocked lesson and reset safely', () async {
+      final container = ProviderContainer(
+        overrides: [backendApiProvider.overrideWithValue(_NavigationApi())],
+      );
       addTearDown(container.dispose);
 
       final notifier = container.read(gameStateProvider.notifier);
+      await notifier.logIn(email: 'test@test.com', password: 'pw');
       expect(notifier.canStartLesson('lesson_1'), isTrue);
 
       notifier.startLesson('lesson_1');
@@ -118,10 +138,13 @@ void main() {
       // XP is no longer optimistic — it only changes on server success.
       // In test environment (no server), completeLesson throws and resets the flag.
       // A second call while lessonComplete is true is a guaranteed no-op.
-      final container = ProviderContainer();
+      final container = ProviderContainer(
+        overrides: [backendApiProvider.overrideWithValue(_NavigationApi())],
+      );
       addTearDown(container.dispose);
 
       final notifier = container.read(gameStateProvider.notifier);
+      await notifier.logIn(email: 'test@test.com', password: 'pw');
       notifier.startLesson('lesson_1');
       final initialXp = container.read(gameStateProvider).user.xp;
 
@@ -154,22 +177,6 @@ void main() {
 
       expect(find.text('Edit your\nhero'), findsOneWidget);
       expect(find.text('Save changes'), findsOneWidget);
-      expect(find.text('Cancel'), findsOneWidget);
-    });
-
-    testWidgets('LanguageSelectionScreen in edit mode displays Change Language and Save language',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: LanguageSelectionScreen(isEditing: true),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Change target\nlanguage'), findsOneWidget);
-      expect(find.text('Save language'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
     });
   });

@@ -1,5 +1,6 @@
 /// Represents the demo user / player state.
 class DemoUser {
+  final String id;
   final String name;
   final String email;
   final int heroIndex; // 0 = boy, 1 = girl
@@ -10,12 +11,10 @@ class DemoUser {
   final int streak;
   final int wordsFound;
   final int lessonsCompleted;
-  final String languageId;
-  final String languageName;
-  final String languageScript;
   final String? activeCourseId;
 
   const DemoUser({
+    required this.id,
     required this.name,
     required this.email,
     this.heroIndex = 0,
@@ -26,13 +25,11 @@ class DemoUser {
     this.streak = 0,
     this.wordsFound = 0,
     this.lessonsCompleted = 0,
-    this.languageId = '',
-    this.languageName = '',
-    this.languageScript = '',
     this.activeCourseId,
   });
 
   DemoUser copyWith({
+    String? id,
     String? name,
     String? email,
     int? heroIndex,
@@ -43,13 +40,11 @@ class DemoUser {
     int? streak,
     int? wordsFound,
     int? lessonsCompleted,
-    String? languageId,
-    String? languageName,
-    String? languageScript,
     String? activeCourseId,
     bool clearActiveCourse = false,
   }) {
     return DemoUser(
+      id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
       heroIndex: heroIndex ?? this.heroIndex,
@@ -60,10 +55,9 @@ class DemoUser {
       streak: streak ?? this.streak,
       wordsFound: wordsFound ?? this.wordsFound,
       lessonsCompleted: lessonsCompleted ?? this.lessonsCompleted,
-      languageId: languageId ?? this.languageId,
-      languageName: languageName ?? this.languageName,
-      languageScript: languageScript ?? this.languageScript,
-      activeCourseId: clearActiveCourse ? null : (activeCourseId ?? this.activeCourseId),
+      activeCourseId: clearActiveCourse
+          ? null
+          : (activeCourseId ?? this.activeCourseId),
     );
   }
 
@@ -74,3 +68,6 @@ class DemoUser {
     return 'Master';
   }
 }
+
+/// Empty unauthenticated state. Progress values stay at their model defaults.
+const DemoUser guestUser = DemoUser(id: '', name: 'Guest', email: '');

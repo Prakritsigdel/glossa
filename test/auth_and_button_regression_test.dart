@@ -10,11 +10,12 @@
 // 7. Backend attempt submission idempotency.
 
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:glossa_app/core/widgets/glossa_button.dart';
-import 'package:glossa_app/shared/mock_data/mock_data.dart';
+import 'support/mock_data.dart';
 import 'package:glossa_app/shared/models/course_models.dart';
 import 'package:glossa_app/shared/models/demo_user.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
@@ -44,7 +45,7 @@ class _MockApi extends BackendApi {
     storedToken = 'mock_token';
     if (shouldFail) throw const BackendException('Registration failed');
     if (authCompleter != null) return authCompleter!.future;
-    return seedUser.copyWith(name: name, email: email, activeCourseId: 'en_ne');
+    return seedUser.copyWith(name: name, email: email, activeCourseId: 'en_new');
   }
 
   @override
@@ -56,11 +57,11 @@ class _MockApi extends BackendApi {
     storedToken = 'mock_token';
     if (shouldFail) throw const BackendException('Invalid email or password');
     if (authCompleter != null) return authCompleter!.future;
-    return seedUser.copyWith(email: email, activeCourseId: 'en_ne');
+    return seedUser.copyWith(email: email, activeCourseId: 'en_new');
   }
 
   @override
-  Future<DemoUser> me() async => seedUser.copyWith(activeCourseId: 'en_ne');
+  Future<DemoUser> me() async => seedUser.copyWith(activeCourseId: 'en_new');
 
   @override
   Future<void> logout() async {
@@ -68,22 +69,14 @@ class _MockApi extends BackendApi {
   }
 
   @override
-  Future<List<Language>> getLanguages() async => [];
-
-  @override
-  Future<List<Course>> getCourses({bool publishedOnly = true}) async => [];
-
-  @override
-  Future<List<CourseUnit>> getUnitsForCourse(String courseId) async => [];
-
-  @override
   Future<List<Lesson>> lessons({String? courseId}) async => mockLessons;
 
   @override
   Future<Map<String, dynamic>> submitAttempt(
-    String lessonId,
-    List<Map<String, dynamic>> answers,
-  ) async {
+    String lessonId, {
+    required List<Map<String, dynamic>> answers,
+    String? idempotencyKey,
+  }) async {
     submitAttemptCallCount++;
     return {
       'completed': true,
@@ -111,230 +104,251 @@ class _MockApi extends BackendApi {
 
 void main() {
   group('GlossaButton Async & Loading State Management', () {
-    testWidgets('GlossaButton immediately disables and shows loadingLabel during async execution',
-        (tester) async {
-      final completer = Completer<void>();
-      var callCount = 0;
+    testWidgets(
+      'GlossaButton immediately disables and shows loadingLabel during async execution',
+      (tester) async {
+        final completer = Completer<void>();
+        var callCount = 0;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GlossaButton(
-              label: 'Submit',
-              loadingLabel: 'Processing...',
-              onPressed: () async {
-                callCount++;
-                await completer.future;
-              },
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: GlossaButton(
+                label: 'Submit',
+                loadingLabel: 'Processing...',
+                onPressed: () async {
+                  callCount++;
+                  await completer.future;
+                },
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Initially shows 'Submit'
-      expect(find.text('Submit'), findsOneWidget);
-      expect(find.text('Processing...'), findsNothing);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+        // Initially shows 'Submit'
+        expect(find.text('Submit'), findsOneWidget);
+        expect(find.text('Processing...'), findsNothing);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
 
-      // Tap button once
-      await tester.tap(find.byType(GlossaButton));
-      await tester.pump();
+        // Tap button once
+        await tester.tap(find.byType(GlossaButton));
+        await tester.pump();
 
-      // Now processing: label changed to 'Processing...', spinner is shown
-      expect(find.text('Processing...'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(callCount, 1);
+        // Now processing: label changed to 'Processing...', spinner is shown
+        expect(find.text('Processing...'), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(callCount, 1);
 
-      // Rapidly tap again while processing — should NOT trigger another call
-      await tester.tap(find.byType(GlossaButton));
-      await tester.pump();
-      await tester.tap(find.byType(GlossaButton));
-      await tester.pump();
-      expect(callCount, 1);
+        // Rapidly tap again while processing — should NOT trigger another call
+        await tester.tap(find.byType(GlossaButton));
+        await tester.pump();
+        await tester.tap(find.byType(GlossaButton));
+        await tester.pump();
+        expect(callCount, 1);
 
-      // Finish the async operation
-      completer.complete();
-      await tester.pumpAndSettle();
+        // Finish the async operation
+        completer.complete();
+        await tester.pumpAndSettle();
 
-      // Restored: label is 'Submit', spinner is gone
-      expect(find.text('Submit'), findsOneWidget);
-      expect(find.text('Processing...'), findsNothing);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-    });
+        // Restored: label is 'Submit', spinner is gone
+        expect(find.text('Submit'), findsOneWidget);
+        expect(find.text('Processing...'), findsNothing);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+      },
+    );
 
-    testWidgets('GlossaButton recovers enabled state and allows retry after error (try/finally)',
-        (tester) async {
-      var callCount = 0;
-      var shouldThrow = true;
+    testWidgets(
+      'GlossaButton recovers enabled state and allows retry after error (try/finally)',
+      (tester) async {
+        var callCount = 0;
+        var shouldThrow = true;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GlossaButton(
-              label: 'Action',
-              loadingLabel: 'Loading...',
-              onPressed: () async {
-                callCount++;
-                if (shouldThrow) {
-                  throw Exception('Network error');
-                }
-              },
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: GlossaButton(
+                label: 'Action',
+                loadingLabel: 'Loading...',
+                onPressed: () async {
+                  callCount++;
+                  if (shouldThrow) {
+                    throw Exception('Network error');
+                  }
+                },
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Tap — throws an error
-      await tester.tap(find.byType(GlossaButton));
-      await tester.pumpAndSettle();
+        // Tap — throws an error
+        await tester.tap(find.byType(GlossaButton));
+        await tester.pumpAndSettle();
 
-      expect(callCount, 1);
-      // Button must be restored to enabled so user can retry
-      expect(find.text('Action'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(callCount, 1);
+        // Button must be restored to enabled so user can retry
+        expect(find.text('Action'), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
 
-      // Now succeed on retry
-      shouldThrow = false;
-      await tester.tap(find.byType(GlossaButton));
-      await tester.pumpAndSettle();
+        // Now succeed on retry
+        shouldThrow = false;
+        await tester.tap(find.byType(GlossaButton));
+        await tester.pumpAndSettle();
 
-      expect(callCount, 2);
-      expect(find.text('Action'), findsOneWidget);
-    });
+        expect(callCount, 2);
+        expect(find.text('Action'), findsOneWidget);
+      },
+    );
   });
 
   group('Authentication Flow & Idempotency', () {
-    testWidgets('SignupScreen disables button and shows Creating account... during registration',
-        (tester) async {
-      final mockApi = _MockApi();
-      final completer = Completer<DemoUser>();
-      mockApi.authCompleter = completer;
+    testWidgets(
+      'SignupScreen disables button and shows Creating account... during registration',
+      (tester) async {
+        final mockApi = _MockApi();
+        final completer = Completer<DemoUser>();
+        mockApi.authCompleter = completer;
 
-      tester.view.physicalSize = const Size(800, 1600);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+        tester.view.physicalSize = const Size(800, 1600);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        ProviderScope(
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [backendApiProvider.overrideWithValue(mockApi)],
+            child: const MaterialApp(home: SignupScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Fill in valid registration details
+        final nameField = find.byType(TextFormField).at(0);
+        final emailField = find.byType(TextFormField).at(1);
+        final passField = find.byType(TextFormField).at(2);
+
+        await tester.enterText(nameField, 'Test User');
+        await tester.enterText(emailField, 'test@glossa.dev');
+        await tester.enterText(passField, 'Password123!');
+        await tester.pumpAndSettle();
+
+        // Accept terms
+        await tester.ensureVisible(find.byType(Checkbox));
+        await tester.tap(find.byType(Checkbox));
+        await tester.pumpAndSettle();
+
+        // Tap 'Start adventure'
+        final buttonFinder = find.widgetWithText(
+          GlossaButton,
+          'Start adventure',
+        );
+        await tester.ensureVisible(buttonFinder);
+        await tester.tap(buttonFinder);
+        await tester.pump();
+
+        // Verifies: button disabled and shows 'Creating account...'
+        expect(find.text('Creating account...'), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(mockApi.registerCallCount, 1);
+
+        // Rapidly tap again — must NOT duplicate registration
+        await tester.tap(find.byType(GlossaButton).first);
+        await tester.pump();
+        expect(mockApi.registerCallCount, 1);
+
+        // Complete the request
+        completer.complete(seedUser.copyWith(name: 'Test User'));
+        await tester.pump();
+      },
+    );
+
+    testWidgets(
+      'LoginScreen disables button and shows Loading save file... during login',
+      (tester) async {
+        final mockApi = _MockApi();
+        final completer = Completer<DemoUser>();
+        mockApi.authCompleter = completer;
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [backendApiProvider.overrideWithValue(mockApi)],
+            child: const MaterialApp(home: LoginScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final emailField = find.byType(TextFormField).at(0);
+        final passField = find.byType(TextFormField).at(1);
+
+        await tester.enterText(emailField, 'test@glossa.dev');
+        await tester.enterText(passField, 'Password123!');
+        await tester.pumpAndSettle();
+
+        // Tap 'Load game'
+        await tester.tap(find.widgetWithText(GlossaButton, 'Load game'));
+        await tester.pump();
+
+        expect(find.text('Loading save file...'), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(mockApi.loginCallCount, 1);
+
+        // Rapid second tap
+        await tester.tap(find.byType(GlossaButton).first);
+        await tester.pump();
+        expect(mockApi.loginCallCount, 1);
+
+        completer.complete(seedUser);
+        await tester.pump();
+      },
+    );
+
+    testWidgets(
+      'Session logout resets authentication state in GameStateNotifier',
+      (tester) async {
+        final mockApi = _MockApi();
+        final container = ProviderContainer(
           overrides: [backendApiProvider.overrideWithValue(mockApi)],
-          child: const MaterialApp(home: SignupScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
 
-      // Fill in valid registration details
-      final nameField = find.byType(TextFormField).at(0);
-      final emailField = find.byType(TextFormField).at(1);
-      final passField = find.byType(TextFormField).at(2);
+        final notifier = container.read(gameStateProvider.notifier);
+        await notifier.logIn(email: 'user@glossa.dev', password: 'password123');
 
-      await tester.enterText(nameField, 'Test User');
-      await tester.enterText(emailField, 'test@glossa.dev');
-      await tester.enterText(passField, 'Password123!');
-      await tester.pumpAndSettle();
+        expect(container.read(gameStateProvider).isAuthenticated, true);
 
-      // Accept terms
-      await tester.ensureVisible(find.byType(Checkbox));
-      await tester.tap(find.byType(Checkbox));
-      await tester.pumpAndSettle();
+        // Perform logout
+        await notifier.logOut();
 
-      // Tap 'Start adventure'
-      final buttonFinder = find.widgetWithText(GlossaButton, 'Start adventure');
-      await tester.ensureVisible(buttonFinder);
-      await tester.tap(buttonFinder);
-      await tester.pump();
+        expect(container.read(gameStateProvider).isAuthenticated, false);
+        expect(container.read(gameStateProvider).user.email, isEmpty);
+        expect(container.read(gameStateProvider).user.xp, 0);
+        expect(container.read(gameStateProvider).lessons, isEmpty);
+      },
+    );
 
-      // Verifies: button disabled and shows 'Creating account...'
-      expect(find.text('Creating account...'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(mockApi.registerCallCount, 1);
-
-      // Rapidly tap again — must NOT duplicate registration
-      await tester.tap(find.byType(GlossaButton).first);
-      await tester.pump();
-      expect(mockApi.registerCallCount, 1);
-
-      // Complete the request
-      completer.complete(seedUser.copyWith(name: 'Test User'));
-      await tester.pump();
-    });
-
-    testWidgets('LoginScreen disables button and shows Loading save file... during login',
-        (tester) async {
-      final mockApi = _MockApi();
-      final completer = Completer<DemoUser>();
-      mockApi.authCompleter = completer;
-
-      await tester.pumpWidget(
-        ProviderScope(
+    testWidgets(
+      'Repeated completeLesson calls are idempotent and do not grant duplicate XP',
+      (tester) async {
+        final mockApi = _MockApi();
+        final container = ProviderContainer(
           overrides: [backendApiProvider.overrideWithValue(mockApi)],
-          child: const MaterialApp(home: LoginScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
 
-      final emailField = find.byType(TextFormField).at(0);
-      final passField = find.byType(TextFormField).at(1);
+        final notifier = container.read(gameStateProvider.notifier);
+        await notifier.logIn(email: 'player@example.com', password: 'pw');
+        await notifier.startLesson('lesson_1');
 
-      await tester.enterText(emailField, 'test@glossa.dev');
-      await tester.enterText(passField, 'Password123!');
-      await tester.pumpAndSettle();
+        // First completion
+        await notifier.completeLesson();
+        expect(mockApi.submitAttemptCallCount, 1);
+        final xpAfterFirst = container.read(gameStateProvider).user.xp;
 
-      // Tap 'Load game'
-      await tester.tap(find.widgetWithText(GlossaButton, 'Load game'));
-      await tester.pump();
-
-      expect(find.text('Loading save file...'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(mockApi.loginCallCount, 1);
-
-      // Rapid second tap
-      await tester.tap(find.byType(GlossaButton).first);
-      await tester.pump();
-      expect(mockApi.loginCallCount, 1);
-
-      completer.complete(seedUser);
-      await tester.pump();
-    });
-
-    testWidgets('Session logout resets authentication state in GameStateNotifier',
-        (tester) async {
-      final mockApi = _MockApi();
-      final container = ProviderContainer(
-        overrides: [backendApiProvider.overrideWithValue(mockApi)],
-      );
-
-      final notifier = container.read(gameStateProvider.notifier);
-      await notifier.logIn(email: 'user@glossa.dev', password: 'password123');
-
-      expect(container.read(gameStateProvider).isAuthenticated, true);
-
-      // Perform logout
-      await notifier.logOut();
-
-      expect(container.read(gameStateProvider).isAuthenticated, false);
-      expect(container.read(gameStateProvider).user.email, seedUser.email);
-    });
-
-    testWidgets('Repeated completeLesson calls are idempotent and do not grant duplicate XP',
-        (tester) async {
-      final mockApi = _MockApi();
-      final container = ProviderContainer(
-        overrides: [backendApiProvider.overrideWithValue(mockApi)],
-      );
-
-      final notifier = container.read(gameStateProvider.notifier);
-      await notifier.startLesson('lesson_1');
-
-      // First completion
-      await notifier.completeLesson();
-      expect(mockApi.submitAttemptCallCount, 1);
-      final xpAfterFirst = container.read(gameStateProvider).user.xp;
-
-      // Second completion attempt on the same completed lesson
-      await notifier.completeLesson();
-      expect(mockApi.submitAttemptCallCount, 1); // Guard prevented re-submission!
-      expect(container.read(gameStateProvider).user.xp, xpAfterFirst);
-    });
+        // Second completion attempt on the same completed lesson
+        await notifier.completeLesson();
+        expect(
+          mockApi.submitAttemptCallCount,
+          1,
+        ); // Guard prevented re-submission!
+        expect(container.read(gameStateProvider).user.xp, xpAfterFirst);
+      },
+    );
   });
 }

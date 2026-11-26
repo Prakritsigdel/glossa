@@ -107,9 +107,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         ),
                                       ),
                                       child: Text(
-                                        user.languageScript.isNotEmpty
-                                            ? '${user.languageScript} (${user.languageName})'
-                                            : 'Nepal Bhasa (Newari)',
+                                        'नेपाल भाषा (Newari)',
                                         style: GlossaTypography.labelSmall
                                             .copyWith(
                                               color: GlossaColors.blueNavy,
@@ -310,13 +308,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 color: GlossaColors.blueNavy,
                               ),
                               title: Text(
-                                'Change Target Language',
+                                'Course: English \u2192 Newari',
                                 style: GlossaTypography.labelMedium,
                               ),
-                              trailing: const Icon(Icons.chevron_right_rounded),
-                              onTap: () => context.push(
-                                '${AppRoutes.languageSelect}?mode=edit',
+                              trailing: const Icon(
+                                Icons.lock_rounded,
+                                color: GlossaColors.textSubtle,
+                                size: 20,
                               ),
+                              onTap: null,
                             ),
                             const Divider(height: 1, thickness: 1),
                             ListTile(

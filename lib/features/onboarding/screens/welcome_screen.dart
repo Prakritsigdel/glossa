@@ -56,7 +56,7 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: Spacing.xl),
                     Text(
-                      'Master the\nlanguages of\nNepal.',
+                      'Master English\u2192Newari.',
                       style: GlossaTypography.displayLargeOnDark.copyWith(
                         fontSize: 36,
                         height: 1.1,
@@ -64,7 +64,8 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: Spacing.md),
                     Text(
-                      'Explore game-inspired quests, complete exercises, and unlock knowledge.',
+                      'Learn Nepal Bhasa (Newari) through game-inspired quests, '
+                      'matching exercises, and translation practice.',
                       style: GlossaTypography.bodyMediumOnDark,
                     ),
                     const SizedBox(height: Spacing.xxl),

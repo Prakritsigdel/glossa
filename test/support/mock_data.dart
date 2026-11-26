@@ -1,10 +1,9 @@
-import '../models/demo_user.dart';
-import '../models/hero_choice.dart';
-import '../models/course_models.dart';
-import '../models/leaderboard_entry.dart';
+import 'package:glossa_app/shared/models/demo_user.dart';
+import 'package:glossa_app/shared/models/course_models.dart';
 
 // ─── Seed user ──────────────────────────────────────────────
 const DemoUser seedUser = DemoUser(
+  id: 'user1',
   name: 'LeBron',
   email: 'lebron@example.com',
   heroIndex: 0,
@@ -15,51 +14,16 @@ const DemoUser seedUser = DemoUser(
   streak: 5,
   wordsFound: 24,
   lessonsCompleted: 1,
-  languageId: 'newari',
-  languageName: 'Newari',
-  languageScript: 'नेपाल भाषा',
 );
 
 // ─── Hero choices ───────────────────────────────────────────
-const List<HeroChoice> heroChoices = [
-  HeroChoice(index: 0, label: 'Boy', description: 'A brave young traveler.'),
-  HeroChoice(index: 1, label: 'Girl', description: 'A courageous explorer.'),
-];
-
-// ─── Language choices ───────────────────────────────────────
-const List<LanguageChoice> languageChoices = [
-  LanguageChoice(
-    id: 'nepali',
-    nameNative: 'नेपाली',
-    nameEnglish: 'Nepali',
-    letterSymbol: 'ने',
-    subtitle: 'Primary course',
-    isStarter: true,
-  ),
-  LanguageChoice(
-    id: 'english',
-    nameNative: 'English',
-    nameEnglish: 'English',
-    letterSymbol: 'En',
-    subtitle: 'Learn English',
-  ),
-  LanguageChoice(
-    id: 'newari',
-    nameNative: 'नेपाल भाषा',
-    nameEnglish: 'Newari',
-    letterSymbol: 'भा',
-    subtitle: 'Heritage language',
-  ),
-];
-
-// ─── Lessons ────────────────────────────────────────────────
 List<Lesson> get mockLessons => [
   const Lesson(
     id: 'lesson_1',
     title: 'Rice and Bread',
     subtitle: 'Match · 4 words',
     exerciseType: ExerciseType.matchWords,
-    status: LessonStatus.cleared,
+    status: LessonStatus.completed,
     xpReward: 20,
     wordCount: 4,
     requiredLevel: 1,
@@ -69,7 +33,7 @@ List<Lesson> get mockLessons => [
     title: 'Around the House',
     subtitle: 'Fill in the blank · +20 XP',
     exerciseType: ExerciseType.fillBlank,
-    status: LessonStatus.current,
+    status: LessonStatus.available,
     xpReward: 20,
     wordCount: 4,
     requiredLevel: 3,
@@ -133,7 +97,6 @@ List<Exercise> get matchWordsExercises => [
       AnswerOption(id: 'mw_d4', text: 'बजि', isDevanagari: true),
       AnswerOption(id: 'mw_e4', text: 'Beaten rice'),
     ],
-    correctAnswerId: '', // Matching pairs; handled by lesson logic
   ),
 ];
 
@@ -158,7 +121,6 @@ List<Exercise> get fillBlankExercises => [
       AnswerOption(id: 'fb_b', text: 'ल', isDevanagari: true),
       AnswerOption(id: 'fb_c', text: 'छें', isDevanagari: true),
     ],
-    correctAnswerId: 'fb_a',
   ),
   const Exercise(
     id: 'fb_2',
@@ -171,7 +133,6 @@ List<Exercise> get fillBlankExercises => [
       AnswerOption(id: 'fb2_b', text: 'माँ', isDevanagari: true),
       AnswerOption(id: 'fb2_c', text: 'छें', isDevanagari: true),
     ],
-    correctAnswerId: 'fb2_a',
   ),
 ];
 
@@ -182,14 +143,13 @@ List<Exercise> get pictureToWordExercises => [
     type: ExerciseType.pictureToWord,
     instruction: 'Name the picture',
     prompt: 'What is this called?',
-    imageKey: 'bowl',
+    illustrationId: 'bowl',
     options: [
       AnswerOption(id: 'ptw_a', text: 'बजि', isDevanagari: true),
       AnswerOption(id: 'ptw_b', text: 'छें', isDevanagari: true),
       AnswerOption(id: 'ptw_c', text: 'ल', isDevanagari: true),
       AnswerOption(id: 'ptw_d', text: 'माँ', isDevanagari: true),
     ],
-    correctAnswerId: 'ptw_a',
   ),
 ];
 
@@ -200,13 +160,13 @@ List<Exercise> get wordToPictureExercises => [
     type: ExerciseType.wordToPicture,
     instruction: 'Pick the picture',
     prompt: 'Which picture is this?',
+    illustrationId: 'house',
     options: [
       AnswerOption(id: 'wtp_a', text: 'House', imageKey: 'house'),
       AnswerOption(id: 'wtp_b', text: 'Water', imageKey: 'droplet'),
       AnswerOption(id: 'wtp_c', text: 'Bowl', imageKey: 'bowl'),
       AnswerOption(id: 'wtp_d', text: 'Person', imageKey: 'person'),
     ],
-    correctAnswerId: 'wtp_a',
   ),
 ];
 
@@ -225,35 +185,3 @@ List<Exercise> exercisesForLesson(String lessonId) {
       return fillBlankExercises; // Fallback for locked lessons
   }
 }
-
-// ─── Mock leaderboard ───────────────────────────────────────
-List<LeaderboardEntry> get mockLeaderboardWeekly => [
-  const LeaderboardEntry(rank: 1, name: 'Sabin', level: 8, className: 'Master', xp: 2140, heroIndex: 0),
-  const LeaderboardEntry(rank: 2, name: 'Nima', level: 7, className: 'Guardian', xp: 1980, heroIndex: 1),
-  const LeaderboardEntry(rank: 3, name: 'Rina', level: 7, className: 'Guardian', xp: 1850, heroIndex: 1),
-  const LeaderboardEntry(rank: 4, name: 'Anju', level: 7, className: 'Guardian', xp: 1320, heroIndex: 1),
-  const LeaderboardEntry(rank: 5, name: 'Dorje', level: 6, className: 'Speaker', xp: 1090, heroIndex: 0),
-  const LeaderboardEntry(rank: 6, name: 'LeBron', level: 4, className: 'Speaker', xp: 640, heroIndex: 0, isCurrentUser: true),
-  const LeaderboardEntry(rank: 7, name: 'Pema', level: 4, className: 'Speaker', xp: 590, heroIndex: 1),
-  const LeaderboardEntry(rank: 8, name: 'Karma', level: 2, className: 'Traveler', xp: 410, heroIndex: 0),
-];
-
-List<LeaderboardEntry> get mockLeaderboardAllTime => [
-  const LeaderboardEntry(rank: 1, name: 'Sabin', level: 10, className: 'Master', xp: 8540, heroIndex: 0),
-  const LeaderboardEntry(rank: 2, name: 'Nima', level: 9, className: 'Master', xp: 7200, heroIndex: 1),
-  const LeaderboardEntry(rank: 3, name: 'Rina', level: 8, className: 'Master', xp: 6350, heroIndex: 1),
-  const LeaderboardEntry(rank: 4, name: 'Anju', level: 7, className: 'Guardian', xp: 4800, heroIndex: 1),
-  const LeaderboardEntry(rank: 5, name: 'Dorje', level: 6, className: 'Speaker', xp: 3200, heroIndex: 0),
-  const LeaderboardEntry(rank: 6, name: 'LeBron', level: 4, className: 'Speaker', xp: 640, heroIndex: 0, isCurrentUser: true),
-  const LeaderboardEntry(rank: 7, name: 'Pema', level: 4, className: 'Speaker', xp: 590, heroIndex: 1),
-  const LeaderboardEntry(rank: 8, name: 'Karma', level: 2, className: 'Traveler', xp: 410, heroIndex: 0),
-];
-
-/// Word of the day
-const Map<String, String> wordOfTheDay = {
-  'devanagari': 'छें',
-  'english': 'House',
-};
-
-/// Words learned as chips shown on completion
-const List<String> learnedWords = ['माँ', 'ल', 'छें', 'बजि'];
