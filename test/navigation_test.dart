@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:glossa_app/app/glossa_app.dart';
 import 'package:glossa_app/app/router/app_router.dart';
 import 'package:glossa_app/core/widgets/bottom_nav_bar.dart';
@@ -14,67 +15,96 @@ import 'package:glossa_app/shared/providers/game_state_provider.dart';
 import 'package:glossa_app/shared/models/demo_user.dart';
 import 'package:glossa_app/shared/models/course_models.dart';
 import 'package:glossa_app/shared/repositories/backend_api.dart';
+
 import 'support/mock_data.dart';
 
 class _NavigationApi extends BackendApi {
+  bool failExerciseFetch = false;
+
   @override
   Future<String?> get token async => null;
 
   @override
-  Future<DemoUser> login({required String email, required String password}) async =>
-      seedUser.copyWith(activeCourseId: 'en_new');
+  Future<DemoUser> login({
+    required String email,
+    required String password,
+  }) async => seedUser.copyWith(activeCourseId: 'en_new');
 
   @override
   Future<List<Lesson>> lessons({String? courseId}) async => mockLessons;
+
+  @override
+  Future<List<Exercise>> exercises(String lessonId) async {
+    if (failExerciseFetch) {
+      throw const BackendException('Exercise request failed.');
+    }
+    return const [
+      Exercise(
+        id: 'navigation-exercise',
+        type: ExerciseType.fillBlank,
+        instruction: 'Choose the answer',
+        options: [AnswerOption(id: 'answer', text: 'answer')],
+      ),
+    ];
+  }
+
+  @override
+  Future<bool> checkAnswer(
+    String lessonId,
+    Map<String, dynamic> answer,
+  ) async => true;
 }
 
 void main() {
   group('Step 3: Main Application Persistent Shell & Tabs', () {
-    testWidgets('Main shell displays persistent bottom nav bar and switches branches',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(const ProviderScope(child: GlossaApp()));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Main shell displays persistent bottom nav bar and switches branches',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(const ProviderScope(child: GlossaApp()));
+        await tester.pumpAndSettle();
 
-      // Navigate to /town
-      appRouter.go(AppRoutes.town);
-      await tester.pumpAndSettle();
+        // Navigate to /town
+        appRouter.go(AppRoutes.town);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
 
-      // Verify TownScreen and GlossaBottomNavBar are present
-      expect(find.byType(TownScreen), findsOneWidget);
-      expect(find.byType(GlossaBottomNavBar), findsOneWidget);
+        // Verify TownScreen and GlossaBottomNavBar are present
+        expect(find.byType(TownScreen), findsOneWidget);
+        expect(find.byType(GlossaBottomNavBar), findsOneWidget);
 
-      // Tap Leaderboard tab (item 1)
-      await tester.tap(find.text('Leaderboard'));
-      await tester.pumpAndSettle();
+        // Tap Leaderboard tab (item 1)
+        await tester.tap(find.text('Leaderboard'));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(LeaderboardScreen), findsOneWidget);
-      expect(find.byType(TownScreen), findsNothing);
-      expect(find.byType(GlossaBottomNavBar), findsOneWidget);
+        expect(find.byType(LeaderboardScreen), findsOneWidget);
+        expect(find.byType(TownScreen), findsNothing);
+        expect(find.byType(GlossaBottomNavBar), findsOneWidget);
 
-      // Tap Hero/Profile tab (item 2)
-      await tester.tap(find.text('Hero'));
-      await tester.pumpAndSettle();
+        // Tap Hero/Profile tab (item 2)
+        await tester.tap(find.text('Hero'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.byType(ProfileScreen), findsOneWidget);
-      expect(find.byType(LeaderboardScreen), findsNothing);
-      expect(find.byType(GlossaBottomNavBar), findsOneWidget);
+        expect(find.byType(ProfileScreen), findsOneWidget);
+        expect(find.byType(LeaderboardScreen), findsNothing);
+        expect(find.byType(GlossaBottomNavBar), findsOneWidget);
 
-      // Tap Town tab (item 0)
-      await tester.tap(find.text('Town'));
-      await tester.pumpAndSettle();
+        // Tap Town tab (item 0)
+        await tester.tap(find.text('Town'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.byType(TownScreen), findsOneWidget);
-    });
+        expect(find.byType(TownScreen), findsOneWidget);
+      },
+    );
   });
 
   group('Step 4: Onboarding Workflow & Back Navigation', () {
-    testWidgets('SignupScreen has working back button', (WidgetTester tester) async {
+    testWidgets('SignupScreen has working back button', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: SignupScreen(),
-          ),
-        ),
+        const ProviderScope(child: MaterialApp(home: SignupScreen())),
       );
       await tester.pumpAndSettle();
 
@@ -83,25 +113,27 @@ void main() {
       expect(find.text('Load game'), findsOneWidget);
     });
 
-    testWidgets('CharacterSelectionScreen in onboarding mode shows Confirm button',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: CharacterSelectionScreen(isEditing: false),
+    testWidgets(
+      'CharacterSelectionScreen in onboarding mode shows Confirm button',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const ProviderScope(
+            child: MaterialApp(
+              home: CharacterSelectionScreen(isEditing: false),
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Select your\ncharacter'), findsOneWidget);
-      expect(find.text('Confirm'), findsOneWidget);
-      expect(find.text('Save changes'), findsNothing);
-    });
+        expect(find.text('Select your\ncharacter'), findsOneWidget);
+        expect(find.text('Confirm'), findsOneWidget);
+        expect(find.text('Save changes'), findsNothing);
+      },
+    );
   });
 
   group('Step 5: Lesson Navigation & Progression Guards', () {
-    test('Cannot start a locked lesson', () {
+    test('Cannot start a locked lesson', () async {
       final container = ProviderContainer(
         overrides: [backendApiProvider.overrideWithValue(_NavigationApi())],
       );
@@ -112,7 +144,10 @@ void main() {
       final canStart = notifier.canStartLesson('lesson_3');
       expect(canStart, isFalse);
 
-      notifier.startLesson('lesson_3');
+      await expectLater(
+        notifier.startLesson('lesson_3'),
+        throwsA(isA<BackendException>()),
+      );
       expect(container.read(gameStateProvider).activeLessonId, isNull);
     });
 
@@ -126,8 +161,11 @@ void main() {
       await notifier.logIn(email: 'test@test.com', password: 'pw');
       expect(notifier.canStartLesson('lesson_1'), isTrue);
 
-      notifier.startLesson('lesson_1');
-      expect(container.read(gameStateProvider).activeLessonId, equals('lesson_1'));
+      await notifier.startLesson('lesson_1');
+      expect(
+        container.read(gameStateProvider).activeLessonId,
+        equals('lesson_1'),
+      );
 
       notifier.resetLesson();
       expect(container.read(gameStateProvider).activeLessonId, isNull);
@@ -145,7 +183,11 @@ void main() {
 
       final notifier = container.read(gameStateProvider.notifier);
       await notifier.logIn(email: 'test@test.com', password: 'pw');
-      notifier.startLesson('lesson_1');
+      await notifier.startLesson('lesson_1');
+      await notifier.checkAnswer(
+        'navigation-exercise',
+        selectedOptionId: 'answer',
+      );
       final initialXp = container.read(gameStateProvider).user.xp;
 
       // lessonComplete is set to true synchronously before any await
@@ -156,44 +198,128 @@ void main() {
       await notifier.completeLesson();
 
       // First call will throw in test env (no server) and reset lessonComplete
-      try { await future; } catch (_) {}
+      try {
+        await future;
+      } catch (_) {}
 
       // XP unchanged — no server confirmed it
       expect(container.read(gameStateProvider).user.xp, equals(initialXp));
     });
+
+    test(
+      'Exercise loading failure clears the active lesson and rethrows',
+      () async {
+        final api = _NavigationApi()..failExerciseFetch = true;
+        final container = ProviderContainer(
+          overrides: [backendApiProvider.overrideWithValue(api)],
+        );
+        addTearDown(container.dispose);
+
+        final notifier = container.read(gameStateProvider.notifier);
+        await notifier.logIn(email: 'test@test.com', password: 'pw');
+        await expectLater(
+          notifier.startLesson('lesson_1'),
+          throwsA(isA<BackendException>()),
+        );
+
+        final state = container.read(gameStateProvider);
+        expect(state.activeLessonId, isNull);
+        expect(state.exercises, isEmpty);
+        expect(state.errorMessage, contains('Exercise request failed'));
+      },
+    );
+  });
+
+  testWidgets('Meeting Someone reaches battle flow after exercises load', (
+    tester,
+  ) async {
+    const lesson = Lesson(
+      id: 'en_new_u1_l2',
+      unitId: 1,
+      sequence: 2,
+      title: 'Meeting Someone',
+      subtitle: 'Names and greetings',
+      exerciseType: ExerciseType.dialogueComplete,
+      status: LessonStatus.available,
+    );
+    final api = _NavigationApi();
+    final container = ProviderContainer(
+      overrides: [
+        backendApiProvider.overrideWithValue(api),
+        townMapProvider.overrideWith((ref) async => [lesson]),
+      ],
+    );
+    addTearDown(container.dispose);
+    container.read(gameStateProvider.notifier).state = container
+        .read(gameStateProvider)
+        .copyWith(lessons: [lesson]);
+
+    final router = GoRouter(
+      initialLocation: AppRoutes.town,
+      routes: [
+        GoRoute(
+          path: AppRoutes.town,
+          builder: (context, state) => const TownScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.battleLoading,
+          builder: (context, state) =>
+              const Scaffold(body: Text('Battle flow')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Meeting Someone'), findsOneWidget);
+    await tester.tap(find.text('Go!'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Battle flow'), findsOneWidget);
+    expect(container.read(gameStateProvider).activeLessonId, 'en_new_u1_l2');
+    expect(container.read(gameStateProvider).exercises, hasLength(1));
   });
 
   group('Step 6: Profile Editing Flow', () {
-    testWidgets('CharacterSelectionScreen in edit mode displays Edit Hero and Save changes',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: CharacterSelectionScreen(isEditing: true),
+    testWidgets(
+      'CharacterSelectionScreen in edit mode displays Edit Hero and Save changes',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const ProviderScope(
+            child: MaterialApp(home: CharacterSelectionScreen(isEditing: true)),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Edit your\nhero'), findsOneWidget);
-      expect(find.text('Save changes'), findsOneWidget);
-      expect(find.text('Cancel'), findsOneWidget);
-    });
+        expect(find.text('Edit your\nhero'), findsOneWidget);
+        expect(find.text('Save changes'), findsOneWidget);
+        expect(find.text('Cancel'), findsOneWidget);
+      },
+    );
   });
 
   group('Step 2: Fallback Route / 404 Screen', () {
-    testWidgets('NotFoundScreen renders RPG-themed message and Return to Town button',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: NotFoundScreen(uri: '/unknown-route'),
-        ),
-      );
-      await tester.pumpAndSettle();
+    testWidgets(
+      'NotFoundScreen renders RPG-themed message and Return to Town button',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(home: NotFoundScreen(uri: '/unknown-route')),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Lost Traveler'), findsOneWidget);
-      expect(find.textContaining('Fog of Forgetting'), findsOneWidget);
-      expect(find.text('Return to Town'), findsOneWidget);
-    });
+        expect(find.text('Lost Traveler'), findsOneWidget);
+        expect(find.textContaining('Fog of Forgetting'), findsOneWidget);
+        expect(find.text('Return to Town'), findsOneWidget);
+      },
+    );
   });
 }

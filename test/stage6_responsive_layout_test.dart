@@ -28,7 +28,9 @@ void main() {
           title: planNumber == 15 ? 'A Day in Newari' : 'Lesson $planNumber',
           subtitle: 'Planned lesson',
           exerciseType: ExerciseType.matchWords,
-          status: index == 0 ? LessonStatus.available : LessonStatus.unavailable,
+          status: index == 0
+              ? LessonStatus.available
+              : LessonStatus.unavailable,
           isPublished: index == 0,
           isCheckpoint: checkpoint,
           isCapstone: planNumber == 15,
@@ -37,26 +39,30 @@ void main() {
         );
       });
 
-      await tester.pumpWidget(ProviderScope(
-        overrides: [townMapProvider.overrideWith((ref) async => lessons)],
-        child: const MaterialApp(home: TownScreen()),
-      ));
-      await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [townMapProvider.overrideWith((ref) async => lessons)],
+          child: const MaterialApp(home: TownScreen()),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(TownScreen), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('Completion layout fits at ${width.toInt()} logical pixels',
-        (tester) async {
+    testWidgets('Completion layout fits at ${width.toInt()} logical pixels', (
+      tester,
+    ) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = Size(width, 850);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(const ProviderScope(
-        child: MaterialApp(home: LevelUpScreen()),
-      ));
+      await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: LevelUpScreen())),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(LevelUpScreen), findsOneWidget);
