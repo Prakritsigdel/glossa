@@ -15,7 +15,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:glossa_app/core/widgets/glossa_button.dart';
+
 import 'support/mock_data.dart';
+
 import 'package:glossa_app/shared/models/course_models.dart';
 import 'package:glossa_app/shared/models/demo_user.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
@@ -45,7 +47,11 @@ class _MockApi extends BackendApi {
     storedToken = 'mock_token';
     if (shouldFail) throw const BackendException('Registration failed');
     if (authCompleter != null) return authCompleter!.future;
-    return seedUser.copyWith(name: name, email: email, activeCourseId: 'en_new');
+    return seedUser.copyWith(
+      name: name,
+      email: email,
+      activeCourseId: 'en_new',
+    );
   }
 
   @override
@@ -334,7 +340,7 @@ void main() {
 
         final notifier = container.read(gameStateProvider.notifier);
         await notifier.logIn(email: 'player@example.com', password: 'pw');
-        await notifier.startLesson('lesson_1');
+        notifier.state = notifier.state.copyWith(activeLessonId: 'lesson_1');
 
         // First completion
         await notifier.completeLesson();

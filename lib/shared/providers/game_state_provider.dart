@@ -210,7 +210,9 @@ class GameStateNotifier extends StateNotifier<GameState> {
   );
 
   Future<void> startLesson(String lessonId) async {
-    if (!canStartLesson(lessonId)) return;
+    if (!canStartLesson(lessonId)) {
+      throw const BackendException('This lesson is locked or unavailable.');
+    }
     state = state.copyWith(
       activeLessonId: lessonId,
       exercises: [],
@@ -223,10 +225,27 @@ class GameStateNotifier extends StateNotifier<GameState> {
     );
     try {
       final exercises = await api.exercises(lessonId);
-      if (exercises.isNotEmpty && mounted) {
+      if (exercises.isEmpty) {
+        throw const BackendException(
+          'No exercises are available for this lesson yet.',
+        );
+      }
+      if (mounted && state.activeLessonId == lessonId) {
         state = state.copyWith(exercises: exercises);
       }
-    } catch (_) {}
+    } catch (error) {
+      if (mounted && state.activeLessonId == lessonId) {
+        state = state.copyWith(
+          clearActiveLesson: true,
+          exercises: [],
+          currentExerciseIndex: 0,
+          correctAnswersInLesson: 0,
+          lessonComplete: false,
+          errorMessage: error.toString(),
+        );
+      }
+      rethrow;
+    }
   }
 
   /// Check a single exercise answer via the per-exercise endpoint.

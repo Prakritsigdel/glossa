@@ -7,6 +7,7 @@ import 'package:glossa_app/shared/providers/game_state_provider.dart';
 import 'package:glossa_app/shared/models/course_models.dart';
 import 'package:glossa_app/shared/repositories/backend_api.dart';
 import 'package:glossa_app/shared/models/demo_user.dart';
+
 import 'support/mock_data.dart';
 
 // ─── Test double ───────────────────────────────────────────────────────────
@@ -17,8 +18,10 @@ class _NoOpBackendApi extends BackendApi {
   Future<String?> get token async => null;
 
   @override
-  Future<DemoUser> login({required String email, required String password}) async =>
-      seedUser.copyWith(activeCourseId: 'en_new');
+  Future<DemoUser> login({
+    required String email,
+    required String password,
+  }) async => seedUser.copyWith(activeCourseId: 'en_new');
 
   @override
   Future<Map<String, dynamic>> submitAttempt(
@@ -247,7 +250,7 @@ void main() {
 
         final notifier = container.read(gameStateProvider.notifier);
         await notifier.logIn(email: 'test@test.com', password: 'pw');
-        notifier.startLesson('lesson_1');
+        notifier.state = notifier.state.copyWith(activeLessonId: 'lesson_1');
         // First completion sets lessonComplete = true
         await notifier.completeLesson();
         expect(container.read(gameStateProvider).lessonComplete, isTrue);
@@ -273,7 +276,7 @@ void main() {
 
       final notifier = container.read(gameStateProvider.notifier);
       await notifier.logIn(email: 'test@test.com', password: 'pw');
-      notifier.startLesson('lesson_1');
+      notifier.state = notifier.state.copyWith(activeLessonId: 'lesson_1');
       expect(container.read(gameStateProvider).lessonComplete, isFalse);
 
       // Start completeLesson but do not await — flag should be set synchronously
@@ -326,7 +329,7 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(gameStateProvider.notifier);
-      notifier.startLesson('lesson_1');
+      notifier.state = notifier.state.copyWith(activeLessonId: 'lesson_1');
       final xpBefore = container.read(gameStateProvider).user.xp;
 
       // completeLesson should throw and revert lessonComplete
@@ -353,7 +356,7 @@ void main() {
         addTearDown(container.dispose);
 
         final notifier = container.read(gameStateProvider.notifier);
-        notifier.startLesson('lesson_1');
+        notifier.state = notifier.state.copyWith(activeLessonId: 'lesson_1');
         try {
           await notifier.completeLesson();
         } catch (_) {}

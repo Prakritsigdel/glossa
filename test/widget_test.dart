@@ -100,14 +100,15 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      container.read(gameStateProvider.notifier).startLesson('lesson_1');
+      final notifier = container.read(gameStateProvider.notifier);
+      notifier.state = notifier.state.copyWith(activeLessonId: 'lesson_1');
 
       // lessonComplete starts false
       expect(container.read(gameStateProvider).lessonComplete, isFalse);
 
       // completeLesson will throw in test env (no HTTP) and revert lessonComplete
       try {
-        await container.read(gameStateProvider.notifier).completeLesson();
+        await notifier.completeLesson();
       } catch (_) {}
 
       // Guard worked: lessonComplete resets to false on failure, enabling retry
