@@ -5,6 +5,7 @@ import 'package:glossa_app/app/glossa_app.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
 import 'package:glossa_app/core/widgets/logo_widget.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
+import 'package:glossa_app/features/onboarding/screens/splash_screen.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
 void main() {
@@ -18,19 +19,22 @@ void main() {
       expect(find.byType(GlossaApp), findsOneWidget);
       expect(find.byType(GlossaLogo), findsOneWidget);
       expect(find.text('Glossa'), findsOneWidget);
+      // LandingScreen auto-navigates to /splash; SplashScreen must not be
+      // shown immediately on startup.
+      expect(find.byType(SplashScreen), findsNothing);
     });
 
-    testWidgets('Tapping Landing navigates to splash', (
+    testWidgets('Tapping Landing does not crash', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(const ProviderScope(child: GlossaApp()));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      // Tap on the landing screen
-      await tester.tap(find.text('Glossa'));
+      // Tapping anywhere on the landing screen triggers skip navigation.
+      // Verify no exceptions are thrown.
+      await tester.tap(find.byType(GlossaLogo));
       await tester.pump();
-
-      expect(find.byType(GlossaApp), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 

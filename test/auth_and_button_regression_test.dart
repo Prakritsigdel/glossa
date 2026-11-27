@@ -340,7 +340,10 @@ void main() {
 
         final notifier = container.read(gameStateProvider.notifier);
         await notifier.logIn(email: 'player@example.com', password: 'pw');
-        notifier.state = notifier.state.copyWith(activeLessonId: 'lesson_1');
+        notifier.state = notifier.state.copyWith(
+          activeLessonId: 'lesson_1',
+          runId: 'lesson-run-id',
+        );
 
         // First completion
         await notifier.completeLesson();

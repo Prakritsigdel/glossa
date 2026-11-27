@@ -25,6 +25,9 @@ class _NavigationApi extends BackendApi {
   Future<String?> get token async => null;
 
   @override
+  Future<void> logout() async {}
+
+  @override
   Future<DemoUser> login({
     required String email,
     required String password,
@@ -32,6 +35,23 @@ class _NavigationApi extends BackendApi {
 
   @override
   Future<List<Lesson>> lessons({String? courseId}) async => mockLessons;
+
+  @override
+  Future<Map<String, dynamic>> startLessonRun(String lessonId) async => {
+    'run_id': 'navigation-run',
+    'answered_exercise_ids': <String>[],
+    'original_results': <String, bool>{},
+    'review_queue': <String>[],
+    'corrected_exercise_ids': <String>[],
+    'matched_pairs_by_exercise': <String, dynamic>{},
+    'needs_completion': false,
+  };
+
+  @override
+  Future<Map<String, dynamic>> reviewQueue(
+    String lessonId,
+    String runId,
+  ) async => {'review_queue': <String>[], 'corrected_exercise_ids': <String>[]};
 
   @override
   Future<List<Exercise>> exercises(String lessonId) async {

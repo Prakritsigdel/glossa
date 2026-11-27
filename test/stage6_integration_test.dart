@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,22 +30,35 @@ class _Stage6Api extends BackendApi {
   bool failFirstSubmission = false;
   bool submissionPassed = true;
   List<Map<String, dynamic>> townRows = [];
+  Completer<List<Map<String, dynamic>>>? pendingTownMap;
+  Completer<DemoUser>? pendingAccountALogin;
+  String? storedToken;
   int townCalls = 0;
+  int runCount = 0;
 
   @override
-  Future<String?> get token async => null;
+  Future<String?> get token async => storedToken;
 
   @override
   Future<DemoUser> login({
     required String email,
     required String password,
-  }) async => currentUser = email.startsWith('b') ? accountB : accountA;
+  }) async {
+    storedToken = 'token-${email.substring(0, 1)}';
+    final user = email.startsWith('b') ? accountB : accountA;
+    if (email.startsWith('a') && pendingAccountALogin != null) {
+      return pendingAccountALogin!.future;
+    }
+    return currentUser = user;
+  }
 
   @override
   Future<DemoUser> me() async => currentUser ?? accountA;
 
   @override
-  Future<void> logout() async {}
+  Future<void> logout() async {
+    storedToken = null;
+  }
 
   @override
   Future<List<Lesson>> lessons({String? courseId}) async =>
@@ -51,6 +66,23 @@ class _Stage6Api extends BackendApi {
 
   @override
   Future<List<Exercise>> exercises(String lessonId) async => exercisesForLesson;
+
+  @override
+  Future<Map<String, dynamic>> startLessonRun(String lessonId) async => {
+    'run_id': 'stage6-run-${runCount++}',
+    'answered_exercise_ids': <String>[],
+    'original_results': <String, bool>{},
+    'review_queue': <String>[],
+    'corrected_exercise_ids': <String>[],
+    'matched_pairs_by_exercise': <String, dynamic>{},
+    'needs_completion': false,
+  };
+
+  @override
+  Future<Map<String, dynamic>> reviewQueue(
+    String lessonId,
+    String runId,
+  ) async => {'review_queue': <String>[], 'corrected_exercise_ids': <String>[]};
 
   @override
   Future<bool> checkAnswer(
@@ -83,6 +115,11 @@ class _Stage6Api extends BackendApi {
   @override
   Future<List<Map<String, dynamic>>> townMap(String courseId) async {
     townCalls++;
+    final pending = pendingTownMap;
+    if (pending != null) {
+      pendingTownMap = null;
+      return pending.future;
+    }
     return townRows;
   }
 }
@@ -160,6 +197,81 @@ void main() {
   );
 
   test(
+    'a delayed response from the previous account cannot replace the new one',
+    () async {
+      final oldLogin = Completer<DemoUser>();
+      api.pendingAccountALogin = oldLogin;
+
+      final staleLogin = notifier.logIn(
+        email: 'a@example.test',
+        password: 'pw',
+      );
+      await Future<void>.delayed(Duration.zero);
+      await notifier.logIn(email: 'b@example.test', password: 'pw');
+      oldLogin.complete(api.accountA);
+      await staleLogin;
+
+      final state = container.read(gameStateProvider);
+      expect(state.user.id, 'b');
+      expect(state.user.xp, 0);
+      expect(state.lessons.map((lesson) => lesson.id), ['b-lesson']);
+    },
+  );
+
+  test(
+    'town map ignores a delayed account response after switching sessions',
+    () async {
+      await notifier.logIn(email: 'a@example.test', password: 'pw');
+      final staleMap = Completer<List<Map<String, dynamic>>>();
+      api.pendingTownMap = staleMap;
+      final oldMap = container.read(townMapProvider.future);
+      await Future<void>.delayed(Duration.zero);
+
+      api.townRows = [_townRow('b-lesson', 'available')];
+      await notifier.logIn(email: 'b@example.test', password: 'pw');
+      expect(
+        (await container.read(townMapProvider.future))
+            .map((lesson) => lesson.id),
+        ['b-lesson'],
+      );
+
+      staleMap.complete([_townRow('a-lesson', 'completed')]);
+      await oldMap;
+      expect(
+        (await container.read(townMapProvider.future))
+            .map((lesson) => lesson.id),
+        ['b-lesson'],
+      );
+    },
+  );
+
+  test(
+    'a restarted provider restores only the currently authenticated account',
+    () async {
+      await notifier.logIn(email: 'b@example.test', password: 'pw');
+      final restartedContainer = ProviderContainer(
+        overrides: [backendApiProvider.overrideWithValue(api)],
+      );
+      addTearDown(restartedContainer.dispose);
+
+      final restartedNotifier = restartedContainer.read(
+        gameStateProvider.notifier,
+      );
+      await restartedNotifier.restoreSession();
+
+      expect(restartedContainer.read(gameStateProvider).user.id, 'b');
+      expect(restartedContainer.read(gameStateProvider).user.xp, 0);
+      expect(
+        restartedContainer
+            .read(gameStateProvider)
+            .lessons
+            .map((lesson) => lesson.id),
+        ['b-lesson'],
+      );
+    },
+  );
+
+  test(
     'logout clears protected user, lesson, answer, and submission state',
     () async {
       await notifier.logIn(email: 'a@example.test', password: 'pw');
@@ -175,7 +287,7 @@ void main() {
       expect(state.user.lessonsCompleted, 0);
       expect(state.exercises, isEmpty);
       expect(state.answers, isEmpty);
-    expect(state.lessonComplete, isFalse);
+      expect(state.lessonComplete, isFalse);
       expect(state.lastXpEarned, 0);
     },
   );
@@ -192,10 +304,11 @@ void main() {
     expect(container.read(gameStateProvider).answers, contains('e1'));
     expect(container.read(gameStateProvider).lessonComplete, isFalse);
     await notifier.completeLesson(idempotencyKey: 'stable-key');
-    expect(
-      api.submittedAnswers,
-      everyElement(contains(containsPair('exercise_id', 'e1'))),
-    );
+    expect(api.submittedAnswers, [
+      <Map<String, dynamic>>[],
+      <Map<String, dynamic>>[],
+    ]);
+    expect(container.read(gameStateProvider).answers, contains('e1'));
   });
 
   test('submission retry reuses the original idempotency key', () async {
@@ -261,10 +374,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('TRY AGAIN'), findsOneWidget);
-    await tester.ensureVisible(find.text('Retry lesson'));
+    expect(find.text('CHECKPOINT NOT PASSED'), findsOneWidget);
+    await tester.ensureVisible(find.text('Retry Lesson'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Retry lesson'));
+    await tester.tap(find.text('Retry Lesson'));
     await tester.pumpAndSettle();
     expect(find.text('Battle loading route'), findsOneWidget);
     expect(container.read(gameStateProvider).activeLessonId, 'checkpoint');
@@ -304,7 +417,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('LESSON PASSED'), findsOneWidget);
+      expect(find.text('CHECKPOINT PASSED'), findsOneWidget);
       expect(find.text('Words learned'), findsNothing);
       await tester.ensureVisible(find.text('Continue'));
       await tester.pumpAndSettle();
