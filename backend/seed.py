@@ -1,22 +1,10 @@
-"""Idempotently seed the active English-to-Newari pilot curriculum.
-
-Historical courses and lesson rows are preserved, but startup never creates
-or republishes the retired generated curriculum.
-"""
+"""Idempotently seed the active Newari curriculum from its source JSON."""
 
 import logging
-from pathlib import Path
 
-from sqlalchemy import select
-
+from app.curriculum_blueprint import CURRICULUM_VERSION, seed_curriculum
 from app.database import SessionLocal
-from app.models import Course, Language, Unit
-from app.curriculum_blueprint import (
-    PLANNED_UNITS,
-    get_curriculum_coverage_report,
-    seed_blueprint,
-)
-from app.vocabulary_importer import import_vocabulary
+from app.models import Course, Language
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 logger = logging.getLogger("seed")
@@ -34,84 +22,51 @@ ACTIVE_COURSE = {
 }
 
 
-def _vocabulary_path() -> Path:
-    candidates = (
-        Path("/newari_vocabulary.xlsx"),
-        Path(__file__).resolve().parent.parent / "newari_vocabulary.xlsx",
-    )
-    return next((path for path in candidates if path.is_file()), candidates[-1])
-
-
 def seed() -> None:
-    """Seed active course metadata, vocabulary, and the unpublished blueprint."""
+    """Create missing metadata and import curriculum in one transaction."""
     with SessionLocal() as db:
-        for language_id, english, native, script in LANGUAGES:
-            if db.get(Language, language_id) is None:
-                db.add(Language(
-                    id=language_id,
-                    name_english=english,
-                    name_native=native,
-                    script=script,
-                    is_active=True,
-                ))
-        db.flush()
+        try:
+            for language_id, english, native, script in LANGUAGES:
+                if db.get(Language, language_id) is None:
+                    db.add(
+                        Language(
+                            id=language_id,
+                            name_english=english,
+                            name_native=native,
+                            script=script,
+                            is_active=True,
+                        )
+                    )
+            db.flush()
 
-        course = db.get(Course, ACTIVE_COURSE["id"])
-        if course is None:
-            course = Course(**ACTIVE_COURSE, is_published=True, is_active=True)
-            db.add(course)
-        else:
-            course.name = ACTIVE_COURSE["name"]
-            course.description = ACTIVE_COURSE["description"]
-            course.is_published = True
-            course.is_active = True
-
-        # Retired course rows remain intact and cannot be reactivated by seeding.
-        for other in db.scalars(select(Course).where(Course.id != "en_new")):
-            if other.is_active:
-                other.is_active = False
-        db.commit()
-
-        units_by_sequence = {
-            unit.sequence: unit
-            for unit in db.scalars(
-                select(Unit).where(
-                    Unit.course_id == "en_new",
-                    Unit.sequence.between(1, len(PLANNED_UNITS)),
-                )
-            )
-        }
-        for sequence, title in enumerate(PLANNED_UNITS, start=1):
-            unit = units_by_sequence.get(sequence)
-            if unit is None:
-                unit = Unit(course_id="en_new", sequence=sequence, title=title)
-                db.add(unit)
+            course = db.get(Course, ACTIVE_COURSE["id"])
+            if course is None:
+                course = Course(**ACTIVE_COURSE, is_published=True, is_active=True)
+                db.add(course)
             else:
-                unit.title = title
-            unit.description = f"{title} · English to Newari pilot"
-        db.commit()
+                course.name = ACTIVE_COURSE["name"]
+                course.description = ACTIVE_COURSE["description"]
+                course.is_active = True
+            db.flush()
 
-        vocab_report = import_vocabulary(db, str(_vocabulary_path()))
-        blueprint_report = seed_blueprint(db, course_id="en_new")
-        logger.info(
-            "Vocabulary import: %d new, %d existing, %d total",
-            vocab_report.imported_count,
-            vocab_report.already_existed_count,
-            vocab_report.imported_count + vocab_report.already_existed_count,
-        )
-        logger.info(
-            "Active blueprint seed: %d lessons created, %d existing; "
-            "%d exercises created, %d existing; %d vocabulary links created",
-            blueprint_report["lessons_created"],
-            blueprint_report["lessons_existed"],
-            blueprint_report["exercises_created"],
-            blueprint_report["exercises_existed"],
-            blueprint_report["vocab_links_created"],
-        )
-        coverage = get_curriculum_coverage_report(db)
-        logger.info("=== Curriculum Coverage Report ===")
-        logger.info("  Active blueprint: %s", coverage["active_blueprint"])
-        logger.info("  Preserved historical records: %s", coverage["historical_records"])
+            report = seed_curriculum(db, course_id=ACTIVE_COURSE["id"])
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+
+    logger.info(
+        "Seeded %s: %d units, %d lessons, %d exercises, %d words, %d XP max "
+        "(created %d lessons and %d exercises)",
+        CURRICULUM_VERSION,
+        report["unit_count"],
+        report["lesson_count"],
+        report["exercise_count"],
+        report["word_count"],
+        report["xp_max"],
+        report["lessons_created"],
+        report["exercises_created"],
+    )
 
 
 if __name__ == "__main__":

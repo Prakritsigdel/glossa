@@ -26,7 +26,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = gs.user;
 
     final xpProgress = user.xpToNextLevel > 0
-        ? (user.xp / user.xpToNextLevel).clamp(0.0, 1.0)
+        ? (user.xpInLevel / user.xpToNextLevel).clamp(0.0, 1.0)
         : 0.0;
 
     return Scaffold(
@@ -139,7 +139,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: Text(
-                              '${user.xp} / ${user.xpToNextLevel} XP to Level ${user.level + 1}',
+                              '${user.xpInLevel} / ${user.xpToNextLevel} XP to Level ${user.level + 1} · ${user.xp} total XP',
                               style: GlossaTypography.bodySmall.copyWith(
                                 fontSize: 11,
                               ),
@@ -237,7 +237,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   children: [
                                     _buildHeroStat(
                                       'HP',
-                                      120,
+                                      user.heroStats['hp'] ?? 100,
                                       const Icon(
                                         Icons.favorite_rounded,
                                         size: 16,
@@ -246,12 +246,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     ),
                                     _buildHeroStat(
                                       'Attack',
-                                      24,
+                                      user.heroStats['attack'] ?? 10,
                                       const _SwordStatIcon(),
                                     ),
                                     _buildHeroStat(
                                       'Defense',
-                                      18,
+                                      user.heroStats['defense'] ?? 8,
                                       const Icon(
                                         Icons.shield_rounded,
                                         size: 16,
@@ -260,7 +260,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     ),
                                     _buildHeroStat(
                                       'Speed',
-                                      16,
+                                      user.heroStats['speed'] ?? 8,
                                       const Icon(
                                         Icons.directions_run_rounded,
                                         size: 16,
@@ -269,7 +269,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     ),
                                     _buildHeroStat(
                                       'Magic',
-                                      32,
+                                      user.heroStats['magic'] ?? 10,
                                       const Icon(
                                         Icons.local_fire_department_rounded,
                                         size: 16,
@@ -350,6 +350,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                             .logOut();
                                         if (context.mounted) {
                                           context.go(AppRoutes.welcome);
+                                        }
+                                      } catch (error) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Could not clear this device session: $error',
+                                              ),
+                                            ),
+                                          );
                                         }
                                       } finally {
                                         if (mounted) {

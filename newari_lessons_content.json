@@ -1,0 +1,8104 @@
+{
+ "meta": {
+  "source": "newari_vocabulary.xlsx (assistant-compiled, unverified)",
+  "is_published": false,
+  "audio_key": null,
+  "audio_coverage": "none",
+  "note": "No Newari phrase is invented. Exercises marked planned_type are playable fallbacks; upgrade once a native speaker verifies phrases."
+ },
+ "progression": {
+  "base_stats": {
+   "hp": 100,
+   "attack": 10,
+   "defense": 8,
+   "speed": 8,
+   "magic": 10
+  },
+  "rules": {
+   "stats": "stats = base_stats + sum(stat_gains of lessons completed for the first time); never stored randomly; replays add nothing",
+   "xp": "xp_earned = sum(xp of exercises answered correctly on the first and only try); a wrong answer forfeits that exercise's xp and skips to the next exercise",
+   "replay_xp_multiplier": 0.25,
+   "checkpoint_pass_threshold": 0.8,
+   "level_curve": "xp needed to go from level n to n+1 = 100 + 25*(n-1)"
+  },
+  "totals": {
+   "xp_max": 620,
+   "exercises": 162,
+   "final_stats": {
+    "hp": 200,
+    "attack": 25,
+    "defense": 22,
+    "speed": 21,
+    "magic": 23
+   }
+  }
+ },
+ "units": [
+  {
+   "id": "U1",
+   "title": "Greetings",
+   "lesson_ids": [
+    "L01",
+    "L02",
+    "L03"
+   ]
+  },
+  {
+   "id": "U2",
+   "title": "Family",
+   "lesson_ids": [
+    "L04",
+    "L05",
+    "L06"
+   ]
+  },
+  {
+   "id": "U3",
+   "title": "Numbers & Colors",
+   "lesson_ids": [
+    "L07",
+    "L08",
+    "L09"
+   ]
+  },
+  {
+   "id": "U4",
+   "title": "Food & Drinks",
+   "lesson_ids": [
+    "L10",
+    "L11",
+    "L12"
+   ]
+  },
+  {
+   "id": "U5",
+   "title": "Home & Routines",
+   "lesson_ids": [
+    "L13",
+    "L14",
+    "L15"
+   ]
+  }
+ ],
+ "words": [
+  {
+   "id": "w01",
+   "newari": "ज्वजलपा",
+   "roman": "jwajalapa",
+   "english": "Hello",
+   "intro_lesson": 1,
+   "used_in_lessons": [
+    1,
+    3,
+    15
+   ]
+  },
+  {
+   "id": "w02",
+   "newari": "सुभाय्",
+   "roman": "subhāy",
+   "english": "Thank you",
+   "intro_lesson": 1,
+   "used_in_lessons": [
+    1,
+    3
+   ]
+  },
+  {
+   "id": "w03",
+   "newari": "खः",
+   "roman": "khaḥ",
+   "english": "Yes",
+   "intro_lesson": 1,
+   "used_in_lessons": [
+    1,
+    3,
+    12
+   ]
+  },
+  {
+   "id": "w04",
+   "newari": "मखु",
+   "roman": "makhu",
+   "english": "No",
+   "intro_lesson": 1,
+   "used_in_lessons": [
+    1,
+    3,
+    12
+   ]
+  },
+  {
+   "id": "w05",
+   "newari": "बांलाः",
+   "roman": "bāṅlāḥ",
+   "english": "Good",
+   "intro_lesson": 1,
+   "used_in_lessons": [
+    1,
+    3
+   ]
+  },
+  {
+   "id": "w06",
+   "newari": "भिं",
+   "roman": "bhiṃ",
+   "english": "Well / fine",
+   "intro_lesson": 1,
+   "used_in_lessons": [
+    1,
+    3
+   ]
+  },
+  {
+   "id": "w07",
+   "newari": "जि",
+   "roman": "ji",
+   "english": "I",
+   "intro_lesson": 2,
+   "used_in_lessons": [
+    2,
+    3
+   ]
+  },
+  {
+   "id": "w08",
+   "newari": "छि",
+   "roman": "chhi",
+   "english": "You",
+   "intro_lesson": 2,
+   "used_in_lessons": [
+    2,
+    3
+   ]
+  },
+  {
+   "id": "w09",
+   "newari": "नां",
+   "roman": "nāṃ",
+   "english": "Name",
+   "intro_lesson": 2,
+   "used_in_lessons": [
+    2,
+    3
+   ]
+  },
+  {
+   "id": "w10",
+   "newari": "छु",
+   "roman": "chhu",
+   "english": "What",
+   "intro_lesson": 2,
+   "used_in_lessons": [
+    2,
+    3,
+    12
+   ]
+  },
+  {
+   "id": "w11",
+   "newari": "सु",
+   "roman": "su",
+   "english": "Who",
+   "intro_lesson": 2,
+   "used_in_lessons": [
+    2,
+    3
+   ]
+  },
+  {
+   "id": "w12",
+   "newari": "छिपि",
+   "roman": "chhipi",
+   "english": "You (plural / formal)",
+   "intro_lesson": 2,
+   "used_in_lessons": [
+    2,
+    3
+   ]
+  },
+  {
+   "id": "w13",
+   "newari": "माँ",
+   "roman": "māṃ",
+   "english": "Mother",
+   "intro_lesson": 4,
+   "used_in_lessons": [
+    4,
+    6
+   ]
+  },
+  {
+   "id": "w14",
+   "newari": "बौ",
+   "roman": "bau",
+   "english": "Father",
+   "intro_lesson": 4,
+   "used_in_lessons": [
+    4,
+    6
+   ]
+  },
+  {
+   "id": "w15",
+   "newari": "तता",
+   "roman": "tatā",
+   "english": "Elder sister",
+   "intro_lesson": 4,
+   "used_in_lessons": [
+    4,
+    6
+   ]
+  },
+  {
+   "id": "w16",
+   "newari": "दाजु",
+   "roman": "dāju",
+   "english": "Elder brother",
+   "intro_lesson": 4,
+   "used_in_lessons": [
+    4,
+    6
+   ]
+  },
+  {
+   "id": "w17",
+   "newari": "किजा",
+   "roman": "kijā",
+   "english": "Younger brother",
+   "intro_lesson": 4,
+   "used_in_lessons": [
+    4,
+    6
+   ]
+  },
+  {
+   "id": "w18",
+   "newari": "केहेँ",
+   "roman": "kehẽ",
+   "english": "Younger sister",
+   "intro_lesson": 4,
+   "used_in_lessons": [
+    4,
+    6
+   ]
+  },
+  {
+   "id": "w19",
+   "newari": "काय्",
+   "roman": "kāy",
+   "english": "Son",
+   "intro_lesson": 5,
+   "used_in_lessons": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": "w20",
+   "newari": "म्हाय्",
+   "roman": "mhāy",
+   "english": "Daughter",
+   "intro_lesson": 5,
+   "used_in_lessons": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": "w21",
+   "newari": "मचा",
+   "roman": "machā",
+   "english": "Child",
+   "intro_lesson": 5,
+   "used_in_lessons": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": "w22",
+   "newari": "मनू",
+   "roman": "manū",
+   "english": "Person",
+   "intro_lesson": 5,
+   "used_in_lessons": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": "w23",
+   "newari": "मिसा",
+   "roman": "misā",
+   "english": "Woman",
+   "intro_lesson": 5,
+   "used_in_lessons": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": "w24",
+   "newari": "मिजं",
+   "roman": "mijaṃ",
+   "english": "Man",
+   "intro_lesson": 5,
+   "used_in_lessons": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": "w25",
+   "newari": "थ्व",
+   "roman": "thwa",
+   "english": "This",
+   "intro_lesson": 6,
+   "used_in_lessons": [
+    6
+   ]
+  },
+  {
+   "id": "w26",
+   "newari": "जिगु",
+   "roman": "jigu",
+   "english": "My",
+   "intro_lesson": 6,
+   "used_in_lessons": [
+    6
+   ]
+  },
+  {
+   "id": "w27",
+   "newari": "जिपि",
+   "roman": "jipi",
+   "english": "We",
+   "intro_lesson": 6,
+   "used_in_lessons": [
+    6
+   ]
+  },
+  {
+   "id": "w28",
+   "newari": "छिगु",
+   "roman": "chhigu",
+   "english": "Your",
+   "intro_lesson": 6,
+   "used_in_lessons": [
+    6
+   ]
+  },
+  {
+   "id": "w29",
+   "newari": "छ",
+   "roman": "chha",
+   "english": "One",
+   "intro_lesson": 7,
+   "used_in_lessons": [
+    7,
+    9,
+    15
+   ]
+  },
+  {
+   "id": "w30",
+   "newari": "नि",
+   "roman": "ni",
+   "english": "Two",
+   "intro_lesson": 7,
+   "used_in_lessons": [
+    7,
+    9
+   ]
+  },
+  {
+   "id": "w31",
+   "newari": "स्वँ",
+   "roman": "swãṃ",
+   "english": "Three",
+   "intro_lesson": 7,
+   "used_in_lessons": [
+    7,
+    9
+   ]
+  },
+  {
+   "id": "w32",
+   "newari": "प्यँ",
+   "roman": "pyãṃ",
+   "english": "Four",
+   "intro_lesson": 7,
+   "used_in_lessons": [
+    7,
+    9
+   ]
+  },
+  {
+   "id": "w33",
+   "newari": "न्या",
+   "roman": "nyā",
+   "english": "Five",
+   "intro_lesson": 7,
+   "used_in_lessons": [
+    7,
+    9
+   ]
+  },
+  {
+   "id": "w34",
+   "newari": "ह्यूँ",
+   "roman": "hyūṃ",
+   "english": "Red",
+   "intro_lesson": 8,
+   "used_in_lessons": [
+    8,
+    9
+   ]
+  },
+  {
+   "id": "w35",
+   "newari": "तुयु",
+   "roman": "tuyu",
+   "english": "White",
+   "intro_lesson": 8,
+   "used_in_lessons": [
+    8,
+    9
+   ]
+  },
+  {
+   "id": "w36",
+   "newari": "छेँ",
+   "roman": "chhẽ",
+   "english": "House / home",
+   "intro_lesson": 8,
+   "used_in_lessons": [
+    8,
+    9,
+    13
+   ]
+  },
+  {
+   "id": "w37",
+   "newari": "लः",
+   "roman": "laḥ",
+   "english": "Water",
+   "intro_lesson": 8,
+   "used_in_lessons": [
+    8,
+    10,
+    15
+   ]
+  },
+  {
+   "id": "w38",
+   "newari": "कचा",
+   "roman": "kachā",
+   "english": "Bowl",
+   "intro_lesson": 8,
+   "used_in_lessons": [
+    8,
+    9
+   ]
+  },
+  {
+   "id": "w39",
+   "newari": "पौ",
+   "roman": "pau",
+   "english": "Paper / book",
+   "intro_lesson": 8,
+   "used_in_lessons": [
+    8,
+    9
+   ]
+  },
+  {
+   "id": "w40",
+   "newari": "खु",
+   "roman": "khu",
+   "english": "Six",
+   "intro_lesson": 9,
+   "used_in_lessons": [
+    9
+   ]
+  },
+  {
+   "id": "w41",
+   "newari": "न्ह्य",
+   "roman": "nhya",
+   "english": "Seven",
+   "intro_lesson": 9,
+   "used_in_lessons": [
+    9
+   ]
+  },
+  {
+   "id": "w42",
+   "newari": "च्या",
+   "roman": "chyā",
+   "english": "Eight",
+   "intro_lesson": 9,
+   "used_in_lessons": [
+    9
+   ]
+  },
+  {
+   "id": "w43",
+   "newari": "गू",
+   "roman": "gū",
+   "english": "Nine",
+   "intro_lesson": 9,
+   "used_in_lessons": [
+    9
+   ]
+  },
+  {
+   "id": "w44",
+   "newari": "झि",
+   "roman": "jhi",
+   "english": "Ten",
+   "intro_lesson": 9,
+   "used_in_lessons": [
+    9
+   ]
+  },
+  {
+   "id": "w45",
+   "newari": "गुलि",
+   "roman": "guli",
+   "english": "How many",
+   "intro_lesson": 9,
+   "used_in_lessons": [
+    9
+   ]
+  },
+  {
+   "id": "w46",
+   "newari": "जा",
+   "roman": "jā",
+   "english": "Cooked rice",
+   "intro_lesson": 10,
+   "used_in_lessons": [
+    10,
+    12
+   ]
+  },
+  {
+   "id": "w47",
+   "newari": "चा",
+   "roman": "chā",
+   "english": "Tea",
+   "intro_lesson": 10,
+   "used_in_lessons": [
+    10,
+    12
+   ]
+  },
+  {
+   "id": "w48",
+   "newari": "ला",
+   "roman": "lā",
+   "english": "Meat",
+   "intro_lesson": 10,
+   "used_in_lessons": [
+    10,
+    12
+   ]
+  },
+  {
+   "id": "w49",
+   "newari": "ङा",
+   "roman": "ṅā",
+   "english": "Fish",
+   "intro_lesson": 10,
+   "used_in_lessons": [
+    10,
+    12
+   ]
+  },
+  {
+   "id": "w50",
+   "newari": "बजि",
+   "roman": "baji",
+   "english": "Beaten rice",
+   "intro_lesson": 10,
+   "used_in_lessons": [
+    10,
+    12
+   ]
+  },
+  {
+   "id": "w51",
+   "newari": "नेगु",
+   "roman": "negu",
+   "english": "To eat",
+   "intro_lesson": 11,
+   "used_in_lessons": [
+    11,
+    12
+   ]
+  },
+  {
+   "id": "w52",
+   "newari": "त्वनेगु",
+   "roman": "twanegu",
+   "english": "To drink",
+   "intro_lesson": 11,
+   "used_in_lessons": [
+    11,
+    12
+   ]
+  },
+  {
+   "id": "w53",
+   "newari": "बियेगु",
+   "roman": "biyegu",
+   "english": "To give",
+   "intro_lesson": 11,
+   "used_in_lessons": [
+    11,
+    12
+   ]
+  },
+  {
+   "id": "w54",
+   "newari": "कायेगु",
+   "roman": "kāyegu",
+   "english": "To take",
+   "intro_lesson": 11,
+   "used_in_lessons": [
+    11,
+    12
+   ]
+  },
+  {
+   "id": "w55",
+   "newari": "तःधं",
+   "roman": "tahdhaṃ",
+   "english": "Big",
+   "intro_lesson": 11,
+   "used_in_lessons": [
+    11,
+    12
+   ]
+  },
+  {
+   "id": "w56",
+   "newari": "चीधं",
+   "roman": "chīdhaṃ",
+   "english": "Small",
+   "intro_lesson": 11,
+   "used_in_lessons": [
+    11,
+    12
+   ]
+  },
+  {
+   "id": "w57",
+   "newari": "ध्वाखा",
+   "roman": "dhwākhā",
+   "english": "Door",
+   "intro_lesson": 13,
+   "used_in_lessons": [
+    13,
+    15
+   ]
+  },
+  {
+   "id": "w58",
+   "newari": "लँ",
+   "roman": "lãṃ",
+   "english": "Road",
+   "intro_lesson": 13,
+   "used_in_lessons": [
+    13,
+    15
+   ]
+  },
+  {
+   "id": "w59",
+   "newari": "थाय्",
+   "roman": "thāy",
+   "english": "Place",
+   "intro_lesson": 13,
+   "used_in_lessons": [
+    13,
+    15
+   ]
+  },
+  {
+   "id": "w60",
+   "newari": "ज्या",
+   "roman": "jyā",
+   "english": "Work",
+   "intro_lesson": 13,
+   "used_in_lessons": [
+    13,
+    14,
+    15
+   ]
+  },
+  {
+   "id": "w61",
+   "newari": "मि",
+   "roman": "mi",
+   "english": "Fire",
+   "intro_lesson": 13,
+   "used_in_lessons": [
+    13,
+    15
+   ]
+  },
+  {
+   "id": "w62",
+   "newari": "गन",
+   "roman": "gana",
+   "english": "Where",
+   "intro_lesson": 13,
+   "used_in_lessons": [
+    13,
+    15
+   ]
+  },
+  {
+   "id": "w63",
+   "newari": "ब्वनेगु",
+   "roman": "bwanegu",
+   "english": "To read / study",
+   "intro_lesson": 13,
+   "used_in_lessons": [
+    13,
+    15
+   ]
+  },
+  {
+   "id": "w64",
+   "newari": "वनेगु",
+   "roman": "wanegu",
+   "english": "To go",
+   "intro_lesson": 14,
+   "used_in_lessons": [
+    14,
+    15
+   ]
+  },
+  {
+   "id": "w65",
+   "newari": "वयेगु",
+   "roman": "wayegu",
+   "english": "To come",
+   "intro_lesson": 14,
+   "used_in_lessons": [
+    14,
+    15
+   ]
+  },
+  {
+   "id": "w66",
+   "newari": "यायेगु",
+   "roman": "yāyegu",
+   "english": "To do",
+   "intro_lesson": 14,
+   "used_in_lessons": [
+    14,
+    15
+   ]
+  },
+  {
+   "id": "w67",
+   "newari": "च्वनेगु",
+   "roman": "chwanegu",
+   "english": "To sit / stay",
+   "intro_lesson": 14,
+   "used_in_lessons": [
+    14,
+    15
+   ]
+  },
+  {
+   "id": "w68",
+   "newari": "स्वयेगु",
+   "roman": "swayegu",
+   "english": "To see",
+   "intro_lesson": 14,
+   "used_in_lessons": [
+    14,
+    15
+   ]
+  },
+  {
+   "id": "w69",
+   "newari": "थौँ",
+   "roman": "thau",
+   "english": "Today",
+   "intro_lesson": 14,
+   "used_in_lessons": [
+    14,
+    15
+   ]
+  },
+  {
+   "id": "w70",
+   "newari": "च्वयेगु",
+   "roman": "chwayegu",
+   "english": "To write",
+   "intro_lesson": 14,
+   "used_in_lessons": [
+    14,
+    15
+   ]
+  }
+ ],
+ "lessons": [
+  {
+   "id": "L01",
+   "number": 1,
+   "unit_id": "U1",
+   "title": "First Words",
+   "is_checkpoint": false,
+   "pass_threshold": null,
+   "is_published": false,
+   "new_word_ids": [
+    "w01",
+    "w02",
+    "w03",
+    "w04",
+    "w05",
+    "w06"
+   ],
+   "review_word_ids": [],
+   "xp_max": 20,
+   "stat_gains": {
+    "hp": 5,
+    "speed": 2,
+    "magic": 1
+   },
+   "exercise_count": 10,
+   "exercises": [
+    {
+     "id": "L01-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w01",
+       "newari": "ज्वजलपा",
+       "roman": "jwajalapa",
+       "english": "Hello"
+      },
+      {
+       "word_id": "w02",
+       "newari": "सुभाय्",
+       "roman": "subhāy",
+       "english": "Thank you"
+      },
+      {
+       "word_id": "w03",
+       "newari": "खः",
+       "roman": "khaḥ",
+       "english": "Yes"
+      },
+      {
+       "word_id": "w04",
+       "newari": "मखु",
+       "roman": "makhu",
+       "english": "No"
+      },
+      {
+       "word_id": "w05",
+       "newari": "बांलाः",
+       "roman": "bāṅlāḥ",
+       "english": "Good"
+      },
+      {
+       "word_id": "w06",
+       "newari": "भिं",
+       "roman": "bhiṃ",
+       "english": "Well / fine"
+      }
+     ],
+     "xp": 2
+    },
+    {
+     "id": "L01-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does ज्वजलपा mean?",
+     "target_word_id": "w01",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Well / fine"
+      },
+      {
+       "text": "Yes"
+      },
+      {
+       "text": "Thank you"
+      },
+      {
+       "text": "Hello"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L01-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does सुभाय् mean?",
+     "target_word_id": "w02",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Thank you"
+      },
+      {
+       "text": "No"
+      },
+      {
+       "text": "Well / fine"
+      },
+      {
+       "text": "Good"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "सुभाय्",
+       "roman": "subhāy"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L01-E04",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w01",
+       "newari": "ज्वजलपा",
+       "roman": "jwajalapa",
+       "english": "Hello"
+      },
+      {
+       "word_id": "w02",
+       "newari": "सुभाय्",
+       "roman": "subhāy",
+       "english": "Thank you"
+      },
+      {
+       "word_id": "w03",
+       "newari": "खः",
+       "roman": "khaḥ",
+       "english": "Yes"
+      },
+      {
+       "word_id": "w04",
+       "newari": "मखु",
+       "roman": "makhu",
+       "english": "No"
+      },
+      {
+       "word_id": "w05",
+       "newari": "बांलाः",
+       "roman": "bāṅlāḥ",
+       "english": "Good"
+      },
+      {
+       "word_id": "w06",
+       "newari": "भिं",
+       "roman": "bhiṃ",
+       "english": "Well / fine"
+      }
+     ],
+     "xp": 2
+    },
+    {
+     "id": "L01-E05",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Yes”?",
+     "target_word_id": "w03",
+     "options": [
+      {
+       "text": "खः",
+       "roman": "khaḥ"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      },
+      {
+       "text": "मखु",
+       "roman": "makhu"
+      },
+      {
+       "text": "बांलाः",
+       "roman": "bāṅlāḥ"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Yes"
+      },
+      "sentence": [
+       {
+        "text": "“Yes” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L01-E06",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “No”?",
+     "target_word_id": "w04",
+     "options": [
+      {
+       "text": "भिं",
+       "roman": "bhiṃ"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      },
+      {
+       "text": "खः",
+       "roman": "khaḥ"
+      },
+      {
+       "text": "मखु",
+       "roman": "makhu"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "No"
+      },
+      "sentence": [
+       {
+        "text": "“No” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L01-E07",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Good”?",
+     "target_word_id": "w05",
+     "options": [
+      {
+       "text": "बांलाः",
+       "roman": "bāṅlāḥ"
+      },
+      {
+       "text": "खः",
+       "roman": "khaḥ"
+      },
+      {
+       "text": "सुभाय्",
+       "roman": "subhāy"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Good"
+      },
+      "sentence": [
+       {
+        "text": "“Good” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L01-E08",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does भिं mean?",
+     "target_word_id": "w06",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Thank you"
+      },
+      {
+       "text": "Hello"
+      },
+      {
+       "text": "Well / fine"
+      },
+      {
+       "text": "Yes"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "भिं",
+       "roman": "bhiṃ"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L01-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Hello”?",
+     "target_word_id": "w01",
+     "options": [
+      {
+       "text": "मखु",
+       "roman": "makhu"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      },
+      {
+       "text": "खः",
+       "roman": "khaḥ"
+      },
+      {
+       "text": "सुभाय्",
+       "roman": "subhāy"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Hello"
+      },
+      "sentence": [
+       {
+        "text": "“Hello” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L01-E10",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w01",
+       "newari": "ज्वजलपा",
+       "roman": "jwajalapa",
+       "english": "Hello"
+      },
+      {
+       "word_id": "w02",
+       "newari": "सुभाय्",
+       "roman": "subhāy",
+       "english": "Thank you"
+      },
+      {
+       "word_id": "w03",
+       "newari": "खः",
+       "roman": "khaḥ",
+       "english": "Yes"
+      },
+      {
+       "word_id": "w04",
+       "newari": "मखु",
+       "roman": "makhu",
+       "english": "No"
+      },
+      {
+       "word_id": "w05",
+       "newari": "बांलाः",
+       "roman": "bāṅlāḥ",
+       "english": "Good"
+      },
+      {
+       "word_id": "w06",
+       "newari": "भिं",
+       "roman": "bhiṃ",
+       "english": "Well / fine"
+      }
+     ],
+     "xp": 2
+    }
+   ]
+  },
+  {
+   "id": "L02",
+   "number": 2,
+   "unit_id": "U1",
+   "title": "Me and You",
+   "is_checkpoint": false,
+   "pass_threshold": null,
+   "is_published": false,
+   "new_word_ids": [
+    "w07",
+    "w08",
+    "w09",
+    "w10",
+    "w11",
+    "w12"
+   ],
+   "review_word_ids": [
+    "w01",
+    "w02",
+    "w03",
+    "w04",
+    "w05",
+    "w06"
+   ],
+   "xp_max": 20,
+   "stat_gains": {
+    "hp": 5,
+    "speed": 2,
+    "magic": 1
+   },
+   "exercise_count": 10,
+   "exercises": [
+    {
+     "id": "L02-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w07",
+       "newari": "जि",
+       "roman": "ji",
+       "english": "I"
+      },
+      {
+       "word_id": "w08",
+       "newari": "छि",
+       "roman": "chhi",
+       "english": "You"
+      },
+      {
+       "word_id": "w09",
+       "newari": "नां",
+       "roman": "nāṃ",
+       "english": "Name"
+      },
+      {
+       "word_id": "w10",
+       "newari": "छु",
+       "roman": "chhu",
+       "english": "What"
+      },
+      {
+       "word_id": "w11",
+       "newari": "सु",
+       "roman": "su",
+       "english": "Who"
+      },
+      {
+       "word_id": "w12",
+       "newari": "छिपि",
+       "roman": "chhipi",
+       "english": "You (plural / formal)"
+      }
+     ],
+     "xp": 2
+    },
+    {
+     "id": "L02-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does जि mean?",
+     "target_word_id": "w07",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "I"
+      },
+      {
+       "text": "You"
+      },
+      {
+       "text": "What"
+      },
+      {
+       "text": "Who"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "जि",
+       "roman": "ji"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L02-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does छि mean?",
+     "target_word_id": "w08",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "You"
+      },
+      {
+       "text": "Name"
+      },
+      {
+       "text": "Yes"
+      },
+      {
+       "text": "Good"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "छि",
+       "roman": "chhi"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L02-E04",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Name”?",
+     "target_word_id": "w09",
+     "options": [
+      {
+       "text": "मखु",
+       "roman": "makhu"
+      },
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "छु",
+       "roman": "chhu"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Name"
+      },
+      "sentence": [
+       {
+        "text": "“Name” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L02-E05",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “What”?",
+     "target_word_id": "w10",
+     "options": [
+      {
+       "text": "छु",
+       "roman": "chhu"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      },
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "सु",
+       "roman": "su"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "What"
+      },
+      "sentence": [
+       {
+        "text": "“What” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L02-E06",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w07",
+       "newari": "जि",
+       "roman": "ji",
+       "english": "I"
+      },
+      {
+       "word_id": "w08",
+       "newari": "छि",
+       "roman": "chhi",
+       "english": "You"
+      },
+      {
+       "word_id": "w09",
+       "newari": "नां",
+       "roman": "nāṃ",
+       "english": "Name"
+      },
+      {
+       "word_id": "w10",
+       "newari": "छु",
+       "roman": "chhu",
+       "english": "What"
+      },
+      {
+       "word_id": "w11",
+       "newari": "सु",
+       "roman": "su",
+       "english": "Who"
+      },
+      {
+       "word_id": "w12",
+       "newari": "छिपि",
+       "roman": "chhipi",
+       "english": "You (plural / formal)"
+      }
+     ],
+     "xp": 2
+    },
+    {
+     "id": "L02-E07",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Hello”?",
+     "target_word_id": "w01",
+     "options": [
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      },
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "छिपि",
+       "roman": "chhipi"
+      },
+      {
+       "text": "भिं",
+       "roman": "bhiṃ"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Hello"
+      },
+      "sentence": [
+       {
+        "text": "“Hello” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L02-E08",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Thank you”?",
+     "target_word_id": "w02",
+     "options": [
+      {
+       "text": "खः",
+       "roman": "khaḥ"
+      },
+      {
+       "text": "सुभाय्",
+       "roman": "subhāy"
+      },
+      {
+       "text": "भिं",
+       "roman": "bhiṃ"
+      },
+      {
+       "text": "सु",
+       "roman": "su"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Thank you"
+      },
+      "sentence": [
+       {
+        "text": "“Thank you” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L02-E09",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does खः mean?",
+     "target_word_id": "w03",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Thank you"
+      },
+      {
+       "text": "You (plural / formal)"
+      },
+      {
+       "text": "Yes"
+      },
+      {
+       "text": "You"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "खः",
+       "roman": "khaḥ"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L02-E10",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w07",
+       "newari": "जि",
+       "roman": "ji",
+       "english": "I"
+      },
+      {
+       "word_id": "w04",
+       "newari": "मखु",
+       "roman": "makhu",
+       "english": "No"
+      },
+      {
+       "word_id": "w11",
+       "newari": "सु",
+       "roman": "su",
+       "english": "Who"
+      },
+      {
+       "word_id": "w05",
+       "newari": "बांलाः",
+       "roman": "bāṅlāḥ",
+       "english": "Good"
+      },
+      {
+       "word_id": "w12",
+       "newari": "छिपि",
+       "roman": "chhipi",
+       "english": "You (plural / formal)"
+      },
+      {
+       "word_id": "w06",
+       "newari": "भिं",
+       "roman": "bhiṃ",
+       "english": "Well / fine"
+      }
+     ],
+     "xp": 2
+    }
+   ]
+  },
+  {
+   "id": "L03",
+   "number": 3,
+   "unit_id": "U1",
+   "title": "Checkpoint: Greetings",
+   "is_checkpoint": true,
+   "pass_threshold": 0.8,
+   "is_published": false,
+   "new_word_ids": [],
+   "review_word_ids": [
+    "w01",
+    "w02",
+    "w03",
+    "w04",
+    "w05",
+    "w06",
+    "w07",
+    "w08",
+    "w09",
+    "w10",
+    "w11",
+    "w12"
+   ],
+   "xp_max": 40,
+   "stat_gains": {
+    "hp": 10,
+    "speed": 3,
+    "magic": 2
+   },
+   "exercise_count": 12,
+   "exercises": [
+    {
+     "id": "L03-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w01",
+       "newari": "ज्वजलपा",
+       "roman": "jwajalapa",
+       "english": "Hello"
+      },
+      {
+       "word_id": "w02",
+       "newari": "सुभाय्",
+       "roman": "subhāy",
+       "english": "Thank you"
+      },
+      {
+       "word_id": "w03",
+       "newari": "खः",
+       "roman": "khaḥ",
+       "english": "Yes"
+      },
+      {
+       "word_id": "w04",
+       "newari": "मखु",
+       "roman": "makhu",
+       "english": "No"
+      },
+      {
+       "word_id": "w05",
+       "newari": "बांलाः",
+       "roman": "bāṅlāḥ",
+       "english": "Good"
+      },
+      {
+       "word_id": "w06",
+       "newari": "भिं",
+       "roman": "bhiṃ",
+       "english": "Well / fine"
+      }
+     ],
+     "xp": 3
+    },
+    {
+     "id": "L03-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does जि mean?",
+     "target_word_id": "w07",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Name"
+      },
+      {
+       "text": "I"
+      },
+      {
+       "text": "Well / fine"
+      },
+      {
+       "text": "What"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "जि",
+       "roman": "ji"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L03-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does छि mean?",
+     "target_word_id": "w08",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "You (plural / formal)"
+      },
+      {
+       "text": "What"
+      },
+      {
+       "text": "Name"
+      },
+      {
+       "text": "You"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "छि",
+       "roman": "chhi"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L03-E04",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does नां mean?",
+     "target_word_id": "w09",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "You"
+      },
+      {
+       "text": "Thank you"
+      },
+      {
+       "text": "What"
+      },
+      {
+       "text": "Name"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L03-E05",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “What”?",
+     "target_word_id": "w10",
+     "options": [
+      {
+       "text": "भिं",
+       "roman": "bhiṃ"
+      },
+      {
+       "text": "छु",
+       "roman": "chhu"
+      },
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "बांलाः",
+       "roman": "bāṅlāḥ"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "What"
+      },
+      "sentence": [
+       {
+        "text": "“What” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L03-E06",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Who”?",
+     "target_word_id": "w11",
+     "options": [
+      {
+       "text": "छु",
+       "roman": "chhu"
+      },
+      {
+       "text": "सु",
+       "roman": "su"
+      },
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "छिपि",
+       "roman": "chhipi"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Who"
+      },
+      "sentence": [
+       {
+        "text": "“Who” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L03-E07",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “You (plural / formal)”?",
+     "target_word_id": "w12",
+     "options": [
+      {
+       "text": "छु",
+       "roman": "chhu"
+      },
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "छिपि",
+       "roman": "chhipi"
+      },
+      {
+       "text": "सु",
+       "roman": "su"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "You (plural / formal)"
+      },
+      "sentence": [
+       {
+        "text": "“You (plural / formal)” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L03-E08",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w01",
+       "newari": "ज्वजलपा",
+       "roman": "jwajalapa",
+       "english": "Hello"
+      },
+      {
+       "word_id": "w02",
+       "newari": "सुभाय्",
+       "roman": "subhāy",
+       "english": "Thank you"
+      },
+      {
+       "word_id": "w03",
+       "newari": "खः",
+       "roman": "khaḥ",
+       "english": "Yes"
+      },
+      {
+       "word_id": "w04",
+       "newari": "मखु",
+       "roman": "makhu",
+       "english": "No"
+      },
+      {
+       "word_id": "w05",
+       "newari": "बांलाः",
+       "roman": "bāṅlāḥ",
+       "english": "Good"
+      },
+      {
+       "word_id": "w06",
+       "newari": "भिं",
+       "roman": "bhiṃ",
+       "english": "Well / fine"
+      }
+     ],
+     "xp": 3
+    },
+    {
+     "id": "L03-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “I”?",
+     "target_word_id": "w07",
+     "options": [
+      {
+       "text": "भिं",
+       "roman": "bhiṃ"
+      },
+      {
+       "text": "जि",
+       "roman": "ji"
+      },
+      {
+       "text": "छु",
+       "roman": "chhu"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "I"
+      },
+      "sentence": [
+       {
+        "text": "“I” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "Hello, thank you.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    },
+    {
+     "id": "L03-E10",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “You”?",
+     "target_word_id": "w08",
+     "options": [
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      },
+      {
+       "text": "जि",
+       "roman": "ji"
+      },
+      {
+       "text": "छि",
+       "roman": "chhi"
+      },
+      {
+       "text": "बांलाः",
+       "roman": "bāṅlāḥ"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "You"
+      },
+      "sentence": [
+       {
+        "text": "“You” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "Yes, I am well.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    },
+    {
+     "id": "L03-E11",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Name”?",
+     "target_word_id": "w09",
+     "options": [
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "जि",
+       "roman": "ji"
+      },
+      {
+       "text": "मखु",
+       "roman": "makhu"
+      },
+      {
+       "text": "सु",
+       "roman": "su"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Name"
+      },
+      "sentence": [
+       {
+        "text": "“Name” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "dialogueComplete",
+     "phrase_target_en": "Someone says “Hello” (reply)",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    },
+    {
+     "id": "L03-E12",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “What”?",
+     "target_word_id": "w10",
+     "options": [
+      {
+       "text": "खः",
+       "roman": "khaḥ"
+      },
+      {
+       "text": "छु",
+       "roman": "chhu"
+      },
+      {
+       "text": "छिपि",
+       "roman": "chhipi"
+      },
+      {
+       "text": "सु",
+       "roman": "su"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "What"
+      },
+      "sentence": [
+       {
+        "text": "“What” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "dialogueComplete",
+     "phrase_target_en": "Is it good? → Yes.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    }
+   ]
+  },
+  {
+   "id": "L04",
+   "number": 4,
+   "unit_id": "U2",
+   "title": "Close Family",
+   "is_checkpoint": false,
+   "pass_threshold": null,
+   "is_published": false,
+   "new_word_ids": [
+    "w13",
+    "w14",
+    "w15",
+    "w16",
+    "w17",
+    "w18"
+   ],
+   "review_word_ids": [
+    "w07",
+    "w08",
+    "w09",
+    "w10",
+    "w11",
+    "w12"
+   ],
+   "xp_max": 25,
+   "stat_gains": {
+    "hp": 5,
+    "defense": 2,
+    "attack": 1
+   },
+   "exercise_count": 10,
+   "exercises": [
+    {
+     "id": "L04-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w13",
+       "newari": "माँ",
+       "roman": "māṃ",
+       "english": "Mother"
+      },
+      {
+       "word_id": "w14",
+       "newari": "बौ",
+       "roman": "bau",
+       "english": "Father"
+      },
+      {
+       "word_id": "w15",
+       "newari": "तता",
+       "roman": "tatā",
+       "english": "Elder sister"
+      },
+      {
+       "word_id": "w16",
+       "newari": "दाजु",
+       "roman": "dāju",
+       "english": "Elder brother"
+      },
+      {
+       "word_id": "w17",
+       "newari": "किजा",
+       "roman": "kijā",
+       "english": "Younger brother"
+      },
+      {
+       "word_id": "w18",
+       "newari": "केहेँ",
+       "roman": "kehẽ",
+       "english": "Younger sister"
+      }
+     ],
+     "xp": 2
+    },
+    {
+     "id": "L04-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does माँ mean?",
+     "target_word_id": "w13",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "You (plural / formal)"
+      },
+      {
+       "text": "Mother"
+      },
+      {
+       "text": "Elder sister"
+      },
+      {
+       "text": "No"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "माँ",
+       "roman": "māṃ"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L04-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does बौ mean?",
+     "target_word_id": "w14",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Good"
+      },
+      {
+       "text": "Father"
+      },
+      {
+       "text": "Thank you"
+      },
+      {
+       "text": "Elder sister"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "बौ",
+       "roman": "bau"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L04-E04",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Elder sister”?",
+     "target_word_id": "w15",
+     "options": [
+      {
+       "text": "बांलाः",
+       "roman": "bāṅlāḥ"
+      },
+      {
+       "text": "छिपि",
+       "roman": "chhipi"
+      },
+      {
+       "text": "तता",
+       "roman": "tatā"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Elder sister"
+      },
+      "sentence": [
+       {
+        "text": "“Elder sister” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L04-E05",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Elder brother”?",
+     "target_word_id": "w16",
+     "options": [
+      {
+       "text": "सु",
+       "roman": "su"
+      },
+      {
+       "text": "दाजु",
+       "roman": "dāju"
+      },
+      {
+       "text": "खः",
+       "roman": "khaḥ"
+      },
+      {
+       "text": "जि",
+       "roman": "ji"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Elder brother"
+      },
+      "sentence": [
+       {
+        "text": "“Elder brother” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L04-E06",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w13",
+       "newari": "माँ",
+       "roman": "māṃ",
+       "english": "Mother"
+      },
+      {
+       "word_id": "w14",
+       "newari": "बौ",
+       "roman": "bau",
+       "english": "Father"
+      },
+      {
+       "word_id": "w15",
+       "newari": "तता",
+       "roman": "tatā",
+       "english": "Elder sister"
+      },
+      {
+       "word_id": "w16",
+       "newari": "दाजु",
+       "roman": "dāju",
+       "english": "Elder brother"
+      },
+      {
+       "word_id": "w17",
+       "newari": "किजा",
+       "roman": "kijā",
+       "english": "Younger brother"
+      },
+      {
+       "word_id": "w18",
+       "newari": "केहेँ",
+       "roman": "kehẽ",
+       "english": "Younger sister"
+      }
+     ],
+     "xp": 3
+    },
+    {
+     "id": "L04-E07",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does जि mean?",
+     "target_word_id": "w07",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Name"
+      },
+      {
+       "text": "I"
+      },
+      {
+       "text": "No"
+      },
+      {
+       "text": "Elder sister"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "जि",
+       "roman": "ji"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L04-E08",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “You”?",
+     "target_word_id": "w08",
+     "options": [
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "तता",
+       "roman": "tatā"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      },
+      {
+       "text": "छि",
+       "roman": "chhi"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "You"
+      },
+      "sentence": [
+       {
+        "text": "“You” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L04-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Name”?",
+     "target_word_id": "w09",
+     "options": [
+      {
+       "text": "सुभाय्",
+       "roman": "subhāy"
+      },
+      {
+       "text": "छिपि",
+       "roman": "chhipi"
+      },
+      {
+       "text": "भिं",
+       "roman": "bhiṃ"
+      },
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Name"
+      },
+      "sentence": [
+       {
+        "text": "“Name” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L04-E10",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w13",
+       "newari": "माँ",
+       "roman": "māṃ",
+       "english": "Mother"
+      },
+      {
+       "word_id": "w10",
+       "newari": "छु",
+       "roman": "chhu",
+       "english": "What"
+      },
+      {
+       "word_id": "w17",
+       "newari": "किजा",
+       "roman": "kijā",
+       "english": "Younger brother"
+      },
+      {
+       "word_id": "w11",
+       "newari": "सु",
+       "roman": "su",
+       "english": "Who"
+      },
+      {
+       "word_id": "w18",
+       "newari": "केहेँ",
+       "roman": "kehẽ",
+       "english": "Younger sister"
+      },
+      {
+       "word_id": "w12",
+       "newari": "छिपि",
+       "roman": "chhipi",
+       "english": "You (plural / formal)"
+      }
+     ],
+     "xp": 3
+    }
+   ]
+  },
+  {
+   "id": "L05",
+   "number": 5,
+   "unit_id": "U2",
+   "title": "More People",
+   "is_checkpoint": false,
+   "pass_threshold": null,
+   "is_published": false,
+   "new_word_ids": [
+    "w19",
+    "w20",
+    "w21",
+    "w22",
+    "w23",
+    "w24"
+   ],
+   "review_word_ids": [
+    "w13",
+    "w14",
+    "w15",
+    "w16",
+    "w17",
+    "w18"
+   ],
+   "xp_max": 25,
+   "stat_gains": {
+    "hp": 5,
+    "defense": 2,
+    "attack": 1
+   },
+   "exercise_count": 10,
+   "exercises": [
+    {
+     "id": "L05-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w19",
+       "newari": "काय्",
+       "roman": "kāy",
+       "english": "Son"
+      },
+      {
+       "word_id": "w20",
+       "newari": "म्हाय्",
+       "roman": "mhāy",
+       "english": "Daughter"
+      },
+      {
+       "word_id": "w21",
+       "newari": "मचा",
+       "roman": "machā",
+       "english": "Child"
+      },
+      {
+       "word_id": "w22",
+       "newari": "मनू",
+       "roman": "manū",
+       "english": "Person"
+      },
+      {
+       "word_id": "w23",
+       "newari": "मिसा",
+       "roman": "misā",
+       "english": "Woman"
+      },
+      {
+       "word_id": "w24",
+       "newari": "मिजं",
+       "roman": "mijaṃ",
+       "english": "Man"
+      }
+     ],
+     "xp": 2
+    },
+    {
+     "id": "L05-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does काय् mean?",
+     "target_word_id": "w19",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Elder brother"
+      },
+      {
+       "text": "Mother"
+      },
+      {
+       "text": "Younger sister"
+      },
+      {
+       "text": "Son"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "काय्",
+       "roman": "kāy"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L05-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does म्हाय् mean?",
+     "target_word_id": "w20",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Woman"
+      },
+      {
+       "text": "You (plural / formal)"
+      },
+      {
+       "text": "Daughter"
+      },
+      {
+       "text": "Younger sister"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "म्हाय्",
+       "roman": "mhāy"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L05-E04",
+     "type": "pictureToWord",
+     "prompt": "What is this?",
+     "image_key": "person",
+     "target_word_id": "w22",
+     "options": [
+      {
+       "text": "मनू",
+       "roman": "manū"
+      },
+      {
+       "text": "छिपि",
+       "roman": "chhipi"
+      },
+      {
+       "text": "काय्",
+       "roman": "kāy"
+      },
+      {
+       "text": "सु",
+       "roman": "su"
+      }
+     ],
+     "answer_index": 0,
+     "xp": 2
+    },
+    {
+     "id": "L05-E05",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Person”?",
+     "target_word_id": "w22",
+     "options": [
+      {
+       "text": "सु",
+       "roman": "su"
+      },
+      {
+       "text": "सुभाय्",
+       "roman": "subhāy"
+      },
+      {
+       "text": "छु",
+       "roman": "chhu"
+      },
+      {
+       "text": "मनू",
+       "roman": "manū"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "illustration_key": "person"
+      },
+      "sentence": [
+       {
+        "text": "“Person” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 2
+    },
+    {
+     "id": "L05-E06",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Child”?",
+     "target_word_id": "w21",
+     "options": [
+      {
+       "text": "छु",
+       "roman": "chhu"
+      },
+      {
+       "text": "मचा",
+       "roman": "machā"
+      },
+      {
+       "text": "खः",
+       "roman": "khaḥ"
+      },
+      {
+       "text": "छि",
+       "roman": "chhi"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Child"
+      },
+      "sentence": [
+       {
+        "text": "“Child” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L05-E07",
+     "type": "wordToPicture",
+     "prompt": "Which picture is मनू?",
+     "show_roman_under_prompt": true,
+     "target_word_id": "w22",
+     "options": [
+      {
+       "image_key": "bowl"
+      },
+      {
+       "image_key": "house"
+      },
+      {
+       "image_key": "droplet"
+      },
+      {
+       "image_key": "person"
+      }
+     ],
+     "answer_index": 3,
+     "xp": 3
+    },
+    {
+     "id": "L05-E08",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w13",
+       "newari": "माँ",
+       "roman": "māṃ",
+       "english": "Mother"
+      },
+      {
+       "word_id": "w14",
+       "newari": "बौ",
+       "roman": "bau",
+       "english": "Father"
+      },
+      {
+       "word_id": "w15",
+       "newari": "तता",
+       "roman": "tatā",
+       "english": "Elder sister"
+      },
+      {
+       "word_id": "w16",
+       "newari": "दाजु",
+       "roman": "dāju",
+       "english": "Elder brother"
+      },
+      {
+       "word_id": "w17",
+       "newari": "किजा",
+       "roman": "kijā",
+       "english": "Younger brother"
+      },
+      {
+       "word_id": "w18",
+       "newari": "केहेँ",
+       "roman": "kehẽ",
+       "english": "Younger sister"
+      }
+     ],
+     "xp": 3
+    },
+    {
+     "id": "L05-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Woman”?",
+     "target_word_id": "w23",
+     "options": [
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "मिसा",
+       "roman": "misā"
+      },
+      {
+       "text": "मनू",
+       "roman": "manū"
+      },
+      {
+       "text": "छु",
+       "roman": "chhu"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Woman"
+      },
+      "sentence": [
+       {
+        "text": "“Woman” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L05-E10",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Man”?",
+     "target_word_id": "w24",
+     "options": [
+      {
+       "text": "सु",
+       "roman": "su"
+      },
+      {
+       "text": "तता",
+       "roman": "tatā"
+      },
+      {
+       "text": "मिजं",
+       "roman": "mijaṃ"
+      },
+      {
+       "text": "किजा",
+       "roman": "kijā"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Man"
+      },
+      "sentence": [
+       {
+        "text": "“Man” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    }
+   ]
+  },
+  {
+   "id": "L06",
+   "number": 6,
+   "unit_id": "U2",
+   "title": "Checkpoint: Family",
+   "is_checkpoint": true,
+   "pass_threshold": 0.8,
+   "is_published": false,
+   "new_word_ids": [
+    "w25",
+    "w26",
+    "w27",
+    "w28"
+   ],
+   "review_word_ids": [
+    "w13",
+    "w14",
+    "w15",
+    "w16",
+    "w17",
+    "w18",
+    "w19",
+    "w20",
+    "w21",
+    "w22",
+    "w23",
+    "w24"
+   ],
+   "xp_max": 50,
+   "stat_gains": {
+    "hp": 10,
+    "defense": 3,
+    "attack": 2
+   },
+   "exercise_count": 12,
+   "exercises": [
+    {
+     "id": "L06-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w25",
+       "newari": "थ्व",
+       "roman": "thwa",
+       "english": "This"
+      },
+      {
+       "word_id": "w26",
+       "newari": "जिगु",
+       "roman": "jigu",
+       "english": "My"
+      },
+      {
+       "word_id": "w27",
+       "newari": "जिपि",
+       "roman": "jipi",
+       "english": "We"
+      },
+      {
+       "word_id": "w28",
+       "newari": "छिगु",
+       "roman": "chhigu",
+       "english": "Your"
+      }
+     ],
+     "xp": 4
+    },
+    {
+     "id": "L06-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does थ्व mean?",
+     "target_word_id": "w25",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Thank you"
+      },
+      {
+       "text": "You"
+      },
+      {
+       "text": "You (plural / formal)"
+      },
+      {
+       "text": "This"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "थ्व",
+       "roman": "thwa"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L06-E03",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “My”?",
+     "target_word_id": "w26",
+     "options": [
+      {
+       "text": "मनू",
+       "roman": "manū"
+      },
+      {
+       "text": "सु",
+       "roman": "su"
+      },
+      {
+       "text": "जिगु",
+       "roman": "jigu"
+      },
+      {
+       "text": "काय्",
+       "roman": "kāy"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "My"
+      },
+      "sentence": [
+       {
+        "text": "“My” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L06-E04",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w25",
+       "newari": "थ्व",
+       "roman": "thwa",
+       "english": "This"
+      },
+      {
+       "word_id": "w13",
+       "newari": "माँ",
+       "roman": "māṃ",
+       "english": "Mother"
+      },
+      {
+       "word_id": "w26",
+       "newari": "जिगु",
+       "roman": "jigu",
+       "english": "My"
+      },
+      {
+       "word_id": "w14",
+       "newari": "बौ",
+       "roman": "bau",
+       "english": "Father"
+      },
+      {
+       "word_id": "w27",
+       "newari": "जिपि",
+       "roman": "jipi",
+       "english": "We"
+      },
+      {
+       "word_id": "w15",
+       "newari": "तता",
+       "roman": "tatā",
+       "english": "Elder sister"
+      }
+     ],
+     "xp": 4
+    },
+    {
+     "id": "L06-E05",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does छिगु mean?",
+     "target_word_id": "w28",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Son"
+      },
+      {
+       "text": "Your"
+      },
+      {
+       "text": "Good"
+      },
+      {
+       "text": "Child"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "छिगु",
+       "roman": "chhigu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L06-E06",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Elder brother”?",
+     "target_word_id": "w16",
+     "options": [
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "दाजु",
+       "roman": "dāju"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      },
+      {
+       "text": "छु",
+       "roman": "chhu"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Elder brother"
+      },
+      "sentence": [
+       {
+        "text": "“Elder brother” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L06-E07",
+     "type": "wordToPicture",
+     "prompt": "Which picture is मनू?",
+     "show_roman_under_prompt": true,
+     "target_word_id": "w22",
+     "options": [
+      {
+       "image_key": "person"
+      },
+      {
+       "image_key": "bowl"
+      },
+      {
+       "image_key": "droplet"
+      },
+      {
+       "image_key": "house"
+      }
+     ],
+     "answer_index": 0,
+     "xp": 4
+    },
+    {
+     "id": "L06-E08",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Younger brother”?",
+     "target_word_id": "w17",
+     "options": [
+      {
+       "text": "किजा",
+       "roman": "kijā"
+      },
+      {
+       "text": "माँ",
+       "roman": "māṃ"
+      },
+      {
+       "text": "मचा",
+       "roman": "machā"
+      },
+      {
+       "text": "खः",
+       "roman": "khaḥ"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Younger brother"
+      },
+      "sentence": [
+       {
+        "text": "“Younger brother” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L06-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Younger sister”?",
+     "target_word_id": "w18",
+     "options": [
+      {
+       "text": "सु",
+       "roman": "su"
+      },
+      {
+       "text": "छिपि",
+       "roman": "chhipi"
+      },
+      {
+       "text": "दाजु",
+       "roman": "dāju"
+      },
+      {
+       "text": "केहेँ",
+       "roman": "kehẽ"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Younger sister"
+      },
+      "sentence": [
+       {
+        "text": "“Younger sister” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "my mother",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    },
+    {
+     "id": "L06-E10",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Son”?",
+     "target_word_id": "w19",
+     "options": [
+      {
+       "text": "मनू",
+       "roman": "manū"
+      },
+      {
+       "text": "भिं",
+       "roman": "bhiṃ"
+      },
+      {
+       "text": "म्हाय्",
+       "roman": "mhāy"
+      },
+      {
+       "text": "काय्",
+       "roman": "kāy"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Son"
+      },
+      "sentence": [
+       {
+        "text": "“Son” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "your father",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    },
+    {
+     "id": "L06-E11",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does म्हाय् mean?",
+     "target_word_id": "w20",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Daughter"
+      },
+      {
+       "text": "Your"
+      },
+      {
+       "text": "I"
+      },
+      {
+       "text": "No"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "म्हाय्",
+       "roman": "mhāy"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "wordOrder",
+     "phrase_target_en": "This is my elder sister.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 5
+    },
+    {
+     "id": "L06-E12",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Child”?",
+     "target_word_id": "w21",
+     "options": [
+      {
+       "text": "भिं",
+       "roman": "bhiṃ"
+      },
+      {
+       "text": "मचा",
+       "roman": "machā"
+      },
+      {
+       "text": "जि",
+       "roman": "ji"
+      },
+      {
+       "text": "बांलाः",
+       "roman": "bāṅlāḥ"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Child"
+      },
+      "sentence": [
+       {
+        "text": "“Child” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "dialogueComplete",
+     "phrase_target_en": "Who is this? → This is my younger brother.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 5
+    }
+   ]
+  },
+  {
+   "id": "L07",
+   "number": 7,
+   "unit_id": "U3",
+   "title": "Numbers 1 to 5",
+   "is_checkpoint": false,
+   "pass_threshold": null,
+   "is_published": false,
+   "new_word_ids": [
+    "w29",
+    "w30",
+    "w31",
+    "w32",
+    "w33"
+   ],
+   "review_word_ids": [
+    "w19",
+    "w20",
+    "w21",
+    "w22",
+    "w23",
+    "w24"
+   ],
+   "xp_max": 30,
+   "stat_gains": {
+    "hp": 5,
+    "magic": 2,
+    "defense": 1
+   },
+   "exercise_count": 10,
+   "exercises": [
+    {
+     "id": "L07-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w29",
+       "newari": "छ",
+       "roman": "chha",
+       "english": "One"
+      },
+      {
+       "word_id": "w30",
+       "newari": "नि",
+       "roman": "ni",
+       "english": "Two"
+      },
+      {
+       "word_id": "w31",
+       "newari": "स्वँ",
+       "roman": "swãṃ",
+       "english": "Three"
+      },
+      {
+       "word_id": "w32",
+       "newari": "प्यँ",
+       "roman": "pyãṃ",
+       "english": "Four"
+      },
+      {
+       "word_id": "w33",
+       "newari": "न्या",
+       "roman": "nyā",
+       "english": "Five"
+      }
+     ],
+     "xp": 3
+    },
+    {
+     "id": "L07-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does छ mean?",
+     "target_word_id": "w29",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "One"
+      },
+      {
+       "text": "Daughter"
+      },
+      {
+       "text": "Yes"
+      },
+      {
+       "text": "You (plural / formal)"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "छ",
+       "roman": "chha"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L07-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does नि mean?",
+     "target_word_id": "w30",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "No"
+      },
+      {
+       "text": "Mother"
+      },
+      {
+       "text": "Two"
+      },
+      {
+       "text": "One"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "नि",
+       "roman": "ni"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L07-E04",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Three”?",
+     "target_word_id": "w31",
+     "options": [
+      {
+       "text": "स्वँ",
+       "roman": "swãṃ"
+      },
+      {
+       "text": "खः",
+       "roman": "khaḥ"
+      },
+      {
+       "text": "माँ",
+       "roman": "māṃ"
+      },
+      {
+       "text": "छिगु",
+       "roman": "chhigu"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Three"
+      },
+      "sentence": [
+       {
+        "text": "“Three” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L07-E05",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Four”?",
+     "target_word_id": "w32",
+     "options": [
+      {
+       "text": "छि",
+       "roman": "chhi"
+      },
+      {
+       "text": "केहेँ",
+       "roman": "kehẽ"
+      },
+      {
+       "text": "मखु",
+       "roman": "makhu"
+      },
+      {
+       "text": "प्यँ",
+       "roman": "pyãṃ"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Four"
+      },
+      "sentence": [
+       {
+        "text": "“Four” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L07-E06",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w29",
+       "newari": "छ",
+       "roman": "chha",
+       "english": "One"
+      },
+      {
+       "word_id": "w30",
+       "newari": "नि",
+       "roman": "ni",
+       "english": "Two"
+      },
+      {
+       "word_id": "w31",
+       "newari": "स्वँ",
+       "roman": "swãṃ",
+       "english": "Three"
+      },
+      {
+       "word_id": "w32",
+       "newari": "प्यँ",
+       "roman": "pyãṃ",
+       "english": "Four"
+      },
+      {
+       "word_id": "w33",
+       "newari": "न्या",
+       "roman": "nyā",
+       "english": "Five"
+      }
+     ],
+     "xp": 3
+    },
+    {
+     "id": "L07-E07",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does काय् mean?",
+     "target_word_id": "w19",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Thank you"
+      },
+      {
+       "text": "Son"
+      },
+      {
+       "text": "Elder sister"
+      },
+      {
+       "text": "Woman"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "काय्",
+       "roman": "kāy"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L07-E08",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does म्हाय् mean?",
+     "target_word_id": "w20",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Daughter"
+      },
+      {
+       "text": "Two"
+      },
+      {
+       "text": "No"
+      },
+      {
+       "text": "Hello"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "म्हाय्",
+       "roman": "mhāy"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L07-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Child”?",
+     "target_word_id": "w21",
+     "options": [
+      {
+       "text": "मचा",
+       "roman": "machā"
+      },
+      {
+       "text": "केहेँ",
+       "roman": "kehẽ"
+      },
+      {
+       "text": "छ",
+       "roman": "chha"
+      },
+      {
+       "text": "काय्",
+       "roman": "kāy"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Child"
+      },
+      "sentence": [
+       {
+        "text": "“Child” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L07-E10",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w29",
+       "newari": "छ",
+       "roman": "chha",
+       "english": "One"
+      },
+      {
+       "word_id": "w19",
+       "newari": "काय्",
+       "roman": "kāy",
+       "english": "Son"
+      },
+      {
+       "word_id": "w22",
+       "newari": "मनू",
+       "roman": "manū",
+       "english": "Person"
+      },
+      {
+       "word_id": "w33",
+       "newari": "न्या",
+       "roman": "nyā",
+       "english": "Five"
+      },
+      {
+       "word_id": "w23",
+       "newari": "मिसा",
+       "roman": "misā",
+       "english": "Woman"
+      },
+      {
+       "word_id": "w24",
+       "newari": "मिजं",
+       "roman": "mijaṃ",
+       "english": "Man"
+      }
+     ],
+     "xp": 3
+    }
+   ]
+  },
+  {
+   "id": "L08",
+   "number": 8,
+   "unit_id": "U3",
+   "title": "Colors and Objects",
+   "is_checkpoint": false,
+   "pass_threshold": null,
+   "is_published": false,
+   "new_word_ids": [
+    "w34",
+    "w35",
+    "w36",
+    "w37",
+    "w38",
+    "w39"
+   ],
+   "review_word_ids": [
+    "w29",
+    "w30",
+    "w31",
+    "w32",
+    "w33"
+   ],
+   "xp_max": 30,
+   "stat_gains": {
+    "hp": 5,
+    "magic": 2,
+    "defense": 1
+   },
+   "exercise_count": 10,
+   "exercises": [
+    {
+     "id": "L08-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w34",
+       "newari": "ह्यूँ",
+       "roman": "hyūṃ",
+       "english": "Red"
+      },
+      {
+       "word_id": "w35",
+       "newari": "तुयु",
+       "roman": "tuyu",
+       "english": "White"
+      },
+      {
+       "word_id": "w36",
+       "newari": "छेँ",
+       "roman": "chhẽ",
+       "english": "House / home"
+      },
+      {
+       "word_id": "w37",
+       "newari": "लः",
+       "roman": "laḥ",
+       "english": "Water"
+      },
+      {
+       "word_id": "w38",
+       "newari": "कचा",
+       "roman": "kachā",
+       "english": "Bowl"
+      },
+      {
+       "word_id": "w39",
+       "newari": "पौ",
+       "roman": "pau",
+       "english": "Paper / book"
+      }
+     ],
+     "xp": 3
+    },
+    {
+     "id": "L08-E02",
+     "type": "pictureToWord",
+     "prompt": "What is this?",
+     "image_key": "house",
+     "target_word_id": "w36",
+     "options": [
+      {
+       "text": "छ",
+       "roman": "chha"
+      },
+      {
+       "text": "छेँ",
+       "roman": "chhẽ"
+      },
+      {
+       "text": "मनू",
+       "roman": "manū"
+      },
+      {
+       "text": "ह्यूँ",
+       "roman": "hyūṃ"
+      }
+     ],
+     "answer_index": 1,
+     "xp": 3
+    },
+    {
+     "id": "L08-E03",
+     "type": "pictureToWord",
+     "prompt": "What is this?",
+     "image_key": "droplet",
+     "target_word_id": "w37",
+     "options": [
+      {
+       "text": "लः",
+       "roman": "laḥ"
+      },
+      {
+       "text": "छु",
+       "roman": "chhu"
+      },
+      {
+       "text": "पौ",
+       "roman": "pau"
+      },
+      {
+       "text": "मखु",
+       "roman": "makhu"
+      }
+     ],
+     "answer_index": 0,
+     "xp": 3
+    },
+    {
+     "id": "L08-E04",
+     "type": "wordToPicture",
+     "prompt": "Which picture is कचा?",
+     "show_roman_under_prompt": true,
+     "target_word_id": "w38",
+     "options": [
+      {
+       "image_key": "person"
+      },
+      {
+       "image_key": "droplet"
+      },
+      {
+       "image_key": "bowl"
+      },
+      {
+       "image_key": "house"
+      }
+     ],
+     "answer_index": 2,
+     "xp": 3
+    },
+    {
+     "id": "L08-E05",
+     "type": "wordToPicture",
+     "prompt": "Which picture is छेँ?",
+     "show_roman_under_prompt": true,
+     "target_word_id": "w36",
+     "options": [
+      {
+       "image_key": "person"
+      },
+      {
+       "image_key": "droplet"
+      },
+      {
+       "image_key": "house"
+      },
+      {
+       "image_key": "bowl"
+      }
+     ],
+     "answer_index": 2,
+     "xp": 3
+    },
+    {
+     "id": "L08-E06",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does ह्यूँ mean?",
+     "target_word_id": "w34",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Red"
+      },
+      {
+       "text": "Yes"
+      },
+      {
+       "text": "What"
+      },
+      {
+       "text": "House / home"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "ह्यूँ",
+       "roman": "hyūṃ"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L08-E07",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does छ mean?",
+     "target_word_id": "w29",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "This"
+      },
+      {
+       "text": "Woman"
+      },
+      {
+       "text": "One"
+      },
+      {
+       "text": "Elder sister"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "छ",
+       "roman": "chha"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L08-E08",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “House / home”?",
+     "target_word_id": "w36",
+     "options": [
+      {
+       "text": "दाजु",
+       "roman": "dāju"
+      },
+      {
+       "text": "छेँ",
+       "roman": "chhẽ"
+      },
+      {
+       "text": "तता",
+       "roman": "tatā"
+      },
+      {
+       "text": "मिजं",
+       "roman": "mijaṃ"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "illustration_key": "house"
+      },
+      "sentence": [
+       {
+        "text": "“House / home” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L08-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Water”?",
+     "target_word_id": "w37",
+     "options": [
+      {
+       "text": "छ",
+       "roman": "chha"
+      },
+      {
+       "text": "मनू",
+       "roman": "manū"
+      },
+      {
+       "text": "लः",
+       "roman": "laḥ"
+      },
+      {
+       "text": "म्हाय्",
+       "roman": "mhāy"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "illustration_key": "droplet"
+      },
+      "sentence": [
+       {
+        "text": "“Water” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L08-E10",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w35",
+       "newari": "तुयु",
+       "roman": "tuyu",
+       "english": "White"
+      },
+      {
+       "word_id": "w30",
+       "newari": "नि",
+       "roman": "ni",
+       "english": "Two"
+      },
+      {
+       "word_id": "w31",
+       "newari": "स्वँ",
+       "roman": "swãṃ",
+       "english": "Three"
+      },
+      {
+       "word_id": "w32",
+       "newari": "प्यँ",
+       "roman": "pyãṃ",
+       "english": "Four"
+      },
+      {
+       "word_id": "w33",
+       "newari": "न्या",
+       "roman": "nyā",
+       "english": "Five"
+      },
+      {
+       "word_id": "w39",
+       "newari": "पौ",
+       "roman": "pau",
+       "english": "Paper / book"
+      }
+     ],
+     "xp": 3
+    }
+   ]
+  },
+  {
+   "id": "L09",
+   "number": 9,
+   "unit_id": "U3",
+   "title": "Checkpoint: Counting Things",
+   "is_checkpoint": true,
+   "pass_threshold": 0.8,
+   "is_published": false,
+   "new_word_ids": [
+    "w40",
+    "w41",
+    "w42",
+    "w43",
+    "w44",
+    "w45"
+   ],
+   "review_word_ids": [
+    "w29",
+    "w30",
+    "w31",
+    "w32",
+    "w33",
+    "w34",
+    "w35",
+    "w36",
+    "w37",
+    "w38",
+    "w39"
+   ],
+   "xp_max": 60,
+   "stat_gains": {
+    "hp": 10,
+    "magic": 3,
+    "defense": 2
+   },
+   "exercise_count": 12,
+   "exercises": [
+    {
+     "id": "L09-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w40",
+       "newari": "खु",
+       "roman": "khu",
+       "english": "Six"
+      },
+      {
+       "word_id": "w41",
+       "newari": "न्ह्य",
+       "roman": "nhya",
+       "english": "Seven"
+      },
+      {
+       "word_id": "w42",
+       "newari": "च्या",
+       "roman": "chyā",
+       "english": "Eight"
+      },
+      {
+       "word_id": "w43",
+       "newari": "गू",
+       "roman": "gū",
+       "english": "Nine"
+      },
+      {
+       "word_id": "w44",
+       "newari": "झि",
+       "roman": "jhi",
+       "english": "Ten"
+      },
+      {
+       "word_id": "w45",
+       "newari": "गुलि",
+       "roman": "guli",
+       "english": "How many"
+      }
+     ],
+     "xp": 5
+    },
+    {
+     "id": "L09-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does खु mean?",
+     "target_word_id": "w40",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Six"
+      },
+      {
+       "text": "Hello"
+      },
+      {
+       "text": "Four"
+      },
+      {
+       "text": "You (plural / formal)"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "खु",
+       "roman": "khu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 5
+    },
+    {
+     "id": "L09-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does न्ह्य mean?",
+     "target_word_id": "w41",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Elder brother"
+      },
+      {
+       "text": "Who"
+      },
+      {
+       "text": "Seven"
+      },
+      {
+       "text": "Five"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "न्ह्य",
+       "roman": "nhya"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 5
+    },
+    {
+     "id": "L09-E04",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Eight”?",
+     "target_word_id": "w42",
+     "options": [
+      {
+       "text": "च्या",
+       "roman": "chyā"
+      },
+      {
+       "text": "बौ",
+       "roman": "bau"
+      },
+      {
+       "text": "माँ",
+       "roman": "māṃ"
+      },
+      {
+       "text": "खः",
+       "roman": "khaḥ"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Eight"
+      },
+      "sentence": [
+       {
+        "text": "“Eight” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 5
+    },
+    {
+     "id": "L09-E05",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w40",
+       "newari": "खु",
+       "roman": "khu",
+       "english": "Six"
+      },
+      {
+       "word_id": "w29",
+       "newari": "छ",
+       "roman": "chha",
+       "english": "One"
+      },
+      {
+       "word_id": "w41",
+       "newari": "न्ह्य",
+       "roman": "nhya",
+       "english": "Seven"
+      },
+      {
+       "word_id": "w30",
+       "newari": "नि",
+       "roman": "ni",
+       "english": "Two"
+      },
+      {
+       "word_id": "w42",
+       "newari": "च्या",
+       "roman": "chyā",
+       "english": "Eight"
+      },
+      {
+       "word_id": "w31",
+       "newari": "स्वँ",
+       "roman": "swãṃ",
+       "english": "Three"
+      }
+     ],
+     "xp": 5
+    },
+    {
+     "id": "L09-E06",
+     "type": "pictureToWord",
+     "prompt": "What is this?",
+     "image_key": "house",
+     "target_word_id": "w36",
+     "options": [
+      {
+       "text": "छेँ",
+       "roman": "chhẽ"
+      },
+      {
+       "text": "सु",
+       "roman": "su"
+      },
+      {
+       "text": "न्या",
+       "roman": "nyā"
+      },
+      {
+       "text": "जि",
+       "roman": "ji"
+      }
+     ],
+     "answer_index": 0,
+     "xp": 5
+    },
+    {
+     "id": "L09-E07",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Nine”?",
+     "target_word_id": "w43",
+     "options": [
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "न्या",
+       "roman": "nyā"
+      },
+      {
+       "text": "गू",
+       "roman": "gū"
+      },
+      {
+       "text": "पौ",
+       "roman": "pau"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Nine"
+      },
+      "sentence": [
+       {
+        "text": "“Nine” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 5
+    },
+    {
+     "id": "L09-E08",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does प्यँ mean?",
+     "target_word_id": "w32",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Two"
+      },
+      {
+       "text": "Name"
+      },
+      {
+       "text": "Four"
+      },
+      {
+       "text": "Eight"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "प्यँ",
+       "roman": "pyãṃ"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 5
+    },
+    {
+     "id": "L09-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Ten”?",
+     "target_word_id": "w44",
+     "options": [
+      {
+       "text": "झि",
+       "roman": "jhi"
+      },
+      {
+       "text": "सु",
+       "roman": "su"
+      },
+      {
+       "text": "नि",
+       "roman": "ni"
+      },
+      {
+       "text": "म्हाय्",
+       "roman": "mhāy"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Ten"
+      },
+      "sentence": [
+       {
+        "text": "“Ten” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "two red bowls",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 5
+    },
+    {
+     "id": "L09-E10",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Five”?",
+     "target_word_id": "w33",
+     "options": [
+      {
+       "text": "न्या",
+       "roman": "nyā"
+      },
+      {
+       "text": "मिजं",
+       "roman": "mijaṃ"
+      },
+      {
+       "text": "जिपि",
+       "roman": "jipi"
+      },
+      {
+       "text": "मनू",
+       "roman": "manū"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Five"
+      },
+      "sentence": [
+       {
+        "text": "“Five” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "three white papers",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 5
+    },
+    {
+     "id": "L09-E11",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does गुलि mean?",
+     "target_word_id": "w45",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "How many"
+      },
+      {
+       "text": "White"
+      },
+      {
+       "text": "Child"
+      },
+      {
+       "text": "Younger sister"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "गुलि",
+       "roman": "guli"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "wordOrder",
+     "phrase_target_en": "How many houses?",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 5
+    },
+    {
+     "id": "L09-E12",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does ह्यूँ mean?",
+     "target_word_id": "w34",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "House / home"
+      },
+      {
+       "text": "Name"
+      },
+      {
+       "text": "Red"
+      },
+      {
+       "text": "Person"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "ह्यूँ",
+       "roman": "hyūṃ"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "wordOrder",
+     "phrase_target_en": "four white houses",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 5
+    }
+   ]
+  },
+  {
+   "id": "L10",
+   "number": 10,
+   "unit_id": "U4",
+   "title": "Basic Foods",
+   "is_checkpoint": false,
+   "pass_threshold": null,
+   "is_published": false,
+   "new_word_ids": [
+    "w46",
+    "w47",
+    "w48",
+    "w49",
+    "w50"
+   ],
+   "review_word_ids": [
+    "w37",
+    "w38"
+   ],
+   "xp_max": 35,
+   "stat_gains": {
+    "hp": 5,
+    "attack": 2,
+    "speed": 1
+   },
+   "exercise_count": 10,
+   "exercises": [
+    {
+     "id": "L10-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w46",
+       "newari": "जा",
+       "roman": "jā",
+       "english": "Cooked rice"
+      },
+      {
+       "word_id": "w47",
+       "newari": "चा",
+       "roman": "chā",
+       "english": "Tea"
+      },
+      {
+       "word_id": "w48",
+       "newari": "ला",
+       "roman": "lā",
+       "english": "Meat"
+      },
+      {
+       "word_id": "w49",
+       "newari": "ङा",
+       "roman": "ṅā",
+       "english": "Fish"
+      },
+      {
+       "word_id": "w50",
+       "newari": "बजि",
+       "roman": "baji",
+       "english": "Beaten rice"
+      }
+     ],
+     "xp": 3
+    },
+    {
+     "id": "L10-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does जा mean?",
+     "target_word_id": "w46",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Cooked rice"
+      },
+      {
+       "text": "Elder brother"
+      },
+      {
+       "text": "Paper / book"
+      },
+      {
+       "text": "Nine"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "जा",
+       "roman": "jā"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L10-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does चा mean?",
+     "target_word_id": "w47",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Who"
+      },
+      {
+       "text": "We"
+      },
+      {
+       "text": "What"
+      },
+      {
+       "text": "Tea"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "चा",
+       "roman": "chā"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L10-E04",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Meat”?",
+     "target_word_id": "w48",
+     "options": [
+      {
+       "text": "ला",
+       "roman": "lā"
+      },
+      {
+       "text": "जि",
+       "roman": "ji"
+      },
+      {
+       "text": "चा",
+       "roman": "chā"
+      },
+      {
+       "text": "न्या",
+       "roman": "nyā"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Meat"
+      },
+      "sentence": [
+       {
+        "text": "“Meat” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L10-E05",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Fish”?",
+     "target_word_id": "w49",
+     "options": [
+      {
+       "text": "स्वँ",
+       "roman": "swãṃ"
+      },
+      {
+       "text": "जिगु",
+       "roman": "jigu"
+      },
+      {
+       "text": "ङा",
+       "roman": "ṅā"
+      },
+      {
+       "text": "पौ",
+       "roman": "pau"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Fish"
+      },
+      "sentence": [
+       {
+        "text": "“Fish” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L10-E06",
+     "type": "pictureToWord",
+     "prompt": "What is this?",
+     "image_key": "droplet",
+     "target_word_id": "w37",
+     "options": [
+      {
+       "text": "ह्यूँ",
+       "roman": "hyūṃ"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      },
+      {
+       "text": "लः",
+       "roman": "laḥ"
+      },
+      {
+       "text": "छेँ",
+       "roman": "chhẽ"
+      }
+     ],
+     "answer_index": 2,
+     "xp": 4
+    },
+    {
+     "id": "L10-E07",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w46",
+       "newari": "जा",
+       "roman": "jā",
+       "english": "Cooked rice"
+      },
+      {
+       "word_id": "w47",
+       "newari": "चा",
+       "roman": "chā",
+       "english": "Tea"
+      },
+      {
+       "word_id": "w38",
+       "newari": "कचा",
+       "roman": "kachā",
+       "english": "Bowl"
+      },
+      {
+       "word_id": "w48",
+       "newari": "ला",
+       "roman": "lā",
+       "english": "Meat"
+      },
+      {
+       "word_id": "w49",
+       "newari": "ङा",
+       "roman": "ṅā",
+       "english": "Fish"
+      },
+      {
+       "word_id": "w50",
+       "newari": "बजि",
+       "roman": "baji",
+       "english": "Beaten rice"
+      }
+     ],
+     "xp": 4
+    },
+    {
+     "id": "L10-E08",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does बजि mean?",
+     "target_word_id": "w50",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "You (plural / formal)"
+      },
+      {
+       "text": "Five"
+      },
+      {
+       "text": "Beaten rice"
+      },
+      {
+       "text": "What"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "बजि",
+       "roman": "baji"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L10-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Cooked rice”?",
+     "target_word_id": "w46",
+     "options": [
+      {
+       "text": "गुलि",
+       "roman": "guli"
+      },
+      {
+       "text": "जा",
+       "roman": "jā"
+      },
+      {
+       "text": "बजि",
+       "roman": "baji"
+      },
+      {
+       "text": "जि",
+       "roman": "ji"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Cooked rice"
+      },
+      "sentence": [
+       {
+        "text": "“Cooked rice” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L10-E10",
+     "type": "wordToPicture",
+     "prompt": "Which picture is लः?",
+     "show_roman_under_prompt": true,
+     "target_word_id": "w37",
+     "options": [
+      {
+       "image_key": "droplet"
+      },
+      {
+       "image_key": "person"
+      },
+      {
+       "image_key": "bowl"
+      },
+      {
+       "image_key": "house"
+      }
+     ],
+     "answer_index": 0,
+     "xp": 4
+    }
+   ]
+  },
+  {
+   "id": "L11",
+   "number": 11,
+   "unit_id": "U4",
+   "title": "Eating and Drinking",
+   "is_checkpoint": false,
+   "pass_threshold": null,
+   "is_published": false,
+   "new_word_ids": [
+    "w51",
+    "w52",
+    "w53",
+    "w54",
+    "w55",
+    "w56"
+   ],
+   "review_word_ids": [
+    "w46",
+    "w47",
+    "w48",
+    "w49",
+    "w50"
+   ],
+   "xp_max": 35,
+   "stat_gains": {
+    "hp": 5,
+    "attack": 2,
+    "speed": 1
+   },
+   "exercise_count": 10,
+   "exercises": [
+    {
+     "id": "L11-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w51",
+       "newari": "नेगु",
+       "roman": "negu",
+       "english": "To eat"
+      },
+      {
+       "word_id": "w52",
+       "newari": "त्वनेगु",
+       "roman": "twanegu",
+       "english": "To drink"
+      },
+      {
+       "word_id": "w53",
+       "newari": "बियेगु",
+       "roman": "biyegu",
+       "english": "To give"
+      },
+      {
+       "word_id": "w54",
+       "newari": "कायेगु",
+       "roman": "kāyegu",
+       "english": "To take"
+      },
+      {
+       "word_id": "w55",
+       "newari": "तःधं",
+       "roman": "tahdhaṃ",
+       "english": "Big"
+      },
+      {
+       "word_id": "w56",
+       "newari": "चीधं",
+       "roman": "chīdhaṃ",
+       "english": "Small"
+      }
+     ],
+     "xp": 3
+    },
+    {
+     "id": "L11-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does नेगु mean?",
+     "target_word_id": "w51",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Thank you"
+      },
+      {
+       "text": "Younger brother"
+      },
+      {
+       "text": "Man"
+      },
+      {
+       "text": "To eat"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "नेगु",
+       "roman": "negu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L11-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does त्वनेगु mean?",
+     "target_word_id": "w52",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "My"
+      },
+      {
+       "text": "To eat"
+      },
+      {
+       "text": "Ten"
+      },
+      {
+       "text": "To drink"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "त्वनेगु",
+       "roman": "twanegu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L11-E04",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To give”?",
+     "target_word_id": "w53",
+     "options": [
+      {
+       "text": "छिपि",
+       "roman": "chhipi"
+      },
+      {
+       "text": "छि",
+       "roman": "chhi"
+      },
+      {
+       "text": "बियेगु",
+       "roman": "biyegu"
+      },
+      {
+       "text": "नि",
+       "roman": "ni"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To give"
+      },
+      "sentence": [
+       {
+        "text": "“To give” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L11-E05",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To take”?",
+     "target_word_id": "w54",
+     "options": [
+      {
+       "text": "मिसा",
+       "roman": "misā"
+      },
+      {
+       "text": "कायेगु",
+       "roman": "kāyegu"
+      },
+      {
+       "text": "खु",
+       "roman": "khu"
+      },
+      {
+       "text": "छि",
+       "roman": "chhi"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To take"
+      },
+      "sentence": [
+       {
+        "text": "“To take” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 3
+    },
+    {
+     "id": "L11-E06",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w51",
+       "newari": "नेगु",
+       "roman": "negu",
+       "english": "To eat"
+      },
+      {
+       "word_id": "w52",
+       "newari": "त्वनेगु",
+       "roman": "twanegu",
+       "english": "To drink"
+      },
+      {
+       "word_id": "w53",
+       "newari": "बियेगु",
+       "roman": "biyegu",
+       "english": "To give"
+      },
+      {
+       "word_id": "w54",
+       "newari": "कायेगु",
+       "roman": "kāyegu",
+       "english": "To take"
+      },
+      {
+       "word_id": "w55",
+       "newari": "तःधं",
+       "roman": "tahdhaṃ",
+       "english": "Big"
+      },
+      {
+       "word_id": "w56",
+       "newari": "चीधं",
+       "roman": "chīdhaṃ",
+       "english": "Small"
+      }
+     ],
+     "xp": 4
+    },
+    {
+     "id": "L11-E07",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Cooked rice”?",
+     "target_word_id": "w46",
+     "options": [
+      {
+       "text": "मिसा",
+       "roman": "misā"
+      },
+      {
+       "text": "लः",
+       "roman": "laḥ"
+      },
+      {
+       "text": "कायेगु",
+       "roman": "kāyegu"
+      },
+      {
+       "text": "जा",
+       "roman": "jā"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Cooked rice"
+      },
+      "sentence": [
+       {
+        "text": "“Cooked rice” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L11-E08",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Tea”?",
+     "target_word_id": "w47",
+     "options": [
+      {
+       "text": "चा",
+       "roman": "chā"
+      },
+      {
+       "text": "कायेगु",
+       "roman": "kāyegu"
+      },
+      {
+       "text": "सु",
+       "roman": "su"
+      },
+      {
+       "text": "तःधं",
+       "roman": "tahdhaṃ"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Tea"
+      },
+      "sentence": [
+       {
+        "text": "“Tea” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "to eat rice",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    },
+    {
+     "id": "L11-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Meat”?",
+     "target_word_id": "w48",
+     "options": [
+      {
+       "text": "ला",
+       "roman": "lā"
+      },
+      {
+       "text": "सु",
+       "roman": "su"
+      },
+      {
+       "text": "तुयु",
+       "roman": "tuyu"
+      },
+      {
+       "text": "ह्यूँ",
+       "roman": "hyūṃ"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Meat"
+      },
+      "sentence": [
+       {
+        "text": "“Meat” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "to drink tea",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    },
+    {
+     "id": "L11-E10",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does ङा mean?",
+     "target_word_id": "w49",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Three"
+      },
+      {
+       "text": "Elder sister"
+      },
+      {
+       "text": "Fish"
+      },
+      {
+       "text": "Younger brother"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "ङा",
+       "roman": "ṅā"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "wordOrder",
+     "phrase_target_en": "big bowl",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    }
+   ]
+  },
+  {
+   "id": "L12",
+   "number": 12,
+   "unit_id": "U4",
+   "title": "Checkpoint: At the Table",
+   "is_checkpoint": true,
+   "pass_threshold": 0.8,
+   "is_published": false,
+   "new_word_ids": [],
+   "review_word_ids": [
+    "w46",
+    "w47",
+    "w48",
+    "w49",
+    "w50",
+    "w51",
+    "w52",
+    "w53",
+    "w54",
+    "w55",
+    "w56",
+    "w03",
+    "w04",
+    "w10"
+   ],
+   "xp_max": 70,
+   "stat_gains": {
+    "hp": 10,
+    "attack": 3,
+    "speed": 2
+   },
+   "exercise_count": 12,
+   "exercises": [
+    {
+     "id": "L12-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w46",
+       "newari": "जा",
+       "roman": "jā",
+       "english": "Cooked rice"
+      },
+      {
+       "word_id": "w47",
+       "newari": "चा",
+       "roman": "chā",
+       "english": "Tea"
+      },
+      {
+       "word_id": "w48",
+       "newari": "ला",
+       "roman": "lā",
+       "english": "Meat"
+      },
+      {
+       "word_id": "w49",
+       "newari": "ङा",
+       "roman": "ṅā",
+       "english": "Fish"
+      },
+      {
+       "word_id": "w50",
+       "newari": "बजि",
+       "roman": "baji",
+       "english": "Beaten rice"
+      },
+      {
+       "word_id": "w51",
+       "newari": "नेगु",
+       "roman": "negu",
+       "english": "To eat"
+      }
+     ],
+     "xp": 5
+    },
+    {
+     "id": "L12-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does त्वनेगु mean?",
+     "target_word_id": "w52",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Who"
+      },
+      {
+       "text": "What"
+      },
+      {
+       "text": "Person"
+      },
+      {
+       "text": "To drink"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "त्वनेगु",
+       "roman": "twanegu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 5
+    },
+    {
+     "id": "L12-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does बियेगु mean?",
+     "target_word_id": "w53",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Younger brother"
+      },
+      {
+       "text": "Woman"
+      },
+      {
+       "text": "Eight"
+      },
+      {
+       "text": "To give"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "बियेगु",
+       "roman": "biyegu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 6
+    },
+    {
+     "id": "L12-E04",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To take”?",
+     "target_word_id": "w54",
+     "options": [
+      {
+       "text": "छ",
+       "roman": "chha"
+      },
+      {
+       "text": "छु",
+       "roman": "chhu"
+      },
+      {
+       "text": "च्या",
+       "roman": "chyā"
+      },
+      {
+       "text": "कायेगु",
+       "roman": "kāyegu"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To take"
+      },
+      "sentence": [
+       {
+        "text": "“To take” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 6
+    },
+    {
+     "id": "L12-E05",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Big”?",
+     "target_word_id": "w55",
+     "options": [
+      {
+       "text": "नि",
+       "roman": "ni"
+      },
+      {
+       "text": "स्वँ",
+       "roman": "swãṃ"
+      },
+      {
+       "text": "तःधं",
+       "roman": "tahdhaṃ"
+      },
+      {
+       "text": "जि",
+       "roman": "ji"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Big"
+      },
+      "sentence": [
+       {
+        "text": "“Big” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 6
+    },
+    {
+     "id": "L12-E06",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w46",
+       "newari": "जा",
+       "roman": "jā",
+       "english": "Cooked rice"
+      },
+      {
+       "word_id": "w47",
+       "newari": "चा",
+       "roman": "chā",
+       "english": "Tea"
+      },
+      {
+       "word_id": "w56",
+       "newari": "चीधं",
+       "roman": "chīdhaṃ",
+       "english": "Small"
+      },
+      {
+       "word_id": "w03",
+       "newari": "खः",
+       "roman": "khaḥ",
+       "english": "Yes"
+      },
+      {
+       "word_id": "w04",
+       "newari": "मखु",
+       "roman": "makhu",
+       "english": "No"
+      },
+      {
+       "word_id": "w10",
+       "newari": "छु",
+       "roman": "chhu",
+       "english": "What"
+      }
+     ],
+     "xp": 6
+    },
+    {
+     "id": "L12-E07",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Meat”?",
+     "target_word_id": "w48",
+     "options": [
+      {
+       "text": "कायेगु",
+       "roman": "kāyegu"
+      },
+      {
+       "text": "ला",
+       "roman": "lā"
+      },
+      {
+       "text": "चा",
+       "roman": "chā"
+      },
+      {
+       "text": "मिजं",
+       "roman": "mijaṃ"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Meat"
+      },
+      "sentence": [
+       {
+        "text": "“Meat” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 6
+    },
+    {
+     "id": "L12-E08",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Fish”?",
+     "target_word_id": "w49",
+     "options": [
+      {
+       "text": "कायेगु",
+       "roman": "kāyegu"
+      },
+      {
+       "text": "छेँ",
+       "roman": "chhẽ"
+      },
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "ङा",
+       "roman": "ṅā"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Fish"
+      },
+      "sentence": [
+       {
+        "text": "“Fish” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "to give water",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 6
+    },
+    {
+     "id": "L12-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Beaten rice”?",
+     "target_word_id": "w50",
+     "options": [
+      {
+       "text": "चा",
+       "roman": "chā"
+      },
+      {
+       "text": "बजि",
+       "roman": "baji"
+      },
+      {
+       "text": "तता",
+       "roman": "tatā"
+      },
+      {
+       "text": "जि",
+       "roman": "ji"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Beaten rice"
+      },
+      "sentence": [
+       {
+        "text": "“Beaten rice” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "to take tea",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 6
+    },
+    {
+     "id": "L12-E10",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does नेगु mean?",
+     "target_word_id": "w51",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Good"
+      },
+      {
+       "text": "Five"
+      },
+      {
+       "text": "To eat"
+      },
+      {
+       "text": "Cooked rice"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "नेगु",
+       "roman": "negu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "wordOrder",
+     "phrase_target_en": "to eat meat",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 6
+    },
+    {
+     "id": "L12-E11",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To drink”?",
+     "target_word_id": "w52",
+     "options": [
+      {
+       "text": "त्वनेगु",
+       "roman": "twanegu"
+      },
+      {
+       "text": "माँ",
+       "roman": "māṃ"
+      },
+      {
+       "text": "मिजं",
+       "roman": "mijaṃ"
+      },
+      {
+       "text": "बजि",
+       "roman": "baji"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To drink"
+      },
+      "sentence": [
+       {
+        "text": "“To drink” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "dialogueComplete",
+     "phrase_target_en": "Tea? → Yes.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 6
+    },
+    {
+     "id": "L12-E12",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To give”?",
+     "target_word_id": "w53",
+     "options": [
+      {
+       "text": "नेगु",
+       "roman": "negu"
+      },
+      {
+       "text": "बियेगु",
+       "roman": "biyegu"
+      },
+      {
+       "text": "न्या",
+       "roman": "nyā"
+      },
+      {
+       "text": "च्या",
+       "roman": "chyā"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To give"
+      },
+      "sentence": [
+       {
+        "text": "“To give” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "dialogueComplete",
+     "phrase_target_en": "Meat? → No.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 6
+    }
+   ]
+  },
+  {
+   "id": "L13",
+   "number": 13,
+   "unit_id": "U5",
+   "title": "Home and Places",
+   "is_checkpoint": false,
+   "pass_threshold": null,
+   "is_published": false,
+   "new_word_ids": [
+    "w57",
+    "w58",
+    "w59",
+    "w60",
+    "w61",
+    "w62",
+    "w63"
+   ],
+   "review_word_ids": [
+    "w36"
+   ],
+   "xp_max": 40,
+   "stat_gains": {
+    "hp": 5,
+    "defense": 2,
+    "speed": 1
+   },
+   "exercise_count": 10,
+   "exercises": [
+    {
+     "id": "L13-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w57",
+       "newari": "ध्वाखा",
+       "roman": "dhwākhā",
+       "english": "Door"
+      },
+      {
+       "word_id": "w58",
+       "newari": "लँ",
+       "roman": "lãṃ",
+       "english": "Road"
+      },
+      {
+       "word_id": "w59",
+       "newari": "थाय्",
+       "roman": "thāy",
+       "english": "Place"
+      },
+      {
+       "word_id": "w60",
+       "newari": "ज्या",
+       "roman": "jyā",
+       "english": "Work"
+      },
+      {
+       "word_id": "w61",
+       "newari": "मि",
+       "roman": "mi",
+       "english": "Fire"
+      },
+      {
+       "word_id": "w62",
+       "newari": "गन",
+       "roman": "gana",
+       "english": "Where"
+      }
+     ],
+     "xp": 4
+    },
+    {
+     "id": "L13-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does ब्वनेगु mean?",
+     "target_word_id": "w63",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Four"
+      },
+      {
+       "text": "Road"
+      },
+      {
+       "text": "To read / study"
+      },
+      {
+       "text": "Fish"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "ब्वनेगु",
+       "roman": "bwanegu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L13-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does ध्वाखा mean?",
+     "target_word_id": "w57",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "This"
+      },
+      {
+       "text": "Door"
+      },
+      {
+       "text": "Thank you"
+      },
+      {
+       "text": "Water"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "ध्वाखा",
+       "roman": "dhwākhā"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L13-E04",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Road”?",
+     "target_word_id": "w58",
+     "options": [
+      {
+       "text": "लँ",
+       "roman": "lãṃ"
+      },
+      {
+       "text": "किजा",
+       "roman": "kijā"
+      },
+      {
+       "text": "थाय्",
+       "roman": "thāy"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Road"
+      },
+      "sentence": [
+       {
+        "text": "“Road” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L13-E05",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Place”?",
+     "target_word_id": "w59",
+     "options": [
+      {
+       "text": "च्या",
+       "roman": "chyā"
+      },
+      {
+       "text": "बांलाः",
+       "roman": "bāṅlāḥ"
+      },
+      {
+       "text": "थाय्",
+       "roman": "thāy"
+      },
+      {
+       "text": "मनू",
+       "roman": "manū"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Place"
+      },
+      "sentence": [
+       {
+        "text": "“Place” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L13-E06",
+     "type": "pictureToWord",
+     "prompt": "What is this?",
+     "image_key": "house",
+     "target_word_id": "w36",
+     "options": [
+      {
+       "text": "ङा",
+       "roman": "ṅā"
+      },
+      {
+       "text": "गुलि",
+       "roman": "guli"
+      },
+      {
+       "text": "छेँ",
+       "roman": "chhẽ"
+      },
+      {
+       "text": "बजि",
+       "roman": "baji"
+      }
+     ],
+     "answer_index": 2,
+     "xp": 4
+    },
+    {
+     "id": "L13-E07",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w57",
+       "newari": "ध्वाखा",
+       "roman": "dhwākhā",
+       "english": "Door"
+      },
+      {
+       "word_id": "w58",
+       "newari": "लँ",
+       "roman": "lãṃ",
+       "english": "Road"
+      },
+      {
+       "word_id": "w60",
+       "newari": "ज्या",
+       "roman": "jyā",
+       "english": "Work"
+      },
+      {
+       "word_id": "w61",
+       "newari": "मि",
+       "roman": "mi",
+       "english": "Fire"
+      },
+      {
+       "word_id": "w62",
+       "newari": "गन",
+       "roman": "gana",
+       "english": "Where"
+      },
+      {
+       "word_id": "w63",
+       "newari": "ब्वनेगु",
+       "roman": "bwanegu",
+       "english": "To read / study"
+      }
+     ],
+     "xp": 4
+    },
+    {
+     "id": "L13-E08",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does थाय् mean?",
+     "target_word_id": "w59",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Place"
+      },
+      {
+       "text": "Where"
+      },
+      {
+       "text": "Child"
+      },
+      {
+       "text": "Seven"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "थाय्",
+       "roman": "thāy"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L13-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Work”?",
+     "target_word_id": "w60",
+     "options": [
+      {
+       "text": "ज्या",
+       "roman": "jyā"
+      },
+      {
+       "text": "जिपि",
+       "roman": "jipi"
+      },
+      {
+       "text": "जि",
+       "roman": "ji"
+      },
+      {
+       "text": "जिगु",
+       "roman": "jigu"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Work"
+      },
+      "sentence": [
+       {
+        "text": "“Work” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L13-E10",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Fire”?",
+     "target_word_id": "w61",
+     "options": [
+      {
+       "text": "मि",
+       "roman": "mi"
+      },
+      {
+       "text": "जा",
+       "roman": "jā"
+      },
+      {
+       "text": "छिपि",
+       "roman": "chhipi"
+      },
+      {
+       "text": "न्या",
+       "roman": "nyā"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Fire"
+      },
+      "sentence": [
+       {
+        "text": "“Fire” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "Where is the house?",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    }
+   ]
+  },
+  {
+   "id": "L14",
+   "number": 14,
+   "unit_id": "U5",
+   "title": "Daily Actions",
+   "is_checkpoint": false,
+   "pass_threshold": null,
+   "is_published": false,
+   "new_word_ids": [
+    "w64",
+    "w65",
+    "w66",
+    "w67",
+    "w68",
+    "w69",
+    "w70"
+   ],
+   "review_word_ids": [
+    "w51",
+    "w52",
+    "w53",
+    "w54",
+    "w55",
+    "w56",
+    "w57",
+    "w58",
+    "w59",
+    "w60",
+    "w61",
+    "w62",
+    "w63"
+   ],
+   "xp_max": 40,
+   "stat_gains": {
+    "hp": 5,
+    "attack": 2,
+    "magic": 1
+   },
+   "exercise_count": 10,
+   "exercises": [
+    {
+     "id": "L14-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w64",
+       "newari": "वनेगु",
+       "roman": "wanegu",
+       "english": "To go"
+      },
+      {
+       "word_id": "w65",
+       "newari": "वयेगु",
+       "roman": "wayegu",
+       "english": "To come"
+      },
+      {
+       "word_id": "w66",
+       "newari": "यायेगु",
+       "roman": "yāyegu",
+       "english": "To do"
+      },
+      {
+       "word_id": "w67",
+       "newari": "च्वनेगु",
+       "roman": "chwanegu",
+       "english": "To sit / stay"
+      },
+      {
+       "word_id": "w68",
+       "newari": "स्वयेगु",
+       "roman": "swayegu",
+       "english": "To see"
+      },
+      {
+       "word_id": "w69",
+       "newari": "थौँ",
+       "roman": "thau",
+       "english": "Today"
+      }
+     ],
+     "xp": 4
+    },
+    {
+     "id": "L14-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does च्वयेगु mean?",
+     "target_word_id": "w70",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "To write"
+      },
+      {
+       "text": "Hello"
+      },
+      {
+       "text": "To do"
+      },
+      {
+       "text": "Three"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "च्वयेगु",
+       "roman": "chwayegu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L14-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does वनेगु mean?",
+     "target_word_id": "w64",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Big"
+      },
+      {
+       "text": "Work"
+      },
+      {
+       "text": "Woman"
+      },
+      {
+       "text": "To go"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "वनेगु",
+       "roman": "wanegu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L14-E04",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To come”?",
+     "target_word_id": "w65",
+     "options": [
+      {
+       "text": "वयेगु",
+       "roman": "wayegu"
+      },
+      {
+       "text": "मि",
+       "roman": "mi"
+      },
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      },
+      {
+       "text": "बौ",
+       "roman": "bau"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To come"
+      },
+      "sentence": [
+       {
+        "text": "“To come” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L14-E05",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To do”?",
+     "target_word_id": "w66",
+     "options": [
+      {
+       "text": "प्यँ",
+       "roman": "pyãṃ"
+      },
+      {
+       "text": "स्वयेगु",
+       "roman": "swayegu"
+      },
+      {
+       "text": "यायेगु",
+       "roman": "yāyegu"
+      },
+      {
+       "text": "काय्",
+       "roman": "kāy"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To do"
+      },
+      "sentence": [
+       {
+        "text": "“To do” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L14-E06",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w64",
+       "newari": "वनेगु",
+       "roman": "wanegu",
+       "english": "To go"
+      },
+      {
+       "word_id": "w65",
+       "newari": "वयेगु",
+       "roman": "wayegu",
+       "english": "To come"
+      },
+      {
+       "word_id": "w67",
+       "newari": "च्वनेगु",
+       "roman": "chwanegu",
+       "english": "To sit / stay"
+      },
+      {
+       "word_id": "w68",
+       "newari": "स्वयेगु",
+       "roman": "swayegu",
+       "english": "To see"
+      },
+      {
+       "word_id": "w69",
+       "newari": "थौँ",
+       "roman": "thau",
+       "english": "Today"
+      },
+      {
+       "word_id": "w70",
+       "newari": "च्वयेगु",
+       "roman": "chwayegu",
+       "english": "To write"
+      }
+     ],
+     "xp": 4
+    },
+    {
+     "id": "L14-E07",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does नेगु mean?",
+     "target_word_id": "w51",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Man"
+      },
+      {
+       "text": "To eat"
+      },
+      {
+       "text": "Today"
+      },
+      {
+       "text": "Four"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "नेगु",
+       "roman": "negu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 4
+    },
+    {
+     "id": "L14-E08",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To drink”?",
+     "target_word_id": "w52",
+     "options": [
+      {
+       "text": "वनेगु",
+       "roman": "wanegu"
+      },
+      {
+       "text": "जा",
+       "roman": "jā"
+      },
+      {
+       "text": "मि",
+       "roman": "mi"
+      },
+      {
+       "text": "त्वनेगु",
+       "roman": "twanegu"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To drink"
+      },
+      "sentence": [
+       {
+        "text": "“To drink” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "Today I read.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    },
+    {
+     "id": "L14-E09",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does बियेगु mean?",
+     "target_word_id": "w53",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Woman"
+      },
+      {
+       "text": "Nine"
+      },
+      {
+       "text": "Two"
+      },
+      {
+       "text": "To give"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "बियेगु",
+       "roman": "biyegu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "wordOrder",
+     "phrase_target_en": "Today I write.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    },
+    {
+     "id": "L14-E10",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To take”?",
+     "target_word_id": "w54",
+     "options": [
+      {
+       "text": "कायेगु",
+       "roman": "kāyegu"
+      },
+      {
+       "text": "स्वयेगु",
+       "roman": "swayegu"
+      },
+      {
+       "text": "जिपि",
+       "roman": "jipi"
+      },
+      {
+       "text": "च्वयेगु",
+       "roman": "chwayegu"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To take"
+      },
+      "sentence": [
+       {
+        "text": "“To take” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "dialogueComplete",
+     "phrase_target_en": "Where? → Home.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 4
+    }
+   ]
+  },
+  {
+   "id": "L15",
+   "number": 15,
+   "unit_id": "U5",
+   "title": "Capstone: A Day in Newari",
+   "is_checkpoint": true,
+   "pass_threshold": 0.8,
+   "is_published": false,
+   "new_word_ids": [],
+   "review_word_ids": [
+    "w57",
+    "w58",
+    "w59",
+    "w60",
+    "w61",
+    "w62",
+    "w63",
+    "w64",
+    "w65",
+    "w66",
+    "w67",
+    "w68",
+    "w69",
+    "w70",
+    "w01",
+    "w29",
+    "w37",
+    "w36"
+   ],
+   "xp_max": 100,
+   "stat_gains": {
+    "hp": 10,
+    "attack": 2,
+    "defense": 1,
+    "speed": 1,
+    "magic": 1
+   },
+   "exercise_count": 14,
+   "exercises": [
+    {
+     "id": "L15-E01",
+     "type": "matchWords",
+     "prompt": "Match each Newari word to its meaning",
+     "pairs": [
+      {
+       "word_id": "w57",
+       "newari": "ध्वाखा",
+       "roman": "dhwākhā",
+       "english": "Door"
+      },
+      {
+       "word_id": "w58",
+       "newari": "लँ",
+       "roman": "lãṃ",
+       "english": "Road"
+      },
+      {
+       "word_id": "w59",
+       "newari": "थाय्",
+       "roman": "thāy",
+       "english": "Place"
+      },
+      {
+       "word_id": "w60",
+       "newari": "ज्या",
+       "roman": "jyā",
+       "english": "Work"
+      },
+      {
+       "word_id": "w61",
+       "newari": "मि",
+       "roman": "mi",
+       "english": "Fire"
+      },
+      {
+       "word_id": "w62",
+       "newari": "गन",
+       "roman": "gana",
+       "english": "Where"
+      }
+     ],
+     "xp": 7
+    },
+    {
+     "id": "L15-E02",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does ब्वनेगु mean?",
+     "target_word_id": "w63",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Father"
+      },
+      {
+       "text": "To go"
+      },
+      {
+       "text": "Paper / book"
+      },
+      {
+       "text": "To read / study"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "ब्वनेगु",
+       "roman": "bwanegu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 7
+    },
+    {
+     "id": "L15-E03",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does वनेगु mean?",
+     "target_word_id": "w64",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "To go"
+      },
+      {
+       "text": "Thank you"
+      },
+      {
+       "text": "Where"
+      },
+      {
+       "text": "Six"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "वनेगु",
+       "roman": "wanegu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 7
+    },
+    {
+     "id": "L15-E04",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Water”?",
+     "target_word_id": "w37",
+     "options": [
+      {
+       "text": "लः",
+       "roman": "laḥ"
+      },
+      {
+       "text": "कायेगु",
+       "roman": "kāyegu"
+      },
+      {
+       "text": "झि",
+       "roman": "jhi"
+      },
+      {
+       "text": "यायेगु",
+       "roman": "yāyegu"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "illustration_key": "droplet"
+      },
+      "sentence": [
+       {
+        "text": "“Water” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 7
+    },
+    {
+     "id": "L15-E05",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “House / home”?",
+     "target_word_id": "w36",
+     "options": [
+      {
+       "text": "भिं",
+       "roman": "bhiṃ"
+      },
+      {
+       "text": "खु",
+       "roman": "khu"
+      },
+      {
+       "text": "नि",
+       "roman": "ni"
+      },
+      {
+       "text": "छेँ",
+       "roman": "chhẽ"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "illustration_key": "house"
+      },
+      "sentence": [
+       {
+        "text": "“House / home” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "xp": 7
+    },
+    {
+     "id": "L15-E06",
+     "type": "pictureToWord",
+     "prompt": "What is this?",
+     "image_key": "droplet",
+     "target_word_id": "w37",
+     "options": [
+      {
+       "text": "नां",
+       "roman": "nāṃ"
+      },
+      {
+       "text": "न्या",
+       "roman": "nyā"
+      },
+      {
+       "text": "लः",
+       "roman": "laḥ"
+      },
+      {
+       "text": "चीधं",
+       "roman": "chīdhaṃ"
+      }
+     ],
+     "answer_index": 2,
+     "xp": 7
+    },
+    {
+     "id": "L15-E07",
+     "type": "wordToPicture",
+     "prompt": "Which picture is छेँ?",
+     "show_roman_under_prompt": true,
+     "target_word_id": "w36",
+     "options": [
+      {
+       "image_key": "person"
+      },
+      {
+       "image_key": "house"
+      },
+      {
+       "image_key": "droplet"
+      },
+      {
+       "image_key": "bowl"
+      }
+     ],
+     "answer_index": 1,
+     "xp": 7
+    },
+    {
+     "id": "L15-E08",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To come”?",
+     "target_word_id": "w65",
+     "options": [
+      {
+       "text": "किजा",
+       "roman": "kijā"
+      },
+      {
+       "text": "बौ",
+       "roman": "bau"
+      },
+      {
+       "text": "वयेगु",
+       "roman": "wayegu"
+      },
+      {
+       "text": "कायेगु",
+       "roman": "kāyegu"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To come"
+      },
+      "sentence": [
+       {
+        "text": "“To come” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "Where is the door?",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 7
+    },
+    {
+     "id": "L15-E09",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To do”?",
+     "target_word_id": "w66",
+     "options": [
+      {
+       "text": "त्वनेगु",
+       "roman": "twanegu"
+      },
+      {
+       "text": "सुभाय्",
+       "roman": "subhāy"
+      },
+      {
+       "text": "यायेगु",
+       "roman": "yāyegu"
+      },
+      {
+       "text": "नेगु",
+       "roman": "negu"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To do"
+      },
+      "sentence": [
+       {
+        "text": "“To do” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "Today I go.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 7
+    },
+    {
+     "id": "L15-E10",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To sit / stay”?",
+     "target_word_id": "w67",
+     "options": [
+      {
+       "text": "मि",
+       "roman": "mi"
+      },
+      {
+       "text": "च्वनेगु",
+       "roman": "chwanegu"
+      },
+      {
+       "text": "प्यँ",
+       "roman": "pyãṃ"
+      },
+      {
+       "text": "बांलाः",
+       "roman": "bāṅlāḥ"
+      }
+     ],
+     "answer_index": 1,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To sit / stay"
+      },
+      "sentence": [
+       {
+        "text": "“To sit / stay” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "translate",
+     "phrase_target_en": "to drink water",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 7
+    },
+    {
+     "id": "L15-E11",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does स्वयेगु mean?",
+     "target_word_id": "w68",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "We"
+      },
+      {
+       "text": "Fish"
+      },
+      {
+       "text": "Fire"
+      },
+      {
+       "text": "To see"
+      }
+     ],
+     "answer_index": 3,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "स्वयेगु",
+       "roman": "swayegu"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "wordOrder",
+     "phrase_target_en": "Where is the road?",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 7
+    },
+    {
+     "id": "L15-E12",
+     "type": "fillBlank",
+     "variant": "recognition",
+     "prompt": "What does थौँ mean?",
+     "target_word_id": "w69",
+     "show_roman_under_prompt": true,
+     "options": [
+      {
+       "text": "Today"
+      },
+      {
+       "text": "Big"
+      },
+      {
+       "text": "To sit / stay"
+      },
+      {
+       "text": "Younger brother"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "थौँ",
+       "roman": "thau"
+      },
+      "sentence": [
+       {
+        "text": "This word means"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "wordOrder",
+     "phrase_target_en": "Today I do work.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 7
+    },
+    {
+     "id": "L15-E13",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “To write”?",
+     "target_word_id": "w70",
+     "options": [
+      {
+       "text": "जि",
+       "roman": "ji"
+      },
+      {
+       "text": "नि",
+       "roman": "ni"
+      },
+      {
+       "text": "च्वयेगु",
+       "roman": "chwayegu"
+      },
+      {
+       "text": "मखु",
+       "roman": "makhu"
+      }
+     ],
+     "answer_index": 2,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "To write"
+      },
+      "sentence": [
+       {
+        "text": "“To write” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "dialogueComplete",
+     "phrase_target_en": "Where? → House.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 8
+    },
+    {
+     "id": "L15-E14",
+     "type": "fillBlank",
+     "variant": "production",
+     "prompt": "Which word means “Hello”?",
+     "target_word_id": "w01",
+     "options": [
+      {
+       "text": "ज्वजलपा",
+       "roman": "jwajalapa"
+      },
+      {
+       "text": "जि",
+       "roman": "ji"
+      },
+      {
+       "text": "थौँ",
+       "roman": "thau"
+      },
+      {
+       "text": "चीधं",
+       "roman": "chīdhaṃ"
+      }
+     ],
+     "answer_index": 0,
+     "layout": {
+      "template": "picture-sentence-chips",
+      "tile": {
+       "text": "Hello"
+      },
+      "sentence": [
+       {
+        "text": "“Hello” in Newari:"
+       },
+       {
+        "blank": true
+       }
+      ],
+      "chips": "options",
+      "fill_behavior": "tap chip moves it into the blank; tap again to return it"
+     },
+     "planned_type": "dialogueComplete",
+     "phrase_target_en": "Water? → Yes.",
+     "upgrade_note": "Replace with the planned exercise type once a native speaker supplies and verifies the Newari phrase.",
+     "xp": 8
+    }
+   ]
+  }
+ ]
+}

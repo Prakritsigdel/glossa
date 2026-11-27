@@ -64,11 +64,17 @@ class Course(Base):
 class Unit(Base):
     __tablename__ = "units"
     __table_args__ = (
-        UniqueConstraint("course_id", "sequence", name="uq_course_sequence"),
+        UniqueConstraint(
+            "course_id", "curriculum_version", "sequence",
+            name="uq_course_version_sequence",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     course_id: Mapped[str] = mapped_column(ForeignKey("courses.id"), index=True)
+    curriculum_version: Mapped[str] = mapped_column(
+        String(40), default="legacy", nullable=False
+    )
     sequence: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(String(120))
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -123,6 +129,7 @@ class Lesson(Base):
     required_level: Mapped[int] = mapped_column(Integer, default=1)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
     is_checkpoint: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    content_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # ── Passing threshold (Stage 6) ─────────────────────────────
     # Ordinary lessons require 100 (fully correct). Checkpoints require 80.
@@ -169,6 +176,7 @@ class Exercise(Base):
     image_key: Mapped[str | None] = mapped_column(String(80), nullable=True)
     audio_key: Mapped[str | None] = mapped_column(String(80), nullable=True)
     sequence: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    xp: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     options: Mapped[list] = mapped_column(JSON)
     answer_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
     pairs: Mapped[dict | None] = mapped_column(JSON, nullable=True)
@@ -181,6 +189,7 @@ class Exercise(Base):
     illustration_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
     correct_answer_config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     vocabulary_reference: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    content_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     lesson: Mapped["Lesson"] = relationship(back_populates="exercises")
 
@@ -202,6 +211,8 @@ class Attempt(Base):
     correct_answers: Mapped[int] = mapped_column(Integer)
     total_questions: Mapped[int] = mapped_column(Integer)
     xp_earned: Mapped[int] = mapped_column(Integer)
+    earned_xp: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    result_payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     passing_threshold: Mapped[int | None] = mapped_column(Integer, nullable=True)
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -246,6 +257,82 @@ class LessonCompletion(Base):
 
     user: Mapped["User"] = relationship(back_populates="lesson_completions")
     lesson: Mapped["Lesson"] = relationship(back_populates="completions")
+
+
+class LessonProgress(Base):
+    """Best score and first-completion state for the active curriculum."""
+
+    __tablename__ = "lesson_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", "lesson_id", name="uq_lesson_progress_user_lesson"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    lesson_id: Mapped[str] = mapped_column(
+        ForeignKey("lessons.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    best_earned_xp: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    best_correct_answers: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
+class LessonRun(Base):
+    """Server-issued lesson run IDs with an immutable account owner."""
+
+    __tablename__ = "lesson_runs"
+    __table_args__ = (
+        Index("ix_lesson_runs_user_lesson_started", "user_id", "lesson_id", "started_at"),
+    )
+
+    run_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    lesson_id: Mapped[str] = mapped_column(
+        ForeignKey("lessons.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ExerciseSubmission(Base):
+    """One finalized answer, or the incremental match state, per exercise run."""
+
+    __tablename__ = "exercise_submissions"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "lesson_id", "run_id", "exercise_id",
+            name="uq_exercise_submission_run",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    lesson_id: Mapped[str] = mapped_column(
+        ForeignKey("lessons.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    exercise_id: Mapped[str] = mapped_column(
+        ForeignKey("exercises.id", ondelete="CASCADE"), nullable=False
+    )
+    run_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    selected_answer: Mapped[dict] = mapped_column(JSON, nullable=False)
+    matched_pairs: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    missed_word_ids: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    correct: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    is_final: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    result_payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
 
 
 class VocabularyEntry(Base):

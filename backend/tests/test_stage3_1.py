@@ -69,6 +69,7 @@ def make_lesson_with_exercises(session, lesson_id, unit, published=False,
         title="Test", subtitle="Test", exercise_type="matchWords",
         xp_reward=20, word_count=4, required_level=1,
         is_published=published, vocabulary_verified=vocab_verified,
+        content_data={"exercise_count": planned},
     )
     session.add(lesson)
     session.commit()
@@ -100,7 +101,7 @@ def make_lesson_with_exercises(session, lesson_id, unit, published=False,
 
 
 class TestExercisePayloadStructure(unittest.TestCase):
-    def test_translate_and_word_order_accept_tile_only_payloads(self):
+    def test_retired_tile_formats_are_not_active_payloads(self):
         translate = Exercise(
             id="tile_translate", lesson_id="test_lesson",
             exercise_type="translate", instruction="Translate the word",
@@ -126,8 +127,8 @@ class TestExercisePayloadStructure(unittest.TestCase):
             correct_answer_config={"correct_sequence": ["o1", "o2"]},
         )
 
-        self.assertTrue(is_exercise_payload_valid(translate))
-        self.assertTrue(is_exercise_payload_valid(word_order))
+        self.assertFalse(is_exercise_payload_valid(translate))
+        self.assertFalse(is_exercise_payload_valid(word_order))
 
     def test_picture_to_word_rejects_unknown_illustration_key(self):
         exercise = Exercise(
@@ -191,7 +192,7 @@ class TestPublicationEnforcementIntegration(unittest.TestCase):
         self.assertFalse(is_lesson_publication_ready(self.session, lesson))
         status = lesson_publication_status(self.session, lesson)
         self.assertFalse(status["publication_ready"])
-        self.assertTrue(any("incomplete_exercises" in b for b in status["blockers"]))
+        self.assertIn("curriculum_structure_incomplete", status["blockers"])
 
     def test_fully_verified_lesson_is_ready(self):
         """A fully published + verified lesson IS publication-ready."""
@@ -211,6 +212,7 @@ class TestPublicationEnforcementIntegration(unittest.TestCase):
             title="Test", subtitle="Test", exercise_type="matchWords",
             xp_reward=20, word_count=4, required_level=1,
             is_published=True, vocabulary_verified=True,
+            content_data={"exercise_count": 1},
         )
         self.session.add(lesson)
         self.session.commit()
@@ -232,7 +234,7 @@ class TestPublicationEnforcementIntegration(unittest.TestCase):
         self.assertFalse(is_lesson_publication_ready(self.session, lesson))
         status = lesson_publication_status(self.session, lesson)
         self.assertFalse(status["publication_ready"])
-        self.assertTrue(any("missing_romanization" in b for b in status["blockers"]))
+        self.assertIn("curriculum_structure_incomplete", status["blockers"])
 
 
 if __name__ == "__main__":

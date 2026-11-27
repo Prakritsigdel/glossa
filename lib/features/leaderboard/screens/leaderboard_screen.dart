@@ -17,6 +17,8 @@ class LeaderboardScreen extends ConsumerStatefulWidget {
 class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   int _selectedTabIndex = 0;
   late Future<List<LeaderboardEntry>> _entries;
+  bool _isLoading = true;
+  int _loadGeneration = 0;
 
   static const _filters = ['weekly', 'alltime'];
 
@@ -27,13 +29,33 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   }
 
   void _loadEntries() {
+    final generation = ++_loadGeneration;
+    _isLoading = true;
     _entries = ref
         .read(backendApiProvider)
-        .leaderboard(_filters[_selectedTabIndex]);
+        .leaderboard(_filters[_selectedTabIndex])
+        .whenComplete(() {
+          if (mounted && generation == _loadGeneration) {
+            setState(() => _isLoading = false);
+          }
+        });
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(
+      gameStateProvider.select(
+        (state) => (
+          state.isAuthenticated,
+          state.user.id,
+          state.user.xp,
+          state.user.heroIndex,
+        ),
+      ),
+      (previous, next) {
+        if (previous != next) setState(_loadEntries);
+      },
+    );
     return FutureBuilder<List<LeaderboardEntry>>(
       future: _entries,
       builder: (context, snapshot) {
@@ -47,7 +69,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
             ),
           );
         }
-        if (!snapshot.hasData) {
+        if (_isLoading || !snapshot.hasData) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
@@ -179,9 +201,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (second != null) _buildPodiumPillar(second, 2, 110),
-          if (first != null) _buildPodiumPillar(first, 1, 140),
-          if (third != null) _buildPodiumPillar(third, 3, 90),
+          if (second != null)
+            Expanded(child: _buildPodiumPillar(second, 2, 110)),
+          if (first != null) Expanded(child: _buildPodiumPillar(first, 1, 140)),
+          if (third != null) Expanded(child: _buildPodiumPillar(third, 3, 90)),
         ],
       ),
     );
@@ -204,48 +227,63 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            HeroAvatar(
-              heroIndex: entry.heroIndex,
-              level: entry.level,
-              size: rank == 1 ? 56 : 46,
-            ),
-            Positioned(
-              top: -10,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: medalColor,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: GlossaColors.blueNavy, width: 1.5),
-                ),
-                child: Text(
-                  '#$rank',
-                  style: GlossaTypography.labelSmall.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: GlossaColors.blueNavy,
+        Center(
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              HeroAvatar(
+                heroIndex: entry.heroIndex,
+                level: entry.level,
+                size: rank == 1 ? 56 : 46,
+              ),
+              Positioned(
+                top: -10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: medalColor,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: GlossaColors.blueNavy,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Text(
+                    '#$rank',
+                    style: GlossaTypography.labelSmall.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: GlossaColors.blueNavy,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: Spacing.xs),
         Text(
           entry.name,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          softWrap: false,
           style: GlossaTypography.labelMedium.copyWith(fontSize: 13),
           overflow: TextOverflow.ellipsis,
         ),
-        Text(
-          '${entry.xp} XP',
-          style: GlossaTypography.bodySmall.copyWith(
-            fontWeight: FontWeight.w700,
-            color: GlossaColors.blueDeep,
-            fontSize: 11,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            '${entry.xp} XP',
+            style: GlossaTypography.bodySmall.copyWith(
+              fontWeight: FontWeight.w700,
+              color: GlossaColors.blueDeep,
+              fontSize: 11,
+            ),
           ),
         ),
         const SizedBox(height: Spacing.xs),
@@ -314,10 +352,15 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               children: [
                 Row(
                   children: [
-                    Text(
-                      entry.name,
-                      style: GlossaTypography.labelMedium.copyWith(
-                        fontWeight: FontWeight.w800,
+                    Expanded(
+                      child: Text(
+                        entry.name,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: GlossaTypography.labelMedium.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                     if (isMe) ...[
@@ -350,11 +393,20 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               ],
             ),
           ),
-          Text(
-            '${entry.xp} XP',
-            style: GlossaTypography.labelMedium.copyWith(
-              color: GlossaColors.blueDeep,
-              fontWeight: FontWeight.w800,
+          const SizedBox(width: Spacing.sm),
+          SizedBox(
+            width: 76,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                '${entry.xp} XP',
+                maxLines: 1,
+                style: GlossaTypography.labelMedium.copyWith(
+                  color: GlossaColors.blueDeep,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
           ),
         ],

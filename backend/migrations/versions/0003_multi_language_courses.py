@@ -151,11 +151,21 @@ def upgrade():
         sa.text("SELECT id FROM units WHERE course_id = 'new_en' AND sequence = 0")
     ).scalar()
     if legacy_unit is None:
-        bind.execute(sa.text(
-            "INSERT INTO units (course_id, sequence, title, description) "
-            "VALUES ('new_en', 0, 'Legacy Content - Unverified', "
-            "'Existing lessons preserved from before multi-language migration. Teaching direction not verified.')"
-        ))
+        if _column_exists(bind, "units", "curriculum_version"):
+            bind.execute(sa.text(
+                "INSERT INTO units "
+                "(course_id, curriculum_version, sequence, title, description) "
+                "VALUES ('new_en', 'legacy', 0, 'Legacy Content - Unverified', "
+                "'Existing lessons preserved from before multi-language migration. "
+                "Teaching direction not verified.')"
+            ))
+        else:
+            bind.execute(sa.text(
+                "INSERT INTO units (course_id, sequence, title, description) "
+                "VALUES ('new_en', 0, 'Legacy Content - Unverified', "
+                "'Existing lessons preserved from before multi-language migration. "
+                "Teaching direction not verified.')"
+            ))
         legacy_unit = bind.execute(
             sa.text("SELECT id FROM units WHERE course_id = 'new_en' AND sequence = 0")
         ).scalar()
