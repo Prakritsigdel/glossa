@@ -16,13 +16,13 @@ class WelcomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: GlossaColors.blueDeep,
       body: SafeArea(
-        // top and bottom default to true, so the content stays clear of the
-        // status bar (clock, battery) and the system navigation bar
         child: Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: Spacing.pagePadding),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.pagePadding,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -42,7 +42,9 @@ class WelcomeScreen extends StatelessWidget {
                                 fontFamily: 'NotoSansDevanagari',
                                 fontSize: 140,
                                 fontWeight: FontWeight.w700,
-                                color: GlossaColors.yellowPrimary.withValues(alpha: 0.3),
+                                color: GlossaColors.yellowPrimary.withValues(
+                                  alpha: 0.3,
+                                ),
                               ),
                             ),
                           ),
@@ -56,7 +58,7 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: Spacing.xl),
                     Text(
-                      'Master English\u2192Newari.',
+                      'Hear the\nlanguage of\nhome.',
                       style: GlossaTypography.displayLargeOnDark.copyWith(
                         fontSize: 36,
                         height: 1.1,
@@ -64,9 +66,66 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: Spacing.md),
                     Text(
-                      'Learn Nepal Bhasa (Newari) through game-inspired quests, '
-                      'matching exercises, and translation practice.',
+                      'Short lessons built on real recordings of native speakers.',
                       style: GlossaTypography.bodyMediumOnDark,
+                    ),
+                    const SizedBox(height: Spacing.xxl),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.md,
+                        vertical: Spacing.sm,
+                      ),
+                      decoration: BoxDecoration(
+                        color: GlossaColors.white,
+                        borderRadius: BorderRadius.circular(Spacing.cardRadius),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: GlossaColors.redAction,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.play_arrow,
+                              color: GlossaColors.white,
+                              size: 32,
+                            ),
+                          ),
+                          const SizedBox(width: Spacing.md),
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: const [
+                                _WaveformBar(height: 8),
+                                _WaveformBar(height: 20),
+                                _WaveformBar(height: 34),
+                                _WaveformBar(height: 50),
+                                _WaveformBar(height: 30),
+                                _WaveformBar(height: 44),
+                                _WaveformBar(height: 16),
+                                _WaveformBar(height: 38),
+                                _WaveformBar(height: 50),
+                                _WaveformBar(height: 26),
+                                _WaveformBar(height: 10),
+                                _WaveformBar(height: 22),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: Spacing.md),
+                          Text(
+                            'भाय्',
+                            style: GlossaTypography.devanagariMedium.copyWith(
+                              fontSize: 24,
+                              color: GlossaColors.blueNavy,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: Spacing.xxl),
                     GlossaButton(
@@ -88,6 +147,24 @@ class WelcomeScreen extends StatelessWidget {
             const GreekKeyBorder(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _WaveformBar extends StatelessWidget {
+  const _WaveformBar({required this.height});
+
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 5,
+      height: height,
+      decoration: BoxDecoration(
+        color: GlossaColors.redAction,
+        borderRadius: BorderRadius.circular(Spacing.xs),
       ),
     );
   }
