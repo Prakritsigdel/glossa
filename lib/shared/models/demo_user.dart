@@ -7,11 +7,13 @@ class DemoUser {
   final String heroClassName;
   final int level;
   final int xp;
+  final int xpInLevel;
   final int xpToNextLevel;
   final int streak;
   final int wordsFound;
   final int lessonsCompleted;
   final String? activeCourseId;
+  final Map<String, int> heroStats;
 
   const DemoUser({
     required this.id,
@@ -21,11 +23,19 @@ class DemoUser {
     this.heroClassName = 'Traveler',
     this.level = 1,
     this.xp = 0,
+    this.xpInLevel = 0,
     this.xpToNextLevel = 100,
     this.streak = 0,
     this.wordsFound = 0,
     this.lessonsCompleted = 0,
     this.activeCourseId,
+    this.heroStats = const {
+      'hp': 100,
+      'attack': 10,
+      'defense': 8,
+      'speed': 8,
+      'magic': 10,
+    },
   });
 
   DemoUser copyWith({
@@ -36,11 +46,13 @@ class DemoUser {
     String? heroClassName,
     int? level,
     int? xp,
+    int? xpInLevel,
     int? xpToNextLevel,
     int? streak,
     int? wordsFound,
     int? lessonsCompleted,
     String? activeCourseId,
+    Map<String, int>? heroStats,
     bool clearActiveCourse = false,
   }) {
     return DemoUser(
@@ -51,6 +63,7 @@ class DemoUser {
       heroClassName: heroClassName ?? this.heroClassName,
       level: level ?? this.level,
       xp: xp ?? this.xp,
+      xpInLevel: xpInLevel ?? this.xpInLevel,
       xpToNextLevel: xpToNextLevel ?? this.xpToNextLevel,
       streak: streak ?? this.streak,
       wordsFound: wordsFound ?? this.wordsFound,
@@ -58,6 +71,7 @@ class DemoUser {
       activeCourseId: clearActiveCourse
           ? null
           : (activeCourseId ?? this.activeCourseId),
+      heroStats: heroStats ?? this.heroStats,
     );
   }
 
