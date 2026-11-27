@@ -50,8 +50,13 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
   Widget build(BuildContext context) {
     final gs = ref.watch(gameStateProvider);
     final user = gs.user;
+    final activeLessons = gs.lessons
+        .where((lesson) => lesson.id == gs.activeLessonId)
+        .toList();
+    final isCheckpoint =
+        activeLessons.isNotEmpty && activeLessons.first.isCheckpoint;
     final xpProgress = user.xpToNextLevel > 0
-        ? (user.xp / user.xpToNextLevel).clamp(0.0, 1.0)
+        ? (user.xpInLevel / user.xpToNextLevel).clamp(0.0, 1.0)
         : 0.0;
 
     return PopScope(
@@ -66,7 +71,7 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
         backgroundColor: GlossaColors.blueDeep,
         body: SafeArea(
           top: false,
-          bottom: false,
+          bottom: true,
           child: Column(
             children: [
               Expanded(
@@ -129,13 +134,24 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                       // ─── LEVEL UP! (Bouncing Elastic Entrance) ──
                       ScaleTransition(
                         scale: _titleScale,
-                        child: Text(
-                          gs.lastPassed ? 'LESSON PASSED' : 'TRY AGAIN',
-                          style: GlossaTypography.displayLarge.copyWith(
-                            color: GlossaColors.yellowPrimary,
-                            fontSize: 36,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Spacing.pagePadding,
+                          ),
+                          child: Text(
+                            !gs.lastPassed
+                                ? 'CHECKPOINT NOT PASSED'
+                                : isCheckpoint
+                                ? 'CHECKPOINT PASSED'
+                                : 'LESSON COMPLETE',
+                            textAlign: TextAlign.center,
+                            softWrap: true,
+                            style: GlossaTypography.displayLarge.copyWith(
+                              color: GlossaColors.yellowPrimary,
+                              fontSize: 36,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
+                            ),
                           ),
                         ),
                       ),
@@ -148,10 +164,17 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                       ),
                       const SizedBox(height: Spacing.sm),
                       Text(
-                        'Score: ${(gs.lastScore * 100).toStringAsFixed(0)}% · Pass mark: ${gs.lastPassingThreshold}%${gs.lastAlreadyCompleted ? ' · Already completed' : ''}',
+                        '${gs.lastCorrectAnswers}/${gs.lastTotalQuestions} correct · ${(gs.lastScore * 100).toStringAsFixed(0)}% accuracy${isCheckpoint ? ' · ${gs.lastPassingThreshold}% required' : ''}${gs.lastAlreadyCompleted ? ' · Replay' : ''}',
                         textAlign: TextAlign.center,
                         style: GlossaTypography.bodyMedium.copyWith(
                           color: GlossaColors.white,
+                        ),
+                      ),
+                      Text(
+                        'First attempt: ${gs.lastCorrectAnswers} correct · ${gs.lastTotalQuestions - gs.lastCorrectAnswers} incorrect',
+                        textAlign: TextAlign.center,
+                        style: GlossaTypography.bodySmall.copyWith(
+                          color: GlossaColors.white.withValues(alpha: 0.8),
                         ),
                       ),
                       const SizedBox(height: Spacing.xl),
@@ -173,7 +196,7 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                             ),
                             const SizedBox(height: Spacing.sm),
                             Text(
-                              '${user.xp} / ${user.xpToNextLevel} XP',
+                              '${user.xpInLevel} / ${user.xpToNextLevel} XP to level ${user.level + 1} · ${user.xp} total',
                               style: GlossaTypography.bodySmall.copyWith(
                                 color: GlossaColors.white.withValues(
                                   alpha: 0.8,
@@ -194,14 +217,14 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                           children: [
                             _StatCard(
                               value: '+${gs.lastXpEarned}',
-                              label: 'XP',
+                              label: 'XP credited',
                               color: GlossaColors.yellowPrimary,
                             ),
                             const SizedBox(width: Spacing.md),
                             _StatCard(
                               value:
                                   '${gs.lastCorrectAnswers}/${gs.lastTotalQuestions}',
-                              label: 'Hits',
+                              label: 'Correct',
                               color: GlossaColors.successGreen,
                             ),
                             const SizedBox(width: Spacing.md),
@@ -213,6 +236,96 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                           ],
                         ),
                       ),
+                      const SizedBox(height: Spacing.md),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.pagePadding,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'XP earned: ${gs.lastEarnedXp} / ${gs.lastXpMax}',
+                              style: GlossaTypography.bodyMedium.copyWith(
+                                color: GlossaColors.white,
+                              ),
+                            ),
+                            const SizedBox(height: Spacing.xs),
+                            Text(
+                              'Credited this run: ${gs.lastXpEarned} XP',
+                              style: GlossaTypography.bodyMedium.copyWith(
+                                color: GlossaColors.yellowPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (gs.lastLevelUp)
+                              Padding(
+                                padding: const EdgeInsets.only(top: Spacing.sm),
+                                child: Text(
+                                  'Level up! Lv ${gs.lastOldLevel} → Lv ${gs.lastNewLevel}',
+                                  style: GlossaTypography.headlineSmall
+                                      .copyWith(
+                                        color: GlossaColors.yellowPrimary,
+                                      ),
+                                ),
+                              ),
+                            if (gs.lastStatGains.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: Spacing.sm),
+                                child: Text(
+                                  'Hero gains: ${gs.lastStatGains.entries.map((entry) => '+${entry.value} ${entry.key.toUpperCase()}').join(' · ')}',
+                                  style: GlossaTypography.bodyMedium.copyWith(
+                                    color: GlossaColors.white,
+                                  ),
+                                ),
+                              ),
+                            Text(
+                              'Mistakes corrected: ${gs.lastMistakesCorrected} · '
+                              'Mastered: ${gs.lastMasteredExercises}/${gs.lastTotalQuestions}',
+                              style: GlossaTypography.bodyMedium.copyWith(
+                                color: GlossaColors.white,
+                              ),
+                            ),
+                            if (gs.lastExerciseResults.isNotEmpty) ...[
+                              const SizedBox(height: Spacing.sm),
+                              for (
+                                var index = 0;
+                                index < gs.lastExerciseResults.length;
+                                index++
+                              )
+                                Text(
+                                  'Exercise ${index + 1}: '
+                                  '${gs.lastExerciseResults[index]['correct'] == true
+                                      ? 'correct first try'
+                                      : gs.lastExerciseResults[index]['review_corrected'] == true
+                                      ? 'mistake corrected'
+                                      : 'not mastered'}',
+                                  style: GlossaTypography.bodySmall.copyWith(
+                                    color: GlossaColors.white.withValues(
+                                      alpha: 0.8,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                            if (gs.lastMissedVocabulary.isNotEmpty) ...[
+                              const SizedBox(height: Spacing.md),
+                              Text(
+                                'Words to practice',
+                                style: GlossaTypography.headlineSmall.copyWith(
+                                  color: GlossaColors.white,
+                                ),
+                              ),
+                              for (final word in gs.lastMissedVocabulary)
+                                Text(
+                                  '${word['newari']} (${word['romanization']}) — ${word['english']}',
+                                  style: GlossaTypography.bodySmall.copyWith(
+                                    color: GlossaColors.white,
+                                  ),
+                                ),
+                            ],
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: Spacing.xxxl),
 
                       // ─── Back to Town button ───────────
@@ -221,7 +334,7 @@ class _LevelUpScreenState extends ConsumerState<LevelUpScreen>
                           horizontal: Spacing.pagePadding,
                         ),
                         child: GlossaButton(
-                          label: gs.lastPassed ? 'Continue' : 'Retry lesson',
+                          label: gs.lastPassed ? 'Continue' : 'Retry Lesson',
                           loadingLabel: gs.lastPassed
                               ? 'Continuing...'
                               : 'Retrying...',
@@ -288,13 +401,21 @@ class _StatCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(
-              value,
-              style: GlossaTypography.headlineLarge.copyWith(color: color),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                style: GlossaTypography.headlineLarge.copyWith(color: color),
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: GlossaTypography.labelSmall.copyWith(
                 color: GlossaColors.white.withValues(alpha: 0.7),
               ),
