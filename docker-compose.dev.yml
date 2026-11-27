@@ -44,6 +44,7 @@ services:
       - "18002:18002"
     volumes:
       - ./newari_vocabulary.xlsx:/newari_vocabulary.xlsx:ro
+      - ./newari_lessons_content.json:/newari_lessons_content.json:ro
     depends_on:
       db:
         condition: service_healthy

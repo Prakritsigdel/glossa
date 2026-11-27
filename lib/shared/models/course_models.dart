@@ -17,6 +17,7 @@ class Lesson {
   final String id;
   final int? unitId;
   final int? sequence;
+  final String? unitTitle;
   final String title;
   final String subtitle;
   final ExerciseType exerciseType;
@@ -40,6 +41,7 @@ class Lesson {
     required this.status,
     this.unitId,
     this.sequence,
+    this.unitTitle,
     this.xpReward = 20,
     this.wordCount = 4,
     this.requiredLevel = 1,
@@ -56,6 +58,7 @@ class Lesson {
       id: id,
       unitId: unitId,
       sequence: sequence,
+      unitTitle: unitTitle,
       title: title,
       subtitle: subtitle,
       exerciseType: exerciseType,
@@ -83,6 +86,7 @@ class Exercise {
   final String id;
   final ExerciseType type;
   final String instruction;
+  final int xp;
   final String? prompt;
   final String? promptHint;
   final String? imageKey;
@@ -109,11 +113,16 @@ class Exercise {
 
   // ── Vocabulary reference ──
   final Map<String, dynamic>? vocabularyReference;
+  final Map<String, dynamic>? layout;
+  final String? variant;
+  final String? plannedType;
+  final String? phraseTargetEn;
 
   const Exercise({
     required this.id,
     required this.type,
     required this.instruction,
+    this.xp = 0,
     this.prompt,
     this.promptHint,
     this.imageKey,
@@ -125,14 +134,11 @@ class Exercise {
     this.dialogueStructure,
     this.illustrationId,
     this.vocabularyReference,
+    this.layout,
+    this.variant,
+    this.plannedType,
+    this.phraseTargetEn,
   });
-
-  /// Returns true if this exercise uses word tiles (translate / wordOrder).
-  bool get usesWordTiles =>
-      type == ExerciseType.translate || type == ExerciseType.wordOrder;
-
-  /// Returns true if this exercise is a dialogue (dialogueComplete).
-  bool get isDialogue => type == ExerciseType.dialogueComplete;
 
   /// Returns true if this exercise uses illustrations (pictureToWord / wordToPicture).
   bool get usesIllustration =>

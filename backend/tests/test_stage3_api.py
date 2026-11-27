@@ -103,6 +103,7 @@ class TestExerciseEndpoint(unittest.TestCase):
         self.client = TestClient(app)
 
     def tearDown(self):
+        self.client.close()
         self.session.close()
 
     def _override_db(self):

@@ -18,6 +18,20 @@ class BackendApi {
 
   final http.Client _client;
   final FlutterSecureStorage _storage;
+  int _sessionGeneration = 0;
+  Future<void> _credentialMutation = Future<void>.value();
+
+  Future<T> _serializeCredentialMutation<T>(Future<T> Function() action) {
+    final completer = Completer<T>();
+    _credentialMutation = _credentialMutation.then((_) async {
+      try {
+        completer.complete(await action());
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      }
+    });
+    return completer.future;
+  }
 
   /// Explicit override via --dart-define=API_BASE_URL=...
   /// Takes priority over all automatic detection.
@@ -63,12 +77,18 @@ class BackendApi {
     Map<String, dynamic>? body,
     bool authenticated = true,
   }) async {
+    final requestGeneration = _sessionGeneration;
     final uri = Uri.parse(
       '${baseUrl.replaceFirst(RegExp(r'/+$'), '')}/api/v1$path',
     );
     if (kDebugMode) debugPrint('[BackendApi] $method $uri');
     final headers = <String, String>{'Content-Type': 'application/json'};
-    final savedToken = await token;
+    final savedToken = authenticated ? await token : null;
+    if (authenticated && requestGeneration != _sessionGeneration) {
+      throw const BackendException(
+        'The account session changed. Please retry.',
+      );
+    }
     if (authenticated && savedToken != null) {
       headers['Authorization'] = 'Bearer $savedToken';
     }
@@ -82,6 +102,11 @@ class BackendApi {
       response = await http.Response.fromStream(streamed)
           .timeout(const Duration(seconds: 15));
     } on SocketException catch (e) {
+      if (authenticated && requestGeneration != _sessionGeneration) {
+        throw const BackendException(
+          'The account session changed. Please retry.',
+        );
+      }
       if (kDebugMode) debugPrint('[BackendApi] SocketException: ${e.message}');
       // On Android, if default 127.0.0.1:8000 failed and no URL was explicitly configured,
       // probe 10.0.2.2:8000 (emulator loopback) as automatic fallback.
@@ -112,6 +137,11 @@ class BackendApi {
         'running and your device can reach it.',
       );
     } on TimeoutException {
+      if (authenticated && requestGeneration != _sessionGeneration) {
+        throw const BackendException(
+          'The account session changed. Please retry.',
+        );
+      }
       // Same check for TimeoutException on Android
       if (_configuredUrl.isEmpty &&
           _resolvedUrl == null &&
@@ -151,6 +181,11 @@ class BackendApi {
         'A network error occurred. Please check your connection and try again.',
       );
     }
+    if (authenticated && requestGeneration != _sessionGeneration) {
+      throw const BackendException(
+        'The account session changed. Please retry.',
+      );
+    }
     final decoded = response.body.isEmpty
         ? <String, dynamic>{}
         : jsonDecode(response.body);
@@ -164,11 +199,24 @@ class BackendApi {
   }
 
   Future<DemoUser> _authenticate(String path, Map<String, dynamic> body) async {
+    final generation = _sessionGeneration;
     final data = await _request('POST', path, body: body, authenticated: false);
-    await _storage.write(
-      key: 'glossa_access_token',
-      value: data['access_token'] as String,
-    );
+    await _serializeCredentialMutation(() async {
+      if (generation != _sessionGeneration) {
+        throw const BackendException(
+          'Authentication was superseded by another account change.',
+        );
+      }
+      await _storage.write(
+        key: 'glossa_access_token',
+        value: data['access_token'] as String,
+      );
+    });
+    if (generation != _sessionGeneration) {
+      throw const BackendException(
+        'Authentication was superseded by another account change.',
+      );
+    }
     return _user(data['user'] as Map<String, dynamic>);
   }
 
@@ -185,7 +233,12 @@ class BackendApi {
   Future<DemoUser> login({required String email, required String password}) =>
       _authenticate('/auth/login', {'email': email, 'password': password});
 
-  Future<void> logout() => _storage.delete(key: 'glossa_access_token');
+  Future<void> logout() {
+    ++_sessionGeneration;
+    return _serializeCredentialMutation(
+      () => _storage.delete(key: 'glossa_access_token'),
+    );
+  }
 
   Future<DemoUser> me() async => _user(await _request('GET', '/me'));
 
@@ -228,18 +281,27 @@ class BackendApi {
         .toList();
   }
 
+  Future<Map<String, dynamic>> startLessonRun(String lessonId) =>
+      _request('POST', '/lessons/$lessonId/start');
+
+  Future<Map<String, dynamic>> reviewQueue(String lessonId, String runId) =>
+      _request('GET', '/lessons/$lessonId/runs/$runId/review-queue');
+
   /// Check a single exercise answer via the per-exercise endpoint.
   ///
   /// Returns true if the answer is correct. Network errors are rethrown
   /// so the UI can display them and offer retry — they are never silently
   /// treated as incorrect.
   Future<bool> checkAnswer(String lessonId, Map<String, dynamic> answer) async {
-    final result = await _request(
-      'POST',
-      '/lessons/$lessonId/answer',
-      body: answer,
-    );
+    final result = await answerExercise(lessonId, answer);
     return result['correct'] as bool;
+  }
+
+  Future<Map<String, dynamic>> answerExercise(
+    String lessonId,
+    Map<String, dynamic> answer,
+  ) async {
+    return _request('POST', '/lessons/$lessonId/answer', body: answer);
   }
 
   /// Submit a complete lesson attempt.
@@ -254,8 +316,10 @@ class BackendApi {
     required List<Map<String, dynamic>> answers,
     String? idempotencyKey,
   }) async {
-    final body = <String, dynamic>{'answers': answers};
-    if (idempotencyKey != null) {
+    final body = answers.isEmpty && idempotencyKey != null
+        ? <String, dynamic>{'run_id': idempotencyKey}
+        : <String, dynamic>{'answers': answers};
+    if (answers.isNotEmpty && idempotencyKey != null) {
       body['idempotency_key'] = idempotencyKey;
     }
     return _request('POST', '/lessons/$lessonId/attempts', body: body);
@@ -294,16 +358,21 @@ class BackendApi {
     level: row['level'] as int,
     xp: row['xp'] as int,
     xpToNextLevel: row['xp_to_next_level'] as int,
+    xpInLevel: (row['xp_in_level'] as num?)?.toInt() ?? 0,
     streak: row['streak'] as int,
     wordsFound: row['words_found'] as int,
     lessonsCompleted: row['lessons_completed'] as int,
     activeCourseId: row['active_course_id'] as String?,
+    heroStats: (row['hero_stats'] as Map<String, dynamic>).map(
+      (key, value) => MapEntry(key, (value as num).toInt()),
+    ),
   );
 
   Lesson _lesson(Map<String, dynamic> row) => Lesson(
     id: row['id'] as String,
     unitId: row['unit_id'] != null ? (row['unit_id'] as num).toInt() : null,
     sequence: row['sequence'] != null ? (row['sequence'] as num).toInt() : null,
+    unitTitle: row['unit_title'] as String?,
     title: row['title'] as String,
     subtitle: row['subtitle'] as String,
     exerciseType: _exerciseType(row['exercise_type'] as String),
@@ -323,9 +392,7 @@ class BackendApi {
   Exercise _exercise(Map<String, dynamic> row) {
     // The backend serializes ExerciseOut.exercise_type; keep "type" as a
     // fallback so payloads from older responses still parse.
-    final type = _exerciseType(
-      (row['exercise_type'] ?? row['type']) as String,
-    );
+    final type = _exerciseType((row['exercise_type'] ?? row['type']) as String);
     final optionsRaw = row['options'] as List? ?? [];
     final options = optionsRaw.map((raw) {
       final option = raw as Map<String, dynamic>;
@@ -359,6 +426,7 @@ class BackendApi {
       id: row['id'] as String,
       type: type,
       instruction: row['instruction'] as String,
+      xp: (row['xp'] as num?)?.toInt() ?? 0,
       prompt: row['prompt'] as String?,
       promptHint: row['prompt_hint'] as String?,
       imageKey: row['image_key'] as String?,
@@ -372,6 +440,10 @@ class BackendApi {
       vocabularyReference: row['vocabulary_reference'] != null
           ? (row['vocabulary_reference'] as Map<String, dynamic>)
           : null,
+      layout: row['layout'] as Map<String, dynamic>?,
+      variant: row['variant'] as String?,
+      plannedType: row['planned_type'] as String?,
+      phraseTargetEn: row['phrase_target_en'] as String?,
     );
   }
 
@@ -380,10 +452,7 @@ class BackendApi {
     'fillBlank' => ExerciseType.fillBlank,
     'pictureToWord' => ExerciseType.pictureToWord,
     'wordToPicture' => ExerciseType.wordToPicture,
-    'translate' => ExerciseType.translate,
-    'wordOrder' => ExerciseType.wordOrder,
-    'dialogueComplete' => ExerciseType.dialogueComplete,
-    _ => ExerciseType.fillBlank,
+    _ => throw FormatException('Unsupported exercise type: $value'),
   };
 
   LessonStatus _lessonStatus(String value) => switch (value) {

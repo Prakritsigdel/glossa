@@ -46,6 +46,12 @@ class _TownScreenState extends ConsumerState<TownScreen> {
     final user = gs.user;
     final lessonsAsync = ref.watch(townMapProvider);
 
+    if (gs.isLoading) {
+      return const Scaffold(
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -89,7 +95,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                     ),
                     const SizedBox(height: Spacing.md),
                     GlossaProgressBar(
-                      progress: user.xp / user.xpToNextLevel,
+                      progress: user.xpInLevel / user.xpToNextLevel,
                       fillColor: GlossaColors.redAction,
                     ),
                     const SizedBox(height: Spacing.xs),
@@ -100,7 +106,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                       runSpacing: Spacing.xs,
                       children: [
                         Text(
-                          '${user.xp} / ${user.xpToNextLevel} XP',
+                          '${user.xpInLevel} / ${user.xpToNextLevel} XP · ${user.xp} total',
                           style: GlossaTypography.bodySmall,
                         ),
                         Container(
@@ -151,6 +157,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
                           const Center(child: CircularProgressIndicator()),
                       error: (error, _) =>
                           Center(child: Text('Error loading lessons: $error')),
+                      skipLoadingOnRefresh: false,
                     ),
                     const SizedBox(height: Spacing.xxl),
                   ],
@@ -208,6 +215,7 @@ class _TownScreenState extends ConsumerState<TownScreen> {
         for (final section in sections)
           _UnitSection(
             unitId: section.key,
+            unitTitle: section.value.first.unitTitle,
             clearedInUnit: section.value
                 .where((lesson) => lesson.status == LessonStatus.completed)
                 .length,
@@ -327,7 +335,7 @@ class _LessonPathItem extends StatelessWidget {
                             ),
                           const SizedBox(height: 2),
                           Text(
-                            lesson.subtitle,
+                            '${lesson.plannedExerciseCount} exercises · ${lesson.xpReward} XP',
                             style: GlossaTypography.bodySmall,
                           ),
                         ],
@@ -445,6 +453,7 @@ class _LessonPathItem extends StatelessWidget {
 
 class _UnitSection extends StatelessWidget {
   final int unitId;
+  final String? unitTitle;
   final int clearedInUnit;
   final int totalInUnit;
   final List<Lesson> lessons;
@@ -452,6 +461,7 @@ class _UnitSection extends StatelessWidget {
 
   const _UnitSection({
     required this.unitId,
+    required this.unitTitle,
     required this.clearedInUnit,
     required this.totalInUnit,
     required this.lessons,
@@ -469,7 +479,10 @@ class _UnitSection extends StatelessWidget {
           spacing: Spacing.sm,
           runSpacing: Spacing.xs,
           children: [
-            Text(_unitName(unitId), style: GlossaTypography.headlineMedium),
+            Text(
+              unitTitle ?? _unitName(unitId),
+              style: GlossaTypography.headlineMedium,
+            ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(

@@ -1,5 +1,4 @@
-// Phase 2 Regression Tests
-// Tests for all 7 critical bug fixes identified in the Phase 1 audit.
+// Phase 2 Regression Tests for reusable app behavior.
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +15,9 @@ import 'support/mock_data.dart';
 class _NoOpBackendApi extends BackendApi {
   @override
   Future<String?> get token async => null;
+
+  @override
+  Future<void> logout() async {}
 
   @override
   Future<DemoUser> login({
@@ -168,11 +170,9 @@ void main() {
         case ExerciseType.wordToPicture:
           return '/lesson/word-to-picture';
         case ExerciseType.translate:
-          return '/lesson/translate';
         case ExerciseType.wordOrder:
-          return '/lesson/word-order';
         case ExerciseType.dialogueComplete:
-          return '/lesson/dialogue-complete';
+          return '/lesson/unsupported';
       }
     }
 
@@ -204,26 +204,13 @@ void main() {
       );
     });
 
-    test('translate routes to /lesson/translate', () {
-      expect(routeForType(ExerciseType.translate), equals('/lesson/translate'));
-    });
-
-    test('wordOrder routes to /lesson/word-order', () {
-      expect(
-        routeForType(ExerciseType.wordOrder),
-        equals('/lesson/word-order'),
-      );
-    });
-
-    test('dialogueComplete routes to /lesson/dialogue-complete', () {
-      expect(
-        routeForType(ExerciseType.dialogueComplete),
-        equals('/lesson/dialogue-complete'),
-      );
-    });
-
-    test('Every ExerciseType value has a /lesson/ route', () {
-      for (final type in ExerciseType.values) {
+    test('only the four active exercise formats have gameplay routes', () {
+      for (final type in [
+        ExerciseType.matchWords,
+        ExerciseType.fillBlank,
+        ExerciseType.pictureToWord,
+        ExerciseType.wordToPicture,
+      ]) {
         expect(
           routeForType(type),
           startsWith('/lesson/'),
@@ -232,9 +219,14 @@ void main() {
       }
     });
 
-    test('No two ExerciseTypes share the same route', () {
-      final routes = ExerciseType.values.map(routeForType).toList();
-      expect(routes.toSet().length, equals(routes.length));
+    test('retired exercise formats are not routable', () {
+      for (final type in [
+        ExerciseType.translate,
+        ExerciseType.wordOrder,
+        ExerciseType.dialogueComplete,
+      ]) {
+        expect(routeForType(type), '/lesson/unsupported');
+      }
     });
   });
 
@@ -250,7 +242,10 @@ void main() {
 
         final notifier = container.read(gameStateProvider.notifier);
         await notifier.logIn(email: 'test@test.com', password: 'pw');
-        notifier.state = notifier.state.copyWith(activeLessonId: 'lesson_1');
+        notifier.state = notifier.state.copyWith(
+          activeLessonId: 'lesson_1',
+          runId: 'test-run-id',
+        );
         // First completion sets lessonComplete = true
         await notifier.completeLesson();
         expect(container.read(gameStateProvider).lessonComplete, isTrue);
@@ -276,7 +271,10 @@ void main() {
 
       final notifier = container.read(gameStateProvider.notifier);
       await notifier.logIn(email: 'test@test.com', password: 'pw');
-      notifier.state = notifier.state.copyWith(activeLessonId: 'lesson_1');
+      notifier.state = notifier.state.copyWith(
+        activeLessonId: 'lesson_1',
+        runId: 'test-run-id',
+      );
       expect(container.read(gameStateProvider).lessonComplete, isFalse);
 
       // Start completeLesson but do not await — flag should be set synchronously
