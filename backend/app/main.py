@@ -117,10 +117,6 @@ def current_user(
     return user
 
 
-def xp_to_next(user: User) -> int:
-    return 100 + 25 * (max(user.level, 1) - 1)
-
-
 def current_streak(user: User) -> int:
     if user.last_activity_date is None:
         return 0
