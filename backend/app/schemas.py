@@ -1,4 +1,6 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from typing import Literal
+
+from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field
 
 
 class Credentials(BaseModel):
@@ -25,11 +27,13 @@ class UserOut(BaseModel):
     language_id: str
     active_course_id: str | None = None
     xp: int
+    xp_in_level: int = 0
     xp_to_next_level: int
     level: int
     streak: int
     words_found: int
     lessons_completed: int
+    hero_stats: dict[str, int] = Field(default_factory=dict)
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -40,7 +44,10 @@ class AuthOut(BaseModel):
 
 
 class AnswerIn(BaseModel):
+    run_id: str = Field(min_length=8, max_length=64)
+    submission_id: str | None = Field(default=None, min_length=8, max_length=64)
     exercise_id: str
+    phase: Literal["original", "review"] = "original"
     selected_option_id: str | None = None
     selected_pairs: dict[str, str] | None = None
     selected_tile_ids: list[str] | None = None
@@ -130,6 +137,7 @@ class ExerciseOut(BaseModel):
     lesson_id: str
     exercise_type: str
     sequence: int | None = None
+    xp: int = 0
     instruction: str
     prompt: str | None = None
     prompt_hint: str | None = None
@@ -139,6 +147,10 @@ class ExerciseOut(BaseModel):
     romanization: str | None = None
     illustration_id: str | None = None
     vocabulary_reference: dict | None = None
+    layout: dict | None = None
+    variant: str | None = None
+    planned_type: str | None = None
+    phrase_target_en: str | None = None
 
     options: list[ExerciseOptionOut] | None = None
     word_tiles: list[ExerciseOptionOut] | None = None
@@ -148,6 +160,7 @@ class ExerciseOut(BaseModel):
 
 
 class ExerciseAnswerIn(BaseModel):
+    run_id: str = Field(min_length=8, max_length=64)
     exercise_id: str
     selected_option_id: str | None = None
     selected_pairs: dict[str, str] | None = None
@@ -155,8 +168,23 @@ class ExerciseAnswerIn(BaseModel):
 
 
 class LessonAttemptIn(BaseModel):
-    answers: list[ExerciseAnswerIn] = Field(min_length=1)
-    idempotency_key: str | None = Field(default=None, min_length=1, max_length=64)
+    run_id: str = Field(
+        min_length=8,
+        max_length=64,
+        validation_alias=AliasChoices("run_id", "idempotency_key"),
+    )
+
+
+class LessonRunStateOut(BaseModel):
+    run_id: str
+    answered_exercise_ids: list[str] = Field(default_factory=list)
+    original_results: dict[str, bool] = Field(default_factory=dict)
+    review_queue: list[str] = Field(default_factory=list)
+    corrected_exercise_ids: list[str] = Field(default_factory=list)
+    matched_pairs_by_exercise: dict[str, dict[str, str]] = Field(
+        default_factory=dict
+    )
+    needs_completion: bool = False
 
 
 class ExerciseResultOut(BaseModel):
@@ -164,6 +192,12 @@ class ExerciseResultOut(BaseModel):
     exercise_type: str
     correct: bool
     error: str | None = None
+    correct_answer: dict | None = None
+    xp: int = 0
+    mistake_count: int = 0
+    review_corrected: bool = False
+    review_attempts: int = 0
+    mastered: bool = False
 
 
 class LessonAttemptOut(BaseModel):
@@ -172,10 +206,22 @@ class LessonAttemptOut(BaseModel):
     is_correct: bool
     correct_answers: int
     total_questions: int
+    mistakes_corrected: int = 0
+    mastered_exercises: int = 0
     xp_earned: int
+    earned_xp: int = 0
+    xp_max: int = 0
+    credited_xp: int = 0
     score: float = 0.0
     passing_threshold: int = 100
     passed: bool = False
     results: list[ExerciseResultOut]
     already_completed: bool = False
+    completed: bool = False
+    missed_vocabulary: list[dict] = Field(default_factory=list)
+    stat_gains: dict[str, int] = Field(default_factory=dict)
+    hero_stats: dict[str, int] = Field(default_factory=dict)
+    old_level: int = 1
+    new_level: int = 1
+    level_up: bool = False
     model_config = ConfigDict(from_attributes=True)

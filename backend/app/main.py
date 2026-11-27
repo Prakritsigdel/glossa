@@ -2,7 +2,9 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import logging
+import uuid
 from contextlib import asynccontextmanager
+from copy import deepcopy
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,22 +20,39 @@ from app.config import (
     settings,
 )
 from app.database import SessionLocal
-from app.exercise_engine import validate_exercise, ALL_EXERCISE_TYPES
 from app.curriculum_blueprint import (
-    EXERCISE_SEQUENCES,
-    LESSON_TO_UNIT,
-    PLANNED_UNITS,
-    UNIT_SEQUENCE,
+    ACTIVE_EXERCISE_TYPES,
+    CURRICULUM_VERSION,
     SUPPORTED_ILLUSTRATION_KEYS,
+    active_lessons_query,
+    load_curriculum,
 )
 from app.models import (
-    Attempt, Course, Exercise, Language, Lesson, LessonCompletion, Unit, User, VocabularyEntry
+    Attempt,
+    Course,
+    Exercise,
+    ExerciseSubmission,
+    Language,
+    Lesson,
+    LessonCompletion,
+    LessonProgress,
+    LessonRun,
+    Unit,
+    User,
 )
 from app.schemas import (
     AnswerIn, AttemptIn, AuthOut, CourseOut, CourseUpdate, Credentials,
     ExerciseAnswerIn, ExerciseOptionOut, ExerciseOut, ExerciseResultOut, LessonAttemptIn,
     LessonAttemptOut, LanguageOut, LeaderboardEntryOut, LessonOut,
     ProfileUpdate, Registration, UnitOut, UserOut,
+    LessonRunStateOut,
+)
+from app.progression import (
+    compute_hero_stats,
+    credited_xp,
+    hero_class,
+    level_state,
+    lesson_passed,
 )
 from app.security import create_token, hash_password, verify_password
 
@@ -99,7 +118,7 @@ def current_user(
 
 
 def xp_to_next(user: User) -> int:
-    return user.level * 150 if user.level > 1 else 100
+    return 100 + 25 * (max(user.level, 1) - 1)
 
 
 def current_streak(user: User) -> int:
@@ -115,356 +134,169 @@ def current_streak(user: User) -> int:
 # Publication-readiness checks (Stage 3)
 # ════════════════════════════════════════════════════════════════════
 
-EXERCISE_TYPE_ORDER = [
-    "matchWords", "fillBlank", "pictureToWord", "wordToPicture",
-    "translate", "wordOrder", "dialogueComplete",
-]
-
-
-def _plan_lesson_number(lesson_id: str) -> int | None:
-    """Extract the course-plan lesson number (1-15) from a lesson id.
-
-    Lesson ids use the format ``<course>_u<unit>_l<lesson_in_unit>``,
-    e.g. ``en_new_u2_l3`` -> plan lesson 6 (unit 2, lesson 3 in unit).
-    Returns None for non-blueprint lesson ids.
-    """
-    try:
-        parts = lesson_id.split("_")
-        # parts: ["en", "new", "u<N>", "l<M>"]
-        unit_seq = int(parts[2][1:])
-        lesson_in_unit = int(parts[3][1:])
-        return (unit_seq - 1) * 3 + lesson_in_unit
-    except (IndexError, ValueError):
-        return None
-
-
-def _is_current_blueprint_lesson(lesson_id: str) -> bool:
-    try:
-        parts = lesson_id.split("_")
-        unit_number = int(parts[2][1:])
-        lesson_number = int(parts[3][1:])
-    except (IndexError, ValueError):
+def is_exercise_payload_valid(exercise: Exercise) -> bool:
+    if exercise.exercise_type not in ACTIVE_EXERCISE_TYPES or not exercise.instruction.strip():
         return False
-    return (
-        lesson_id.startswith("en_new_u")
-        and 1 <= unit_number <= 5
-        and 1 <= lesson_number <= 3
+    options = exercise.options or []
+    option_ids = [item.get("id") for item in options if isinstance(item, dict)]
+    if len(option_ids) != len(options) or len(option_ids) != len(set(option_ids)):
+        return False
+    if exercise.exercise_type == "matchWords":
+        pairs = (exercise.correct_answer_config or {}).get("pairs", {})
+        return (
+            len(pairs) >= 2
+            and all(key in option_ids and value in option_ids for key, value in pairs.items())
+            and all(
+                item.get("romanization")
+                for item in options
+                if item.get("is_devanagari")
+            )
+        )
+    if len(options) < 2:
+        return False
+    correct_id = (exercise.correct_answer_config or {}).get("correct_option_id")
+    if correct_id not in option_ids:
+        return False
+    if exercise.exercise_type in ("pictureToWord", "wordToPicture"):
+        image_keys = (
+            [exercise.image_key]
+            if exercise.exercise_type == "pictureToWord"
+            else [item.get("image_key") for item in options]
+        )
+        if any(key not in SUPPORTED_ILLUSTRATION_KEYS for key in image_keys):
+            return False
+    return all(
+        not item.get("is_devanagari") or bool(item.get("romanization"))
+        for item in options
     )
 
 
-def _planned_exercise_slots_for_lesson(lesson: Lesson) -> int:
-    """Return the planned exercise slot count for a lesson.
-
-    For en_new blueprint lessons, uses EXERCISE_SEQUENCES keyed by the
-    course-plan lesson number. For legacy lessons (no blueprint), returns
-    the current exercise count so publication-readiness is not blocked
-    by missing blueprint data.
-    """
-    plan_lesson = _plan_lesson_number(lesson.id)
-    if plan_lesson is not None and plan_lesson in EXERCISE_SEQUENCES:
-        return len(EXERCISE_SEQUENCES[plan_lesson])
-    return len(lesson.exercises) if lesson.exercises else 0
+def is_lesson_structurally_ready(db: Session, lesson: Lesson) -> bool:
+    expected_count = (lesson.content_data or {}).get("exercise_count")
+    exercises = sorted(lesson.exercises or [], key=lambda item: item.sequence or 0)
+    return bool(
+        expected_count
+        and len(exercises) == expected_count
+        and all(is_exercise_payload_valid(exercise) for exercise in exercises)
+    )
 
 
 def _exercise_requires_domain(exercise: Exercise, domain: str) -> bool:
-    """Return True if an exercise type requires verification in a domain."""
-    if domain == "illustration":
-        return exercise.exercise_type in ("pictureToWord", "wordToPicture")
-    if domain == "sentence":
-        return exercise.exercise_type in ("wordOrder", "dialogueComplete")
-    if domain == "dialogue":
-        return exercise.exercise_type == "dialogueComplete"
-    return False
-
-
-def is_exercise_payload_valid(exercise: Exercise) -> bool:
-    """Check that an exercise payload is structurally valid.
-
-    Does not expose correct answers; only validates structure.
-    """
-    if not exercise.instruction or not exercise.instruction.strip():
-        return False
-    if exercise.exercise_type not in ALL_EXERCISE_TYPES:
-        return False
-    options = exercise.options or []
-    tiles = exercise.word_tiles or []
-
-    def valid_items(items: list, *, require_romanization: bool = False) -> bool:
-        ids: set[str] = set()
-        for item in items:
-            if not isinstance(item, dict):
-                return False
-            item_id = item.get("id")
-            text = item.get("text")
-            if not isinstance(item_id, str) or not item_id or item_id in ids:
-                return False
-            if not isinstance(text, str) or not text.strip():
-                return False
-            ids.add(item_id)
-            if item.get("is_devanagari") and require_romanization:
-                if not isinstance(item.get("romanization"), str) or not item["romanization"].strip():
-                    return False
-        return True
-
-    if exercise.exercise_type == "matchWords":
-        if len(options) < 4 or not valid_items(options, require_romanization=True):
-            return False
-        if len({item["text"] for item in options}) != len(options):
-            return False
-        pairs = (exercise.correct_answer_config or {}).get("pairs") or exercise.pairs
-        if not isinstance(pairs, dict) or len(pairs) < 2:
-            return False
-        option_ids = {item["id"] for item in options}
-        by_id = {item["id"]: item for item in options}
-        if any(
-            not isinstance(dev, str)
-            or not isinstance(eng, str)
-            or dev not in option_ids
-            or eng not in option_ids
-            or not by_id[dev].get("is_devanagari")
-            or by_id[eng].get("is_devanagari")
-            for dev, eng in pairs.items()
-        ):
-            return False
-        if len(set(pairs.values())) != len(pairs):
-            return False
-    elif exercise.exercise_type in ("fillBlank", "pictureToWord", "wordToPicture", "dialogueComplete"):
-        if len(options) < 2 or not valid_items(options, require_romanization=True):
-            return False
-        if len({item["text"] for item in options}) != len(options):
-            return False
-        option_ids = {item["id"] for item in options}
-        correct_id = (exercise.correct_answer_config or {}).get(
-            "correct_option_id", exercise.answer_id
-        )
-        if not isinstance(correct_id, str) or correct_id not in option_ids:
-            return False
-        if exercise.exercise_type == "pictureToWord":
-            if exercise.image_key not in SUPPORTED_ILLUSTRATION_KEYS:
-                return False
-        if exercise.exercise_type == "wordToPicture":
-            image_keys = [item.get("image_key") for item in options]
-            if (
-                len(image_keys) != 4
-                or not all(isinstance(key, str) for key in image_keys)
-                or any(key not in SUPPORTED_ILLUSTRATION_KEYS for key in image_keys)
-                or len(set(image_keys)) != len(image_keys)
-            ):
-                return False
-        if exercise.exercise_type == "dialogueComplete":
-            dialogue = exercise.dialogue_structure or []
-            if (
-                len(dialogue) < 2
-                or not all(isinstance(line, dict) for line in dialogue)
-                or sum(line.get("missing") is True for line in dialogue) != 1
-            ):
-                return False
-    elif exercise.exercise_type in ("translate", "wordOrder"):
-        if len(tiles) < 2 or not valid_items(tiles, require_romanization=True):
-            return False
-        if exercise.exercise_type == "translate":
-            tile_texts = [tile["text"] for tile in tiles]
-            if len(tile_texts) != len(set(tile_texts)):
-                return False
-        config = exercise.correct_answer_config or {}
-        correct_sequence = config.get("correct_sequence")
-        tile_ids = {tile["id"] for tile in tiles}
-        if (
-            not isinstance(correct_sequence, list)
-            or not correct_sequence
-            or not all(isinstance(tile_id, str) for tile_id in correct_sequence)
-        ):
-            return False
-        if len(correct_sequence) != len(set(correct_sequence)):
-            return False
-        if not set(correct_sequence).issubset(tile_ids):
-            return False
-    return True
-
-
-def is_lesson_structurally_ready(db: Session, lesson: Lesson) -> bool:
-    """Check that a lesson's curriculum payload is structurally complete.
-
-    Structural checks only -- this never looks at publication or
-    verification flags, so it can be shared by:
-      * the strict production publication gate, and
-      * the isolated development environment, which plays structurally
-        complete content that is still awaiting native-speaker verification.
-    """
-    if not lesson.exercises:
-        return False
-
-    # All planned slots populated
-    planned = _planned_exercise_slots_for_lesson(lesson)
-    if len(lesson.exercises) < planned:
-        return False
-
-    plan_lesson = _plan_lesson_number(lesson.id)
-    if plan_lesson in EXERCISE_SEQUENCES:
-        expected = {
-            f"{lesson.id}_{exercise_type}{slot}": exercise_type
-            for slot, exercise_type in enumerate(EXERCISE_SEQUENCES[plan_lesson], start=1)
-        }
-        actual = {exercise.id: exercise.exercise_type for exercise in lesson.exercises}
-        if actual != expected:
-            return False
-
-    # All exercise payloads structurally valid
-    for exercise in lesson.exercises:
-        if not is_exercise_payload_valid(exercise):
-            return False
-
-    # Referenced vocabulary entries must exist on the lesson. Exercises
-    # without a provenance reference (provisional wordOrder/dialogue content)
-    # are allowed here; publication additionally requires references below.
-    vocab_ids = {lv.vocabulary_entry_id for lv in lesson.vocabulary or []}
-    if plan_lesson in EXERCISE_SEQUENCES:
-        for exercise in lesson.exercises:
-            references = (exercise.vocabulary_reference or {}).get("entry_ids")
-            if references and not set(references).issubset(vocab_ids):
-                return False
-
-    # Newari spelling + romanization present for exercises that have script
-    for exercise in lesson.exercises:
-        if exercise.newari_script and not exercise.romanization:
-            return False
-
-    return True
+    return domain == "illustration" and exercise.exercise_type in (
+        "pictureToWord",
+        "wordToPicture",
+    )
 
 
 def is_lesson_publication_ready(db: Session, lesson: Lesson) -> bool:
-    """Check whether a lesson is ready for publication.
-
-    A lesson must not be publicly playable unless:
-    - Publication has been explicitly authorized (is_published=True)
-    - All planned exercise slots are populated
-    - All exercise payloads pass structural validation
-    - All referenced vocabulary entries are is_verified=True
-    - Newari spelling and romanization are present (verification flag governs trust)
-    - Sentence/dialogue/illustration verification flags are True where required
-    """
-    # Explicit publication authorization required
-    if not lesson.is_published:
+    if not lesson.is_published or not is_lesson_structurally_ready(db, lesson):
         return False
-
-    if not is_lesson_structurally_ready(db, lesson):
-        return False
-
-    # All referenced vocabulary entries must be verified
-    vocab_ids = {lv.vocabulary_entry_id for lv in lesson.vocabulary or []}
-    if vocab_ids:
-        verified_rows = db.scalars(
-            select(VocabularyEntry.id).where(
-                VocabularyEntry.id.in_(vocab_ids), VocabularyEntry.is_verified == True  # noqa: E712
-            )
-        ).all()
-        if set(verified_rows) != vocab_ids:
-            return False
-
-    # Blueprint exercises must declare their vocabulary provenance
-    plan_lesson = _plan_lesson_number(lesson.id)
-    if plan_lesson in EXERCISE_SEQUENCES:
-        for exercise in lesson.exercises:
-            references = (exercise.vocabulary_reference or {}).get("entry_ids")
-            if not references or not set(references).issubset(vocab_ids):
-                return False
-
-    # Domain-specific verification flags
     if not lesson.vocabulary_verified:
         return False
-    needs_sentence = any(_exercise_requires_domain(e, "sentence") for e in lesson.exercises)
-    if needs_sentence and not lesson.sentence_verified:
-        return False
-    needs_dialogue = any(_exercise_requires_domain(e, "dialogue") for e in lesson.exercises)
-    if needs_dialogue and not lesson.dialogue_verified:
-        return False
-    needs_illustration = any(_exercise_requires_domain(e, "illustration") for e in lesson.exercises)
-    if needs_illustration and not lesson.illustration_verified:
-        return False
+    return not any(
+        _exercise_requires_domain(exercise, "illustration")
+        for exercise in lesson.exercises
+    ) or lesson.illustration_verified
 
-    return True
+
+def _is_active_curriculum_lesson(db: Session, lesson: Lesson) -> bool:
+    unit = db.get(Unit, lesson.unit_id) if lesson.unit_id else None
+    return bool(
+        unit
+        and unit.course_id == "en_new"
+        and unit.curriculum_version == CURRICULUM_VERSION
+    )
 
 
 def lesson_is_playable(db: Session, lesson: Lesson) -> bool:
-    """Whether this lesson may be served to a learner in this environment.
-
-    Production (the default content environment) is unchanged: only
-    explicitly published lessons are playable, so unverified content is
-    rejected even if a lesson row is flagged published by mistake.
-
-    Development additionally serves structurally complete lessons from the
-    active blueprint, and only while GLOSSA_CONTENT_ENVIRONMENT=development.
-    Under a normal production configuration the provisional development
-    curriculum stays inaccessible because it is never published.
-    """
-    if lesson.is_published:
-        return True
-    if not development_content_enabled():
+    if not _is_active_curriculum_lesson(db, lesson):
         return False
-    if not _is_current_blueprint_lesson(lesson.id):
-        return False
-    # Development gameplay still requires the full planned exercise payload.
-    return is_lesson_structurally_ready(db, lesson)
+    if development_content_enabled():
+        return is_lesson_structurally_ready(db, lesson)
+    return is_lesson_publication_ready(db, lesson)
 
 
 def _lesson_not_playable_detail() -> str:
-    """403 detail for a lesson that is not playable in this environment."""
     if development_content_enabled():
         return "Lesson is not available in this development environment."
     return "Lesson is not published and awaiting verification."
 
 
 def lesson_publication_status(db: Session, lesson: Lesson) -> dict:
-    """Return publication-readiness details for a lesson."""
-    ready = is_lesson_publication_ready(db, lesson)
-    reasons = []
+    blockers = []
     if not lesson.is_published:
-        reasons.append("not_explicitly_published")
-    if not lesson.exercises:
-        reasons.append("no_exercises")
-    else:
-        planned = _planned_exercise_slots_for_lesson(lesson)
-        if len(lesson.exercises) < planned:
-            reasons.append(f"incomplete_exercises_{len(lesson.exercises)}_of_{planned}")
-        for exercise in lesson.exercises:
-            if not is_exercise_payload_valid(exercise):
-                reasons.append(f"invalid_payload_{exercise.id}")
-            if exercise.newari_script and not exercise.romanization:
-                reasons.append(f"missing_romanization_{exercise.id}")
+        blockers.append("not_explicitly_published")
+    if not is_lesson_structurally_ready(db, lesson):
+        blockers.append("curriculum_structure_incomplete")
     if not lesson.vocabulary_verified:
-        reasons.append("vocabulary_not_verified")
-    needs_sentence = any(_exercise_requires_domain(e, "sentence") for e in lesson.exercises)
-    if needs_sentence and not lesson.sentence_verified:
-        reasons.append("sentence_not_verified")
-    needs_dialogue = any(_exercise_requires_domain(e, "dialogue") for e in lesson.exercises)
-    if needs_dialogue and not lesson.dialogue_verified:
-        reasons.append("dialogue_not_verified")
-    needs_illustration = any(_exercise_requires_domain(e, "illustration") for e in lesson.exercises)
-    if needs_illustration and not lesson.illustration_verified:
-        reasons.append("illustration_not_verified")
+        blockers.append("vocabulary_not_verified")
+    if any(_exercise_requires_domain(exercise, "illustration") for exercise in lesson.exercises):
+        if not lesson.illustration_verified:
+            blockers.append("illustration_not_verified")
     return {
         "lesson_id": lesson.id,
         "is_published": lesson.is_published,
-        "publication_ready": ready,
+        "publication_ready": is_lesson_publication_ready(db, lesson),
         "content_environment": content_environment(),
-        "blockers": reasons,
+        "blockers": blockers,
     }
 
 
-
-def user_output(user: User) -> UserOut:
-    return UserOut(
-        id=user.id, name=user.name, email=user.email, hero_index=user.hero_index,
-        hero_class_name=user.hero_class_name, language_id=user.language_id,
-        active_course_id=user.active_course_id, xp=user.xp,
-        xp_to_next_level=xp_to_next(user), level=user.level,
-        streak=current_streak(user), words_found=user.words_found,
-        lessons_completed=user.lessons_completed,
+def _completed_lesson_ids(db: Session, user_id: int) -> list[str]:
+    return list(
+        db.scalars(
+            select(LessonProgress.lesson_id)
+            .join(Lesson, Lesson.id == LessonProgress.lesson_id)
+            .join(Unit, Unit.id == Lesson.unit_id)
+            .where(
+                LessonProgress.user_id == user_id,
+                LessonProgress.completed_at.is_not(None),
+                Unit.curriculum_version == CURRICULUM_VERSION,
+            )
+        ).all()
     )
 
 
-def auth_output(user: User) -> AuthOut:
-    return AuthOut(access_token=create_token(user.id), user=user_output(user))
+def _user_progress_output(db: Session, user: User) -> tuple[dict[str, int], int, int]:
+    completed_ids = _completed_lesson_ids(db, user.id)
+    lessons = {
+        lesson.id: lesson.content_data or {}
+        for lesson in db.scalars(
+            select(Lesson).where(Lesson.id.in_(completed_ids))
+        ).all()
+    } if completed_ids else {}
+    words = {
+        word_id
+        for content in lessons.values()
+        for word_id in content.get("new_word_ids", [])
+    }
+    return compute_hero_stats(completed_ids), len(words), len(completed_ids)
+
+
+def user_output(user: User, db: Session) -> UserOut:
+    level, xp_in_level, xp_required = level_state(user.xp)
+    hero_stats, words_found, lessons_completed = _user_progress_output(db, user)
+    return UserOut(
+        id=user.id,
+        name=user.name,
+        email=user.email,
+        hero_index=user.hero_index,
+        hero_class_name=hero_class(level),
+        language_id=user.language_id,
+        active_course_id=user.active_course_id,
+        xp=user.xp,
+        xp_in_level=xp_in_level,
+        xp_to_next_level=xp_required,
+        level=level,
+        streak=current_streak(user),
+        words_found=words_found,
+        lessons_completed=lessons_completed,
+        hero_stats=hero_stats,
+    )
+
+
+def auth_output(user: User, db: Session) -> AuthOut:
+    return AuthOut(access_token=create_token(user.id), user=user_output(user, db))
 
 
 def _resolve_course_id(course_id: str | None, user: User) -> str:
@@ -480,35 +312,15 @@ def _resolve_course_id(course_id: str | None, user: User) -> str:
 
 
 def lesson_statuses(db: Session, user: User, course_id: str | None = None) -> dict[str, str]:
-    """Calculate cleared/current/locked status for lessons in a course."""
+    """Return availability for each lesson in the active JSON curriculum."""
     cid = _resolve_course_id(course_id, user)
-
-    # Query playable lessons in this course, ordered by unit.sequence then lesson.sequence
-    lessons = list(
-        db.scalars(
-            select(Lesson)
-            .join(Unit, Lesson.unit_id == Unit.id)
-            .where(Unit.course_id == cid)
-            .order_by(Unit.sequence, Lesson.sequence)
-        ).all()
-    )
-    lessons = [
-        lesson
-        for lesson in lessons
-        if _is_current_blueprint_lesson(lesson.id) and lesson_is_playable(db, lesson)
-    ]
-    if not lessons:
+    if cid != "en_new":
         return {}
-
-    result = {}
-    for lesson in lessons:
-        result[lesson.id] = {
-            "completed": "cleared",
-            "available": "current",
-            "locked": "locked",
-            "unavailable": "locked",
-        }[_lesson_availability(db, user, lesson)]
-    return result
+    lessons = list(db.scalars(active_lessons_query()).all())
+    return {
+        lesson.id: _lesson_availability(db, user, lesson, lessons)
+        for lesson in lessons
+    }
 # ─── Health ────────────────────────────────────────────────────
 
 
@@ -547,7 +359,7 @@ def register(payload: Registration, db: Session = Depends(db_session)):
         db.rollback()
         raise HTTPException(status_code=409, detail="An account with this email already exists")
     db.refresh(user)
-    return auth_output(user)
+    return auth_output(user, db)
 
 
 @app.post("/api/v1/auth/login", response_model=AuthOut)
@@ -555,15 +367,15 @@ def login(payload: Credentials, db: Session = Depends(db_session)):
     user = db.scalar(select(User).where(User.email == payload.email.lower()))
     if user is None or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Email or password is incorrect")
-    return auth_output(user)
+    return auth_output(user, db)
 
 
 # ─── User profile ──────────────────────────────────────────────
 
 
 @app.get("/api/v1/me", response_model=UserOut)
-def get_me(user: User = Depends(current_user)):
-    return user_output(user)
+def get_me(user: User = Depends(current_user), db: Session = Depends(db_session)):
+    return user_output(user, db)
 
 
 @app.patch("/api/v1/me", response_model=UserOut)
@@ -576,7 +388,7 @@ def update_me(
         setattr(user, key, value)
     db.commit()
     db.refresh(user)
-    return user_output(user)
+    return user_output(user, db)
 
 
 @app.put("/api/v1/users/me/active-course", response_model=UserOut)
@@ -598,7 +410,7 @@ def update_active_course(
     user.active_course_id = course.id
     db.commit()
     db.refresh(user)
-    return user_output(user)
+    return user_output(user, db)
 
 
 # ─── Languages ─────────────────────────────────────────────────
@@ -651,33 +463,22 @@ def get_units_for_course(
     units = list(
         db.scalars(
             select(Unit)
-            .where(Unit.course_id == course_id, Unit.sequence.between(1, 5))
+            .where(
+                Unit.course_id == course_id,
+                Unit.curriculum_version == CURRICULUM_VERSION,
+            )
             .order_by(Unit.sequence)
         ).all()
     )
-
-    # Progress is based on authoritative completions, never failed attempts.
-    cleared_ids = set(
-        db.scalars(
-            select(LessonCompletion.lesson_id)
-            .join(Lesson, Lesson.id == LessonCompletion.lesson_id)
-            .join(Unit, Unit.id == Lesson.unit_id)
-            .where(
-                LessonCompletion.user_id == user.id,
-                LessonCompletion.passed == True,  # noqa: E712
-                Unit.course_id == course_id,
-            )
-        ).all()
-    )
+    completed_ids = set(_completed_lesson_ids(db, user.id))
 
     result = []
     for unit in units:
-        planned_ids = {
-            f"en_new_u{unit.sequence}_l{lesson_number}"
-            for lesson_number in range(1, 4)
-        }
+        planned_ids = set(
+            db.scalars(select(Lesson.id).where(Lesson.unit_id == unit.id)).all()
+        )
         total_lessons = len(planned_ids)
-        cleared_lessons = sum(1 for lesson_id in planned_ids if lesson_id in cleared_ids)
+        cleared_lessons = len(planned_ids & completed_ids)
         result.append(
             UnitOut(
                 id=unit.id,
@@ -706,20 +507,7 @@ def get_lessons(
         raise HTTPException(status_code=403, detail="Only English->Newari is available")
     cid = _resolve_course_id(course_id, user)
     statuses = lesson_statuses(db, user, cid)
-
-    lessons = list(
-        db.scalars(
-            select(Lesson)
-            .join(Unit, Lesson.unit_id == Unit.id)
-            .where(Unit.course_id == cid)
-            .order_by(Unit.sequence, Lesson.sequence)
-        ).all()
-    )
-    lessons = [
-        lesson
-        for lesson in lessons
-        if _is_current_blueprint_lesson(lesson.id) and lesson_is_playable(db, lesson)
-    ]
+    lessons = list(db.scalars(active_lessons_query()).all()) if cid == "en_new" else []
 
     return [
         {
@@ -729,16 +517,19 @@ def get_lessons(
             "title": l.title,
             "subtitle": l.subtitle,
             "exercise_type": l.exercise_type,
-            "status": statuses.get(l.id, "locked"),
+            "status": statuses.get(l.id, "unavailable"),
             "xp_reward": l.xp_reward,
             "word_count": l.word_count,
             "required_level": l.required_level,
             "is_published": l.is_published,
             "is_checkpoint": l.is_checkpoint,
-            "is_capstone": l.id.endswith("_l15"),
+            "is_capstone": bool(
+                (l.content_data or {}).get("number")
+                == len(load_curriculum()["lessons"])
+            ),
             "passing_score": l.passing_score,
-            "availability": _lesson_availability(db, user, l),
-            "planned_exercise_count": _planned_exercise_count_for_lesson(l),
+            "availability": _lesson_availability(db, user, l, lessons),
+            "planned_exercise_count": (l.content_data or {}).get("exercise_count", 0),
             "populated_exercise_count": len(l.exercises) if l.exercises else 0,
             "content_environment": content_environment(),
             "provisional": not is_lesson_publication_ready(db, l),
@@ -767,26 +558,16 @@ def get_course_progress(
 ):
     if course_id != "en_new":
         raise HTTPException(status_code=403, detail="Only English->Newari is available")
-    lesson_ids = [
-        f"en_new_u{unit}_l{lesson}"
-        for unit in range(1, 6)
-        for lesson in range(1, 4)
-    ]
-    completed_ids = set(
-        db.scalars(
-            select(LessonCompletion.lesson_id).where(
-                LessonCompletion.user_id == user.id,
-                LessonCompletion.lesson_id.in_(lesson_ids),
-                LessonCompletion.passed == True,  # noqa: E712
-            )
-        ).all()
+    lesson_ids = set(
+        db.scalars(select(Lesson.id).join(Unit).where(Unit.curriculum_version == CURRICULUM_VERSION)).all()
     )
+    completed_ids = set(_completed_lesson_ids(db, user.id))
     completed = len(completed_ids)
     return {
         "course_id": course_id,
         "completed_lessons": completed,
-        "total_lessons": 15,
-        "is_complete": completed == 15,
+        "total_lessons": len(lesson_ids),
+        "is_complete": completed == len(lesson_ids),
     }
 
 
@@ -801,21 +582,16 @@ def get_exercises(
     )
     if lesson is None:
         raise HTTPException(status_code=404, detail="Lesson not found")
-    # Enforce en_new course membership: retired course lessons are inaccessible.
-    lesson_unit = db.scalar(
-        select(Unit).where(Unit.id == lesson.unit_id)
-    )
-    if lesson_unit is None or lesson_unit.course_id != "en_new":
+    if not _is_active_curriculum_lesson(db, lesson):
         raise HTTPException(status_code=403, detail="Lesson is not available")
-    if not _is_current_blueprint_lesson(lesson.id):
-        raise HTTPException(status_code=403, detail="Lesson is not part of the active curriculum")
-    if lesson_statuses(db, user).get(lesson_id) == "locked":
+    availability = lesson_statuses(db, user).get(lesson_id)
+    if availability == "locked":
         raise HTTPException(status_code=403, detail="Lesson is locked")
     # Publication-readiness: unreviewed lessons remain unpublished and
     # their exercises are not served to learners. The development content
     # environment additionally serves structurally complete provisional
     # lessons from an isolated database.
-    if not lesson_is_playable(db, lesson):
+    if availability == "unavailable" or not lesson_is_playable(db, lesson):
         raise HTTPException(
             status_code=403,
             detail=_lesson_not_playable_detail(),
@@ -855,25 +631,219 @@ def get_exercises(
                 lesson_id=e.lesson_id,
                 exercise_type=e.exercise_type,
                 sequence=e.sequence,
+                xp=e.xp,
                 instruction=e.instruction,
                 prompt=e.prompt,
                 prompt_hint=e.prompt_hint,
                 image_key=e.image_key,
                 audio_key=e.audio_key,
-                newari_script=None,
+                newari_script=(
+                    e.newari_script
+                    if e.exercise_type == "wordToPicture"
+                    else None
+                ),
                 romanization=(
                     e.romanization
                     if e.exercise_type == "wordToPicture"
                     else None
                 ),
                 illustration_id=e.illustration_id,
-                vocabulary_reference=e.vocabulary_reference,
+                vocabulary_reference=None,
                 options=public_options,
                 word_tiles=public_word_tiles,
                 dialogue_structure=e.dialogue_structure,
+                layout=deepcopy((e.content_data or {}).get("layout")),
+                variant=(e.content_data or {}).get("variant"),
+                planned_type=(e.content_data or {}).get("planned_type"),
+                phrase_target_en=(e.content_data or {}).get("phrase_target_en"),
             )
         )
     return exercises
+
+
+def _review_state(submission: ExerciseSubmission) -> dict:
+    value = (submission.result_payload or {}).get("_review_state", {})
+    return value if isinstance(value, dict) else {}
+
+
+def _lesson_run_state(
+    db: Session,
+    lesson: Lesson,
+    run_id: str,
+    user_id: int,
+    *,
+    resumed: bool,
+) -> LessonRunStateOut:
+    exercises = sorted(lesson.exercises, key=lambda exercise: exercise.sequence or 0)
+    submissions = list(
+        db.scalars(
+            select(ExerciseSubmission).where(
+                ExerciseSubmission.user_id == user_id,
+                ExerciseSubmission.lesson_id == lesson.id,
+                ExerciseSubmission.run_id == run_id,
+            )
+        ).all()
+    )
+    by_id = {submission.exercise_id: submission for submission in submissions}
+    answered_ids = [
+        exercise.id
+        for exercise in exercises
+        if (submission := by_id.get(exercise.id)) is not None
+        and submission.is_final
+    ]
+    original_results = {
+        exercise.id: submission.correct is True
+        for exercise in exercises
+        if (submission := by_id.get(exercise.id)) is not None
+        and submission.is_final
+    }
+    review_queue = [
+        exercise.id
+        for exercise in exercises
+        if (submission := by_id.get(exercise.id)) is not None
+        and exercise.exercise_type != "matchWords"
+        and submission.is_final
+        and submission.correct is False
+        and not _review_state(submission).get("corrected", False)
+    ]
+    corrected_ids = [
+        exercise.id
+        for exercise in exercises
+        if (submission := by_id.get(exercise.id)) is not None
+        and _review_state(submission).get("corrected", False)
+    ]
+    matched_pairs = {
+        exercise.id: submission.matched_pairs
+        for exercise in exercises
+        if exercise.exercise_type == "matchWords"
+        and (submission := by_id.get(exercise.id)) is not None
+        and submission.matched_pairs
+    }
+    return LessonRunStateOut(
+        run_id=run_id,
+        answered_exercise_ids=answered_ids,
+        original_results=original_results,
+        review_queue=review_queue,
+        corrected_exercise_ids=corrected_ids,
+        matched_pairs_by_exercise=matched_pairs,
+        needs_completion=(
+            resumed
+            and len(answered_ids) == len(exercises)
+            and not review_queue
+        ),
+    )
+
+
+def _require_owned_run(
+    db: Session,
+    user: User,
+    lesson_id: str,
+    run_id: str,
+) -> LessonRun:
+    run = db.get(LessonRun, run_id)
+    if run is None or run.user_id != user.id or run.lesson_id != lesson_id:
+        raise HTTPException(status_code=404, detail="Lesson run not found")
+    return run
+
+
+@app.post(
+    "/api/v1/lessons/{lesson_id}/start",
+    response_model=LessonRunStateOut,
+)
+def start_lesson_run(
+    lesson_id: str,
+    db: Session = Depends(db_session),
+    user: User = Depends(current_user),
+):
+    user = db.scalar(
+        select(User)
+        .where(User.id == user.id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    lesson = db.scalar(
+        select(Lesson)
+        .where(Lesson.id == lesson_id)
+        .options(selectinload(Lesson.exercises), selectinload(Lesson.unit))
+    )
+    if lesson is None:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    if not _is_active_curriculum_lesson(db, lesson):
+        raise HTTPException(status_code=403, detail="Lesson is not available")
+    availability = lesson_statuses(db, user).get(lesson_id)
+    if availability == "locked":
+        raise HTTPException(status_code=403, detail="Lesson is locked")
+    if availability == "unavailable" or not lesson_is_playable(db, lesson):
+        raise HTTPException(status_code=403, detail=_lesson_not_playable_detail())
+
+    completed_runs = set(
+        db.scalars(
+            select(Attempt.idempotency_key).where(
+                Attempt.user_id == user.id,
+                Attempt.lesson_id == lesson_id,
+                Attempt.idempotency_key.is_not(None),
+            )
+        ).all()
+    )
+    active_runs = list(
+        db.scalars(
+            select(LessonRun)
+            .where(
+                LessonRun.user_id == user.id,
+                LessonRun.lesson_id == lesson_id,
+            )
+            .order_by(LessonRun.started_at.desc())
+        ).all()
+    )
+    active_run = next(
+        (run for run in active_runs if run.run_id not in completed_runs),
+        None,
+    )
+    resumed = active_run is not None
+    if active_run is None:
+        active_run = LessonRun(
+            run_id=uuid.uuid4().hex,
+            user_id=user.id,
+            lesson_id=lesson_id,
+        )
+        db.add(active_run)
+        db.commit()
+        db.refresh(active_run)
+    run_id = active_run.run_id
+
+    return _lesson_run_state(
+        db, lesson, run_id, user.id, resumed=resumed
+    )
+
+
+@app.get("/api/v1/lessons/{lesson_id}/runs/{run_id}/review-queue")
+def get_review_queue(
+    lesson_id: str,
+    run_id: str,
+    db: Session = Depends(db_session),
+    user: User = Depends(current_user),
+):
+    lesson = db.scalar(
+        select(Lesson)
+        .where(Lesson.id == lesson_id)
+        .options(selectinload(Lesson.exercises), selectinload(Lesson.unit))
+    )
+    if lesson is None:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    if not _is_active_curriculum_lesson(db, lesson):
+        raise HTTPException(status_code=403, detail="Lesson is not available")
+    _require_owned_run(db, user, lesson_id, run_id)
+    availability = lesson_statuses(db, user).get(lesson_id)
+    if availability == "locked":
+        raise HTTPException(status_code=403, detail="Lesson is locked")
+    if availability == "unavailable" or not lesson_is_playable(db, lesson):
+        raise HTTPException(status_code=403, detail=_lesson_not_playable_detail())
+
+    state = _lesson_run_state(db, lesson, run_id, user.id, resumed=True)
+    return {
+        "review_queue": state.review_queue,
+        "corrected_exercise_ids": state.corrected_exercise_ids,
+    }
 
 
 @app.post("/api/v1/lessons/{lesson_id}/attempts", response_model=LessonAttemptOut)
@@ -883,14 +853,7 @@ def submit_attempt(
     db: Session = Depends(db_session),
     user: User = Depends(current_user),
 ):
-    """Submit answers for all exercises in a lesson.
-
-    Server-authoritative scoring: the client does not provide scores,
-    completion flags, or XP. Supports variable exercise counts,
-    idempotency (via idempotency_key), and legitimate retries.
-    XP is awarded only on the first passing attempt (100% for ordinary
-    lessons, 80%+ for checkpoints).
-    """
+    """Finalize a run after the server has recorded one answer per exercise."""
     user = db.scalar(
         select(User)
         .where(User.id == user.id)
@@ -898,285 +861,232 @@ def submit_attempt(
         .execution_options(populate_existing=True)
     )
     lesson = db.scalar(
-        select(Lesson).where(Lesson.id == lesson_id).options(selectinload(Lesson.exercises))
+        select(Lesson)
+        .where(Lesson.id == lesson_id)
+        .options(selectinload(Lesson.exercises), selectinload(Lesson.unit))
     )
     if lesson is None:
         raise HTTPException(status_code=404, detail="Lesson not found")
-
-    # Enforce en_new course membership: retired course lessons are inaccessible.
-    lesson_unit = db.scalar(
-        select(Unit).where(Unit.id == lesson.unit_id)
-    )
-    if lesson_unit is None or lesson_unit.course_id != "en_new":
+    if not _is_active_curriculum_lesson(db, lesson):
         raise HTTPException(status_code=403, detail="Lesson is not available")
-    if not _is_current_blueprint_lesson(lesson.id):
-        raise HTTPException(status_code=403, detail="Lesson is not part of the active curriculum")
-
-    # Publication check: unreviewed lessons cannot be played.
-    if not lesson_is_playable(db, lesson):
+    _require_owned_run(db, user, lesson_id, payload.run_id)
+    status_value = lesson_statuses(db, user).get(lesson_id)
+    if status_value == "locked":
+        raise HTTPException(status_code=403, detail="Lesson is locked")
+    if status_value == "unavailable" or not lesson_is_playable(db, lesson):
         raise HTTPException(
             status_code=403,
             detail=_lesson_not_playable_detail(),
         )
 
-    # Lock check: prerequisites must be completed.
-    if lesson_statuses(db, user).get(lesson_id) == "locked":
-        raise HTTPException(status_code=403, detail="Lesson is locked")
-
-    exercises = {e.id: e for e in lesson.exercises}
+    exercises = sorted(lesson.exercises, key=lambda exercise: exercise.sequence or 0)
     if not exercises:
         raise HTTPException(status_code=422, detail="Lesson has no exercises")
-
-    # Build submitted answers map
-    submitted: dict[str, ExerciseAnswerIn] = {}
-    for answer in payload.answers:
-        if answer.exercise_id in submitted:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Duplicate response for exercise {answer.exercise_id}",
-            )
-        submitted[answer.exercise_id] = answer
-
-    # Validate: exactly one response per playable exercise
-    submitted_ids = set(submitted.keys())
-    exercise_ids = set(exercises.keys())
-    if submitted_ids != exercise_ids:
-        missing = exercise_ids - submitted_ids
-        unknown = submitted_ids - exercise_ids
-        msg_parts = []
-        if missing:
-            msg_parts.append(f"Missing responses for: {sorted(missing)}")
-        if unknown:
-            msg_parts.append(f"Unknown exercise ids: {sorted(unknown)}")
-        raise HTTPException(status_code=422, detail="; ".join(msg_parts))
-
-    # Validate each answer using the exercise engine
-    results: list[ExerciseResultOut] = []
-    correct_count = 0
-    for exercise_id, exercise in exercises.items():
-        answer = submitted[exercise_id]
-        # Build exercise config dict for the validator
-        ex_config = {
-            "exercise_type": exercise.exercise_type,
-            "options": exercise.options or [],
-            "pairs": exercise.pairs,
-            "answer_id": exercise.answer_id,
-            "correct_answer_config": exercise.correct_answer_config or {},
-            "word_tiles": exercise.word_tiles or [],
-            "dialogue_structure": exercise.dialogue_structure,
-        }
-
-        # Extract submitted payload based on exercise type
-        if exercise.exercise_type == "matchWords":
-            submitted_payload = answer.selected_pairs
-        elif exercise.exercise_type in ("translate", "wordOrder"):
-            submitted_payload = answer.selected_tile_ids
-        else:
-            submitted_payload = answer.selected_option_id
-
-        validation = validate_exercise(
-            exercise.exercise_type, submitted_payload, ex_config
+    existing = db.scalar(
+        select(Attempt).where(
+            Attempt.user_id == user.id,
+            Attempt.idempotency_key == payload.run_id,
         )
-        if not validation.valid:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Exercise {exercise_id}: {validation.error}",
+    )
+    if existing is not None:
+        if existing.lesson_id != lesson_id or not existing.result_payload:
+            raise HTTPException(status_code=409, detail="Run id was already used")
+        return LessonAttemptOut.model_validate(existing.result_payload)
+
+    submissions = list(
+        db.scalars(
+            select(ExerciseSubmission).where(
+                ExerciseSubmission.user_id == user.id,
+                ExerciseSubmission.lesson_id == lesson_id,
+                ExerciseSubmission.run_id == payload.run_id,
+                ExerciseSubmission.is_final == True,  # noqa: E712
             )
-        is_correct = validation.correct
-        if is_correct:
-            correct_count += 1
-        results.append(
-            ExerciseResultOut(
-                exercise_id=exercise_id,
-                exercise_type=exercise.exercise_type,
-                correct=is_correct,
-            )
+        ).all()
+    )
+    submission_by_id = {submission.exercise_id: submission for submission in submissions}
+    expected_ids = {exercise.id for exercise in exercises}
+    if set(submission_by_id) != expected_ids:
+        raise HTTPException(
+            status_code=409,
+            detail="Every exercise must be finalized before the lesson can be completed",
+        )
+
+    review_queue = [
+        exercise.id
+        for exercise in exercises
+        if exercise.exercise_type != "matchWords"
+        and submission_by_id[exercise.id].correct is False
+        and not _review_state(submission_by_id[exercise.id]).get(
+            "corrected", False
+        )
+    ]
+    if review_queue:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": "Complete mistake review before finishing the lesson",
+                "review_queue": review_queue,
+            },
         )
 
     total_questions = len(exercises)
-    passing_score = lesson.passing_score or 100
-    # is_correct_all = 100% correct (backward-compatible meaning)
-    is_correct_all = correct_count == total_questions
-    # passed = meets the lesson's passing threshold (80% for checkpoints, 100% ordinary)
-    passed = correct_count * 100 >= total_questions * passing_score
+    correct_count = sum(submission.correct is True for submission in submissions)
+    earned = sum(
+        exercise.xp
+        for exercise in exercises
+        if submission_by_id[exercise.id].correct is True
+    )
+    lesson_data = lesson.content_data or {}
+    passed = lesson_passed(lesson_data, correct_count, total_questions)
+    progress = db.scalar(
+        select(LessonProgress)
+        .where(
+            LessonProgress.user_id == user.id,
+            LessonProgress.lesson_id == lesson_id,
+        )
+        .with_for_update()
+    )
+    if progress is None:
+        progress = LessonProgress(user_id=user.id, lesson_id=lesson_id)
+        db.add(progress)
+        db.flush()
+    completed_before = progress.completed_at is not None
+    previous_best = progress.best_earned_xp
+    credit = credited_xp(earned, previous_best, completed_before=completed_before)
+    old_level = level_state(user.xp)[0]
+    progress.attempt_count += 1
+    progress.best_earned_xp = max(progress.best_earned_xp, earned)
+    progress.best_correct_answers = max(progress.best_correct_answers, correct_count)
+    newly_completed = passed and not completed_before
+    if newly_completed:
+        progress.completed_at = datetime.now(timezone.utc)
+    user.xp += credit
+    if user.last_activity_date != datetime.now(timezone.utc).date():
+        today = datetime.now(timezone.utc).date()
+        yesterday = today - timedelta(days=1)
+        user.streak = user.streak + 1 if user.last_activity_date == yesterday else 1
+        user.last_activity_date = today
+    new_level, _, _ = level_state(user.xp)
+    user.level = new_level
+    user.hero_class_name = hero_class(new_level)
+
+    if newly_completed:
+        db.add(
+            LessonCompletion(
+                user_id=user.id,
+                lesson_id=lesson_id,
+                score=correct_count / total_questions,
+                passed=True,
+                xp_earned=credit,
+                correct_answers=correct_count,
+                total_questions=total_questions,
+            )
+        )
+
+    exercise_results = []
+    missed_ids = set()
+    mistakes_corrected = 0
+    mastered_exercises = 0
+    for exercise in exercises:
+        submission = submission_by_id[exercise.id]
+        review_state = _review_state(submission)
+        review_corrected = bool(review_state.get("corrected", False))
+        review_attempts = int(review_state.get("attempts", 0))
+        mastered = submission.correct is True or review_corrected
+        mistakes_corrected += int(review_corrected)
+        mastered_exercises += int(mastered)
+        missed_ids.update(submission.missed_word_ids or [])
+        exercise_results.append(
+            ExerciseResultOut(
+                exercise_id=exercise.id,
+                exercise_type=exercise.exercise_type,
+                correct=bool(submission.correct),
+                correct_answer=(
+                    _correct_answer(exercise)
+                    if submission.correct is False
+                    and exercise.exercise_type != "matchWords"
+                    else None
+                ),
+                xp=exercise.xp,
+                mistake_count=(submission.result_payload or {}).get(
+                    "mistake_count", 0
+                ),
+                review_corrected=review_corrected,
+                review_attempts=review_attempts,
+                mastered=mastered,
+            )
+        )
+    word_map = {word["id"]: word for word in load_curriculum()["words"]}
+    missed_vocabulary = [
+        {
+            "id": word_id,
+            "newari": word_map[word_id]["newari"],
+            "romanization": word_map[word_id]["roman"],
+            "english": word_map[word_id]["english"],
+        }
+        for word_id in sorted(missed_ids)
+        if word_id in word_map
+    ]
+    stat_gains = dict(lesson_data.get("stat_gains", {})) if newly_completed else {}
+    total_lesson_ids = _completed_lesson_ids(db, user.id)
+    if newly_completed:
+        total_lesson_ids.append(lesson_id)
+    hero_stats = compute_hero_stats(total_lesson_ids)
+    response = LessonAttemptOut(
+        lesson_id=lesson_id,
+        attempt_number=progress.attempt_count,
+        is_correct=correct_count == total_questions,
+        correct_answers=correct_count,
+        total_questions=total_questions,
+        mistakes_corrected=mistakes_corrected,
+        mastered_exercises=mastered_exercises,
+        xp_earned=credit,
+        earned_xp=earned,
+        xp_max=lesson.xp_reward,
+        credited_xp=credit,
+        score=correct_count / total_questions,
+        passing_threshold=round(
+            float(lesson_data.get("pass_threshold") or 0) * 100
+        ),
+        passed=passed,
+        results=exercise_results,
+        already_completed=completed_before,
+        completed=completed_before or passed,
+        missed_vocabulary=missed_vocabulary,
+        stat_gains=stat_gains,
+        hero_stats=hero_stats,
+        old_level=old_level,
+        new_level=new_level,
+        level_up=new_level > old_level,
+    )
     submission_hash = hashlib.sha256(
         json.dumps(
-            [answer.model_dump(exclude_none=True) for answer in sorted(payload.answers, key=lambda item: item.exercise_id)],
+            {
+                exercise_id: submission_by_id[exercise_id].selected_answer
+                for exercise_id in sorted(submission_by_id)
+            },
             sort_keys=True,
             separators=(",", ":"),
         ).encode("utf-8")
     ).hexdigest()
-
-    # Determine attempt number
-    existing_attempts = list(
-        db.scalars(
-            select(Attempt).where(
-                Attempt.user_id == user.id, Attempt.lesson_id == lesson_id
-            ).order_by(Attempt.attempt_number)
-        ).all()
-    )
-    attempt_number = (existing_attempts[-1].attempt_number + 1) if existing_attempts else 1
-
-    # Check idempotency: if the same idempotency_key was already used by this user, return the prior result
-    if payload.idempotency_key:
-        existing_by_key = db.scalar(
-            select(Attempt).where(
-                Attempt.idempotency_key == payload.idempotency_key,
-                Attempt.user_id == user.id,
-            )
-        )
-        if existing_by_key:
-            if existing_by_key.lesson_id != lesson_id:
-                raise HTTPException(status_code=409, detail="Idempotency key was used for another lesson")
-            if existing_by_key.submission_hash:
-                conflict = existing_by_key.submission_hash != submission_hash
-            else:
-                conflict = (
-                    existing_by_key.correct_answers != correct_count
-                    or existing_by_key.total_questions != total_questions
-                )
-            if conflict:
-                raise HTTPException(status_code=409, detail="Idempotency key was used with a different submission")
-            db.refresh(user)
-            return LessonAttemptOut(
-                lesson_id=lesson_id,
-                attempt_number=existing_by_key.attempt_number,
-                is_correct=existing_by_key.is_correct,
-                correct_answers=existing_by_key.correct_answers,
-                total_questions=existing_by_key.total_questions,
-                xp_earned=existing_by_key.xp_earned,
-                score=existing_by_key.correct_answers / max(existing_by_key.total_questions, 1),
-                passing_threshold=existing_by_key.passing_threshold or 100,
-                passed=existing_by_key.correct_answers * 100 >= existing_by_key.total_questions * (existing_by_key.passing_threshold or 100),
-                results=[],
-                already_completed=True,
-            )
-
-    # Award XP only on the first passing attempt (not every correct attempt)
-    xp_earned = 0
-    already_completed = db.scalar(
-        select(LessonCompletion).where(
-            LessonCompletion.user_id == user.id,
-            LessonCompletion.lesson_id == lesson_id,
-        )
-    )
-    if passed and already_completed is None:
-        xp_earned = lesson.xp_reward
-        user.xp += xp_earned
-        user.words_found += lesson.word_count
-        user.lessons_completed += 1
-        today = datetime.now(timezone.utc).date()
-        if user.last_activity_date != today:
-            yesterday = today - timedelta(days=1)
-            user.streak = (
-                user.streak + 1 if user.last_activity_date == yesterday else 1
-            )
-            user.last_activity_date = today
-        while user.xp >= xp_to_next(user):
-            user.level += 1
-        levels = [(2, "Traveler"), (4, "Speaker"), (6, "Guardian")]
-        user.hero_class_name = (
-            "Master"
-            if user.level >= 7
-            else next(
-                (title for limit, title in levels if user.level <= limit),
-                "Master",
-            )
-        )
-
-    # Create the attempt record (always, for history)
-    attempt = Attempt(
-        user_id=user.id,
-        lesson_id=lesson_id,
-        attempt_number=attempt_number,
-        idempotency_key=payload.idempotency_key,
-        submission_hash=submission_hash,
-        is_correct=is_correct_all,
-        passing_threshold=passing_score,
-        correct_answers=correct_count,
-        total_questions=total_questions,
-        xp_earned=xp_earned,
-    )
-    db.add(attempt)
-
-    # Create the completion record (only on first pass, idempotent)
-    if passed and already_completed is None:
-        completion = LessonCompletion(
+    db.add(
+        Attempt(
             user_id=user.id,
             lesson_id=lesson_id,
-            score=correct_count / total_questions if total_questions > 0 else 0.0,
-            passed=True,
-            xp_earned=xp_earned,
+            attempt_number=progress.attempt_count,
+            idempotency_key=payload.run_id,
+            submission_hash=submission_hash,
+            is_correct=correct_count == total_questions,
+            passing_threshold=response.passing_threshold,
             correct_answers=correct_count,
             total_questions=total_questions,
+            xp_earned=credit,
+            earned_xp=earned,
+            result_payload=response.model_dump(),
         )
-        db.add(completion)
-
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        # Duplicate idempotency key (scoped to user) or concurrent completion
-        # blocked by the unique constraint on (user_id, lesson_id).
-        existing_by_key = None
-        if payload.idempotency_key:
-            existing_by_key = db.scalar(
-                select(Attempt).where(
-                    Attempt.idempotency_key == payload.idempotency_key,
-                    Attempt.user_id == user.id,
-                )
-            )
-        if existing_by_key:
-            return LessonAttemptOut(
-                lesson_id=lesson_id,
-                attempt_number=existing_by_key.attempt_number,
-                is_correct=existing_by_key.is_correct,
-                correct_answers=existing_by_key.correct_answers,
-                total_questions=existing_by_key.total_questions,
-                xp_earned=existing_by_key.xp_earned,
-                score=existing_by_key.correct_answers / max(existing_by_key.total_questions, 1),
-                passing_threshold=existing_by_key.passing_threshold or 100,
-                passed=existing_by_key.correct_answers * 100 >= existing_by_key.total_questions * (existing_by_key.passing_threshold or 100),
-                results=[],
-                already_completed=True,
-            )
-        # Check if a completion already exists (concurrent submission race)
-        existing_completion = db.scalar(
-            select(LessonCompletion).where(
-                LessonCompletion.user_id == user.id,
-                LessonCompletion.lesson_id == lesson_id,
-            )
-        )
-        if existing_completion:
-            return LessonAttemptOut(
-                lesson_id=lesson_id,
-                attempt_number=attempt_number,
-                is_correct=is_correct_all,
-                correct_answers=correct_count,
-                total_questions=total_questions,
-                xp_earned=existing_completion.xp_earned,
-                score=correct_count / total_questions,
-                passing_threshold=passing_score,
-                passed=True,
-                results=[],
-                already_completed=True,
-            )
-        raise HTTPException(status_code=409, detail="Concurrent submission conflict")
-
-    db.refresh(user)
-    return LessonAttemptOut(
-        lesson_id=lesson_id,
-        attempt_number=attempt_number,
-        is_correct=is_correct_all,
-        correct_answers=correct_count,
-        total_questions=total_questions,
-        xp_earned=xp_earned,
-        score=correct_count / total_questions,
-        passing_threshold=passing_score,
-        passed=passed,
-        results=results,
-        already_completed=already_completed is not None,
     )
+    db.commit()
+    return response
 
 
 @app.post("/api/v1/lessons/{lesson_id}/answer")
@@ -1186,57 +1096,357 @@ def check_answer(
     db: Session = Depends(db_session),
     user: User = Depends(current_user),
 ):
+    """Validate an original answer, review answer, or one matching pair."""
+    user = db.scalar(
+        select(User)
+        .where(User.id == user.id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
     exercise = db.get(Exercise, answer.exercise_id)
     if exercise is None or exercise.lesson_id != lesson_id:
         raise HTTPException(status_code=404, detail="Exercise not found")
-    lesson = db.get(Lesson, lesson_id)
+    lesson = db.scalar(
+        select(Lesson)
+        .where(Lesson.id == lesson_id)
+        .options(selectinload(Lesson.exercises), selectinload(Lesson.unit))
+    )
     if lesson is None:
         raise HTTPException(status_code=404, detail="Lesson not found")
-    # Enforce en_new course membership.
-    lesson_unit = db.scalar(
-        select(Unit).where(Unit.id == lesson.unit_id)
-    )
-    if lesson_unit is None or lesson_unit.course_id != "en_new":
+    if not _is_active_curriculum_lesson(db, lesson):
         raise HTTPException(status_code=403, detail="Lesson is not available")
-    if not _is_current_blueprint_lesson(lesson.id):
-        raise HTTPException(status_code=403, detail="Lesson is not part of the active curriculum")
-    # Publication check: unreviewed lessons cannot be played or probed.
-    if not lesson_is_playable(db, lesson):
+    availability = lesson_statuses(db, user).get(lesson_id)
+    if availability == "locked":
+        raise HTTPException(status_code=403, detail="Lesson is locked")
+    if availability == "unavailable" or not lesson_is_playable(db, lesson):
         raise HTTPException(
             status_code=403,
             detail=_lesson_not_playable_detail(),
         )
-    if lesson_statuses(db, user).get(lesson_id) == "locked":
-        raise HTTPException(status_code=403, detail="Lesson is locked")
+    if answer.run_id != answer.run_id.strip():
+        raise HTTPException(status_code=422, detail="Invalid run id")
 
-    # Build exercise config dict for the validator
-    ex_config = {
-        "exercise_type": exercise.exercise_type,
-        "options": exercise.options or [],
-        "pairs": exercise.pairs,
-        "answer_id": exercise.answer_id,
-        "correct_answer_config": exercise.correct_answer_config or {},
-        "word_tiles": exercise.word_tiles or [],
-        "dialogue_structure": exercise.dialogue_structure,
-    }
-
-    # Extract submitted payload based on exercise type
-    if exercise.exercise_type == "matchWords":
-        submitted_payload = answer.selected_pairs
-    elif exercise.exercise_type in ("translate", "wordOrder"):
-        submitted_payload = answer.selected_tile_ids
+    run = db.get(LessonRun, answer.run_id)
+    if run is not None:
+        _require_owned_run(db, user, lesson_id, answer.run_id)
     else:
-        submitted_payload = answer.selected_option_id
-
-    validation = validate_exercise(
-        exercise.exercise_type, submitted_payload, ex_config, feedback=True
-    )
-    if not validation.valid:
-        raise HTTPException(
-            status_code=422,
-            detail=validation.error or "Invalid submission",
+        run = LessonRun(
+            run_id=answer.run_id,
+            user_id=user.id,
+            lesson_id=lesson_id,
         )
-    return {"correct": validation.correct}
+        db.add(run)
+        try:
+            db.flush()
+        except IntegrityError:
+            db.rollback()
+            _require_owned_run(db, user, lesson_id, answer.run_id)
+
+    completed_run = db.scalar(
+        select(Attempt.id).where(
+            Attempt.user_id == user.id,
+            Attempt.idempotency_key == answer.run_id,
+        )
+    )
+    if completed_run is not None:
+        raise HTTPException(status_code=409, detail="Lesson run is already complete")
+
+    existing = db.scalar(
+        select(ExerciseSubmission)
+        .where(
+            ExerciseSubmission.user_id == user.id,
+            ExerciseSubmission.lesson_id == lesson_id,
+            ExerciseSubmission.run_id == answer.run_id,
+            ExerciseSubmission.exercise_id == exercise.id,
+        )
+        .with_for_update()
+    )
+    if answer.phase == "review" and existing is None:
+        raise HTTPException(
+            status_code=409,
+            detail="This exercise has no original answer to review",
+        )
+    selected = answer.model_dump(
+        exclude_none=True,
+        exclude={"run_id", "exercise_id", "submission_id", "phase"},
+    )
+    request_answer = {"phase": answer.phase, **selected}
+    request_history = {}
+    if existing is not None:
+        stored_answer = existing.selected_answer or {}
+        if isinstance(stored_answer, dict):
+            stored_history = stored_answer.get("_submission_requests", {})
+            if isinstance(stored_history, dict):
+                request_history = dict(stored_history)
+        if answer.submission_id and answer.submission_id in request_history:
+            previous = request_history[answer.submission_id]
+            if previous.get("answer") != request_answer:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Submission id was already used for a different answer",
+                )
+            return previous["response"]
+        if answer.phase == "review":
+            if answer.submission_id is None:
+                raise HTTPException(
+                    status_code=422,
+                    detail="A review submission id is required",
+                )
+            if exercise.exercise_type == "matchWords":
+                raise HTTPException(
+                    status_code=409,
+                    detail="Matching exercises are corrected during the original lesson",
+                )
+            if not existing.is_final or existing.correct is not False:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Only an originally incorrect exercise can be reviewed",
+                )
+            review_state = _review_state(existing)
+            if review_state.get("corrected", False):
+                raise HTTPException(
+                    status_code=409,
+                    detail="This exercise has already been corrected",
+                )
+            if (
+                answer.selected_option_id is None
+                or answer.selected_pairs is not None
+                or answer.selected_tile_ids is not None
+            ):
+                raise HTTPException(
+                    status_code=422,
+                    detail="Select exactly one review answer",
+                )
+            option_ids = {option["id"] for option in (exercise.options or [])}
+            if answer.selected_option_id not in option_ids:
+                raise HTTPException(status_code=422, detail="Unknown answer option")
+
+            is_correct = answer.selected_option_id == exercise.answer_id
+            review_attempts = int(review_state.get("attempts", 0)) + 1
+            review_state = {
+                **review_state,
+                "attempts": review_attempts,
+                "corrected": is_correct,
+            }
+            response = {
+                "correct": is_correct,
+                "is_final": True,
+                "phase": "review",
+                "review_complete": is_correct,
+                "review_attempt": review_attempts,
+                "matched_pairs": {},
+                "xp_earned": 0,
+                "correct_answer": (
+                    _correct_answer(exercise) if not is_correct else None
+                ),
+                "correct_option_id": (
+                    exercise.answer_id if not is_correct else None
+                ),
+                "missed_word_ids": existing.missed_word_ids or [],
+                "mistake_count": 0,
+            }
+            request_history[answer.submission_id] = {
+                "answer": request_answer,
+                "response": response,
+            }
+            existing.selected_answer = {
+                "_answer": selected,
+                "_submission_requests": request_history,
+            }
+            existing.result_payload = {
+                **(existing.result_payload or {}),
+                "_review_state": review_state,
+            }
+            try:
+                db.commit()
+            except IntegrityError:
+                db.rollback()
+                saved = db.scalar(
+                    select(ExerciseSubmission).where(
+                        ExerciseSubmission.user_id == user.id,
+                        ExerciseSubmission.lesson_id == lesson_id,
+                        ExerciseSubmission.run_id == answer.run_id,
+                        ExerciseSubmission.exercise_id == exercise.id,
+                    )
+                )
+                saved_requests = (
+                    (saved.selected_answer or {}).get("_submission_requests", {})
+                    if saved and isinstance(saved.selected_answer, dict)
+                    else {}
+                )
+                saved_request = saved_requests.get(answer.submission_id)
+                if saved_request and saved_request.get("answer") == request_answer:
+                    return saved_request["response"]
+                raise HTTPException(
+                    status_code=409,
+                    detail="This review answer was already submitted",
+                )
+            return response
+        if existing.is_final:
+            raise HTTPException(status_code=409, detail="This exercise was already answered")
+        if not answer.submission_id and (
+            stored_answer.get("_answer") == selected or stored_answer == selected
+        ):
+            return existing.result_payload
+        if exercise.exercise_type != "matchWords":
+            raise HTTPException(status_code=409, detail="This exercise was already answered")
+    if exercise.exercise_type == "matchWords":
+        if answer.selected_pairs is None or len(answer.selected_pairs) != 1:
+            raise HTTPException(status_code=422, detail="Select exactly one pair")
+        dev_id, eng_id = next(iter(answer.selected_pairs.items()))
+        correct_pairs = (exercise.correct_answer_config or {}).get("pairs", {})
+        if dev_id not in correct_pairs or eng_id not in set(correct_pairs.values()):
+            raise HTTPException(status_code=422, detail="Unknown matching option")
+        prior_pairs = {}
+        if existing is not None:
+            prior_pairs = existing.matched_pairs
+        if dev_id in prior_pairs or eng_id in prior_pairs.values():
+            raise HTTPException(status_code=422, detail="A matched word cannot be reused")
+        is_correct = correct_pairs[dev_id] == eng_id
+        matched_pairs = dict(prior_pairs)
+        if is_correct:
+            matched_pairs[dev_id] = eng_id
+        previous_mistakes = (
+            (existing.result_payload or {}).get("mistake_count", 0)
+            if existing is not None
+            else 0
+        )
+        mistake_count = previous_mistakes + (0 if is_correct else 1)
+        finalized = len(matched_pairs) == len(correct_pairs)
+        previous_missed = list(existing.missed_word_ids or []) if existing else []
+        missed_ids = list(dict.fromkeys(
+            previous_missed
+            + (
+                [
+                    (exercise.correct_answer_config or {})
+                    .get("word_ids_by_devanagari", {})
+                    .get(dev_id)
+                ]
+                if not is_correct
+                else []
+            )
+        ))
+        missed_ids = [item for item in missed_ids if item]
+        response = {
+            "correct": finalized and mistake_count == 0,
+            "pair_correct": is_correct,
+            "is_final": finalized,
+            "matched_pairs": matched_pairs,
+            "xp_earned": exercise.xp if finalized and mistake_count == 0 else 0,
+            "correct_answer": None,
+            "missed_word_ids": missed_ids,
+            "mistake_count": mistake_count,
+        }
+    else:
+        if answer.selected_option_id is None or answer.selected_pairs is not None:
+            raise HTTPException(status_code=422, detail="Select exactly one answer")
+        option_ids = {option["id"] for option in (exercise.options or [])}
+        if answer.selected_option_id not in option_ids:
+            raise HTTPException(status_code=422, detail="Unknown answer option")
+        is_correct = answer.selected_option_id == exercise.answer_id
+        target_word_id = (exercise.content_data or {}).get("target_word_id")
+        missed_ids = [] if is_correct or not target_word_id else [target_word_id]
+        response = {
+            "correct": is_correct,
+            "pair_correct": None,
+            "is_final": True,
+            "matched_pairs": {},
+            "xp_earned": exercise.xp if is_correct else 0,
+            "correct_answer": _correct_answer(exercise) if not is_correct else None,
+            "correct_option_id": exercise.answer_id if not is_correct else None,
+            "missed_word_ids": missed_ids,
+            "mistake_count": 0,
+        }
+        matched_pairs = {}
+        finalized = True
+
+    if existing is None:
+        existing = ExerciseSubmission(
+            user_id=user.id,
+            lesson_id=lesson_id,
+            exercise_id=exercise.id,
+            run_id=answer.run_id,
+        )
+        db.add(existing)
+    if answer.submission_id:
+        request_history[answer.submission_id] = {
+            "answer": request_answer,
+            "response": response,
+        }
+        existing.selected_answer = {
+            "_answer": selected,
+            "_submission_requests": request_history,
+        }
+    else:
+        existing.selected_answer = selected
+    existing.matched_pairs = matched_pairs
+    existing.missed_word_ids = response["missed_word_ids"]
+    existing.correct = response["correct"] if finalized else None
+    existing.is_final = finalized
+    existing.result_payload = response
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        saved = db.scalar(
+            select(ExerciseSubmission).where(
+                ExerciseSubmission.user_id == user.id,
+                ExerciseSubmission.lesson_id == lesson_id,
+                ExerciseSubmission.run_id == answer.run_id,
+                ExerciseSubmission.exercise_id == exercise.id,
+            )
+        )
+        if saved and saved.result_payload:
+            saved_requests = (
+                (saved.selected_answer or {}).get("_submission_requests", {})
+                if isinstance(saved.selected_answer, dict)
+                else {}
+            )
+            saved_request = saved_requests.get(answer.submission_id)
+            if saved_request and saved_request.get("answer") == request_answer:
+                return saved_request["response"]
+        raise HTTPException(status_code=409, detail="This exercise was already answered")
+    return response
+
+
+def _correct_answer(exercise: Exercise) -> dict:
+    content = exercise.content_data or {}
+    word_id = content.get("target_word_id")
+    if exercise.exercise_type == "matchWords":
+        return {
+            "pairs": [
+                {
+                    "newari": pair["newari"],
+                    "romanization": pair["roman"],
+                    "english": pair["english"],
+                }
+                for pair in content.get("pairs", [])
+            ]
+        }
+    word = next(
+        (item for item in load_curriculum()["words"] if item["id"] == word_id),
+        None,
+    )
+    if word is None:
+        return {}
+    image_key = content.get("image_key") or (
+        (content.get("layout") or {}).get("tile", {}).get("image_key")
+    )
+    if exercise.exercise_type == "wordToPicture":
+        correct_option = next(
+            (
+                option for option in (exercise.options or [])
+                if option["id"] == exercise.answer_id
+            ),
+            {},
+        )
+        image_key = correct_option.get("image_key")
+    return {
+        "newari": word["newari"],
+        "romanization": word["roman"],
+        "english": word["english"],
+        "image_key": image_key,
+    }
 
 
 # ─── Leaderboard ───────────────────────────────────────────────
@@ -1273,8 +1483,8 @@ def get_leaderboard(
         LeaderboardEntryOut(
             rank=index,
             name=row.name,
-            level=row.level,
-            class_name=row.hero_class_name,
+            level=level_state(row.xp)[0],
+            class_name=hero_class(level_state(row.xp)[0]),
             xp=score_for(row),
             hero_index=row.hero_index,
             is_current_user=row.id == user.id,
@@ -1283,81 +1493,51 @@ def get_leaderboard(
     ]
 
 
-# ════════════════════════════════════════════════════════════════════
-# Lesson completion and progression (Stage 6)
-# ════════════════════════════════════════════════════════════════════
-
-def _lesson_passing_score(lesson: Lesson) -> int:
-    """Return the passing score threshold (0-100) for a lesson.
-
-    Ordinary lessons require 100 (fully correct). Checkpoints require 80.
-    """
-    return lesson.passing_score or 100
-
-
 def _lesson_is_passed(db: Session, user_id: int, lesson_id: str) -> bool:
-    """Check if a lesson has been passed (completion record with passed=True)."""
     return db.scalar(
-        select(LessonCompletion).where(
-            LessonCompletion.user_id == user_id,
-            LessonCompletion.lesson_id == lesson_id,
-            LessonCompletion.passed == True,  # noqa: E712
+        select(LessonProgress.id).where(
+            LessonProgress.user_id == user_id,
+            LessonProgress.lesson_id == lesson_id,
+            LessonProgress.completed_at.is_not(None),
         )
     ) is not None
 
 
-def _lesson_prerequisite_met(db: Session, user: User, lesson: Lesson) -> bool:
-    """Check if all prerequisite lessons for a lesson are completed.
-
-    Lesson N (N > 1) requires lesson N-1 to be passed. Lesson 1 has no
-    prerequisite. This naturally handles unit transitions: lesson 4
-    requires lesson 3 (unit 1 checkpoint), etc.
-    """
-    try:
-        parts = lesson.id.split("_")
-        # Format: en_new_u<unit>_l<lesson_in_unit>
-        unit_seq = int(parts[2][1:])
-        lesson_in_unit = int(parts[3][1:])
-    except (IndexError, ValueError):
-        # Non-blueprint lesson - no prerequisite
-        return True
-
-    if unit_seq == 1 and lesson_in_unit == 1:
-        # Lesson 1 (en_new_u1_l1) has no prerequisite
-        return True
-
-    # Previous lesson number in course-plan numbering (1-15)
-    prev_lesson_num = (unit_seq - 1) * 3 + (lesson_in_unit - 1)
-    if prev_lesson_num < 1:
-        return True
-
-    prev_unit_seq = (prev_lesson_num - 1) // 3 + 1
-    prev_lesson_in_unit = ((prev_lesson_num - 1) % 3) + 1
-    prev_lesson_id = f"en_new_u{prev_unit_seq}_l{prev_lesson_in_unit}"
-
-    previous_lesson = db.get(Lesson, prev_lesson_id)
-    if previous_lesson is None or not lesson_is_playable(db, previous_lesson):
-        return False
-    return _lesson_is_passed(db, user.id, prev_lesson_id)
+def _lesson_prerequisite_met(
+    db: Session,
+    user: User,
+    lesson: Lesson,
+    lessons: list[Lesson] | None = None,
+) -> bool:
+    ordered = lessons or list(db.scalars(active_lessons_query()).all())
+    position = next(
+        (index for index, item in enumerate(ordered) if item.id == lesson.id),
+        None,
+    )
+    return position == 0 or (
+        position is not None
+        and position > 0
+        and _lesson_is_passed(db, user.id, ordered[position - 1].id)
+    )
 
 
-def _lesson_availability(db: Session, user: User, lesson: Lesson) -> str:
-    """Determine the availability status of a lesson for a user.
-
-    Returns one of: "unavailable", "locked", "available", "completed".
-    """
+def _lesson_availability(
+    db: Session,
+    user: User,
+    lesson: Lesson,
+    lessons: list[Lesson] | None = None,
+) -> str:
     if not lesson_is_playable(db, lesson):
         return "unavailable"
     if _lesson_is_passed(db, user.id, lesson.id):
         return "completed"
-    if not _lesson_prerequisite_met(db, user, lesson):
+    if not _lesson_prerequisite_met(db, user, lesson, lessons):
         return "locked"
     return "available"
 
 
 def _planned_exercise_count_for_lesson(lesson: Lesson) -> int:
-    """Return the planned exercise slot count for a lesson."""
-    return _planned_exercise_slots_for_lesson(lesson)
+    return int((lesson.content_data or {}).get("exercise_count", 0))
 
 
 def _get_town_map(db: Session, user: User, course_id: str) -> list[dict]:
@@ -1367,26 +1547,13 @@ def _get_town_map(db: Session, user: User, course_id: str) -> list[dict]:
     curriculum without exposing exercise content or correct answers.
     """
     cid = _resolve_course_id(course_id, user)
-
-    lessons = list(
-        db.scalars(
-            select(Lesson)
-            .join(Unit, Lesson.unit_id == Unit.id)
-            .where(Unit.course_id == cid)
-            .order_by(Unit.sequence, Lesson.sequence)
-        ).all()
-    )
+    lessons = list(db.scalars(active_lessons_query()).all()) if cid == "en_new" else []
 
     result = []
-    blueprint_ids = {
-        f"en_new_u{unit}_l{lesson}"
-        for unit in range(1, 6)
-        for lesson in range(1, 4)
-    }
+    lesson_count = len(lessons)
     for lesson in lessons:
-        if lesson.id not in blueprint_ids:
-            continue
-        availability = _lesson_availability(db, user, lesson)
+        content = lesson.content_data or {}
+        availability = _lesson_availability(db, user, lesson, lessons)
         result.append({
             "id": lesson.id,
             "unit_id": lesson.unit_id,
@@ -1401,7 +1568,7 @@ def _get_town_map(db: Session, user: User, course_id: str) -> list[dict]:
             "required_level": lesson.required_level,
             "is_published": lesson.is_published,
             "is_checkpoint": lesson.is_checkpoint,
-            "is_capstone": lesson.id.endswith("_l15"),
+            "is_capstone": content.get("number") == lesson_count,
             "passing_score": lesson.passing_score,
             "availability": availability,
             "planned_exercise_count": _planned_exercise_count_for_lesson(lesson),
