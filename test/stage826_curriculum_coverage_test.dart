@@ -124,6 +124,7 @@ Exercise _exerciseFromJson(Map<String, dynamic> source, String lessonId) {
     options: options,
     newariScript: source['newari_script'] as String?,
     romanization: source['romanization'] as String?,
+    layout: source['layout'] as Map<String, dynamic>?,
   );
 }
 

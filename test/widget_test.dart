@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:glossa_app/app/glossa_app.dart';
 import 'package:glossa_app/core/widgets/hero_avatar.dart';
-import 'package:glossa_app/core/widgets/logo_widget.dart';
 import 'package:glossa_app/core/widgets/progress_bar.dart';
+import 'package:glossa_app/features/onboarding/screens/landing_screen.dart';
 import 'package:glossa_app/features/onboarding/screens/splash_screen.dart';
 import 'package:glossa_app/shared/providers/game_state_provider.dart';
 
@@ -17,23 +17,26 @@ void main() {
       await tester.pump();
 
       expect(find.byType(GlossaApp), findsOneWidget);
-      expect(find.byType(GlossaLogo), findsOneWidget);
-      expect(find.text('Glossa'), findsOneWidget);
+      expect(find.byType(LandingScreen), findsOneWidget);
       // LandingScreen auto-navigates to /splash; SplashScreen must not be
       // shown immediately on startup.
       expect(find.byType(SplashScreen), findsNothing);
+      // Landing exposes the New Game and Continue entry points.
+      expect(find.text('New Game'), findsOneWidget);
+      expect(find.text('Continue (load save)'), findsOneWidget);
     });
 
     testWidgets('Tapping Landing does not crash', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(const ProviderScope(child: GlossaApp()));
-      await tester.pumpAndSettle();
-
-      // Tapping anywhere on the landing screen triggers skip navigation.
-      // Verify no exceptions are thrown.
-      await tester.tap(find.byType(GlossaLogo));
       await tester.pump();
+
+      // Tapping New Game triggers navigation without crashing.
+      await tester.tap(find.text('New Game'));
+      // Pump past the button debounce so no timer is left pending.
+      await tester.pump(const Duration(milliseconds: 400));
+
       expect(tester.takeException(), isNull);
     });
   });
