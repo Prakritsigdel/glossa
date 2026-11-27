@@ -10,9 +10,10 @@ from app.curriculum_blueprint import load_curriculum
 
 
 def compute_hero_stats(completed_lesson_ids: Iterable[str]) -> dict[str, int]:
-    progression = load_curriculum()["progression"]
+    curriculum = load_curriculum()
+    progression = curriculum["progression"]
     stats = dict(progression["base_stats"])
-    lessons = {lesson["id"]: lesson for lesson in load_curriculum()["lessons"]}
+    lessons = {lesson["id"]: lesson for lesson in curriculum["lessons"]}
     for lesson_id in set(completed_lesson_ids):
         lesson = lessons.get(lesson_id)
         if lesson is None:
